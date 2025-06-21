@@ -1,0 +1,38 @@
+[
+  {
+    "type": "console.navigation/section",
+    "properties": {
+      "id": "teknetes-gigs-section",
+      "perspective": "admin",
+      "name": "Teknetes Gigs",
+      "insertBefore": "compute"
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "teknetes-gigs-definitions",
+      "perspective": "admin",
+      "section": "teknetes-gigs-section",
+      "name": "GigDefinitions",
+      "href": "/gigdefinitions"
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "path": "/gigdefinitions",
+      "component": { "$codeRef": "GigDefinitionsListPage" }
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "teknetes-gigs",
+      "perspective": "admin",
+      "section": "teknetes-gigs-section",
+      "name": "Gigs",
+      "href": "/gigs"
+    }
+  }
+]

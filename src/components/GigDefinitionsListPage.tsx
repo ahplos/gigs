@@ -1,0 +1,110 @@
+import * as React from 'react';
+import {
+  List,
+  ListItem,
+} from '@patternfly/react-core';
+
+import {
+  ListPageHeader,
+  ListPageBody,
+  ListPageCreate,
+  VirtualizedTable,
+  useK8sWatchResource,
+  K8sResourceCommon,
+  TableData,
+  RowProps,
+  ResourceLink,
+  TableColumn,
+  Timestamp
+} from '@openshift-console/dynamic-plugin-sdk';
+
+import {
+  GigDefinition
+} from '../utilities/objectDefs';
+
+type GigDefinitionTableProps = {
+  data: K8sResourceCommon[];
+  unfilteredData: K8sResourceCommon[];
+  loaded: boolean;
+  loadError: any;
+};
+
+let gdGroupVersionKind = { group: 'batch.teknetes.org', version: 'v1beta1', kind: 'GigDefinition' }
+
+const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilteredData, loaded, loadError }) => {
+
+  const columns: TableColumn<K8sResourceCommon>[] = [
+    {
+      title: 'Name',
+      id: 'name',
+    },
+    {
+      title: 'Params',
+      id: 'params',
+    },
+    {
+      title: 'Created',
+      id: 'created',
+    },
+  ];
+
+  let listItems = (gigDef: GigDefinition) => {
+    return gigDef.spec.formSpec?.map((widget) => <ListItem><b>{widget.var}</b> [{widget.components[0].inputType}]</ListItem>)
+  };
+
+  const PodRow: React.FC<RowProps<GigDefinition>> = ({ obj: GigDefintion, activeColumnIDs }) => {
+    return (
+      <>
+        <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
+          <ResourceLink groupVersionKind={gdGroupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
+        </TableData>
+        <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
+          <List isPlain>
+            {listItems(obj)}
+          </List>
+        </TableData>
+        <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
+          <Timestamp timestamp={obj.metadata.creationTimestamp} />
+        </TableData>
+      </>
+    );
+  };
+
+  return (
+    <VirtualizedTable<K8sResourceCommon>
+      data={data}
+      unfilteredData={unfilteredData}
+      loaded={loaded}
+      loadError={loadError}
+      columns={columns}
+      Row={PodRow}
+    />
+  );
+}
+
+const GigDefinitionsListPage = () => {
+
+  const [gds, gdLoaded, gdLoadError] = useK8sWatchResource<K8sResourceCommon[]>({
+    groupVersionKind: gdGroupVersionKind,
+    isList: true,
+    namespaced: false,
+  });
+
+  return (
+    <>
+      <ListPageHeader title={'Teknetes GigDefinitions'}>
+        <ListPageCreate groupVersionKind={gdGroupVersionKind}>{'Create GigDefinition'}</ListPageCreate>
+      </ListPageHeader>
+      <ListPageBody>
+        <GigDefinitionsTable
+          data={gds}
+          unfilteredData={gds}
+          loaded={gdLoaded}
+          loadError={gdLoadError}
+        />
+      </ListPageBody>
+    </>
+  );
+};
+
+export default GigDefinitionsListPage;

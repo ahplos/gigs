@@ -1,0 +1,203 @@
+elCicdDefs:
+  GIG: gig
+  GIG_DEF: $<GIG>definition
+  GIG_RUN: $<GIG>run
+  GIG_TYPES: [$<GIG_DEF>, $<GIG>, $<GIG_RUN>]
+  
+  SCOPE: Namespaced
+  CATEGORIES: $<GIG_TYPES>
+
+  GIG_DESCRIPTION: |-
+      represents an impromptu Job with arbitrary scripts, and implies user input is required, potentially in mutliple stages.
+  GIG_DEF_SPEC_DEFINITION:
+    description: GigDefintionSpec defines a Gig, and the optional and/or required parameters to launch it.
+    type: object
+    properties:
+      stages:
+        description: |
+          A related unit of work in a single shell.
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            runType:
+              type: string
+              enum:
+              - unmanaged
+              - managed
+              default: unmanaged
+            shell:
+              type: string
+              enum:
+              - bash
+              - python
+              default: bash
+            secrets:
+              type: array
+              items:
+                type: string
+            script:
+              type: string
+          required:
+          - name
+          - script
+      formSpec: $<FORM_SPEC>
+
+  FORM_SPEC:
+    type: array
+    description: Optional list of groups of components organized into sections of a form users will use to launch a job.
+    required:
+    - components
+    items:
+      type: object
+      properties:
+        attributes:
+          description: |-
+            A map of key/value pairs that optionally configure the form group.
+          type: object
+          additionalProperties:
+            type: string
+        var:
+          description: |-
+            Variable that will be assigned from the values of components in the group. Can be overriden at
+            the component level.
+          type: string
+          pattern: '^\w+$'
+        components:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            description: |-
+              arbitrary keys corresponding to JSX PatternFly Form (e.g. TextInput or Radio) controls that contain a map of zero or more
+              attributes for the control; e.g.
+                - component: Radio
+                  attributes:
+                    label: Option 1
+            properties:
+              inputType:
+                type: string
+                enum:
+                - TextArea
+                - TextInput
+                - Radio
+                - Checkbox
+              attributes:
+                description: |-
+                  attributes is a map of {key,value} pairs that optionally contain attributes and values for the component
+                type: object
+                additionalProperties:
+                  type: string
+            required:
+            - inputType
+
+elCicdDefs-$<GIG_DEF>:
+  TITLE_CASE_NAME: GigDefinition
+  SCOPE: Cluster
+  CONFIG_MAP_REF: 
+    type: object
+    properties:
+      name:
+        type: string
+      key:
+        type: string
+  SPEC_DEFINITION: $<GIG_DEF_SPEC_DEFINITION>
+  DESCRIPTION: A $<TITLE_CASE_NAME> $<GIG_DESCRIPTION>
+
+elCicdDefs-$<GIG>:
+  TITLE_CASE_NAME: Gig
+  SPEC_DEFINITION:
+    description: $<TITLE_CASE_NAME>Spec defines the relationship between a $<GIG_DEF> and CronJob.
+    type: object
+    properties:
+      cronJobRef:
+        description: reference to a CronJob in the same Namespace
+        type: object
+        properties:
+          name:
+            description: name of a CronJob in the same Namespace
+            type: string
+        required:
+        - name
+      gigDefinitionRef:
+        description: reference to either a ClusterGig or a Gig in the same Namespace
+        type: object
+        properties:
+          name:
+            type: string
+        required:
+        - name
+
+elCicdDefs-$<GIG_RUN>:
+  TITLE_CASE_NAME: GigRun
+  SPEC_DEFINITION: 
+    description: $<TITLE_CASE_NAME>Spec defines a specific run produced from a GigBinding.
+    type: object
+    properties:
+      formSpec: $<FORM_SPEC>
+      input:
+        type: array
+        items:
+          type: object
+  STATUS_DEFINITION:
+    type: object
+    properties:
+      inputPhase:
+        type: string
+        enum:
+        - WaitingForUser
+        - Posted
+        default: WaitingForUser
+
+elCicdTemplates:
+- apiVersion: apiextensions.k8s.io/v1
+  kind: CustomResourceDefinition
+  objNames: $<GIG_TYPES>
+  objName: $<>s.batch.teknetes.org
+  template:
+    spec:
+      conversion:
+        strategy: None
+      # group name to use for REST API: /apis/<group>/<version>
+      group: batch.teknetes.org
+      # list of versions supported by this CustomResourceDefinition
+      names:
+        kind: $<TITLE_CASE_NAME>
+        plural: $<BASE_OBJ_NAME>s
+        singular: $<BASE_OBJ_NAME>
+        categories: $<GIG_TYPES>
+      scope: $<SCOPE>
+      preserveUnknownFields: false
+      versions:
+      - name: v1beta1
+        served: true
+        storage: true
+        subresources:
+          status: {}
+        schema:
+          openAPIV3Schema:          
+            description: |-
+              A Gig represents an impromptu Job with arbitrary scripts, and implies user input is required, potentially in mutliple stages.
+            type: object
+            properties:
+              apiVersion:
+                description: |-
+                  APIVersion defines the versioned schema of this representation of an object.
+                  Servers should convert recognized schemas to the latest internal value, and
+                  may reject unrecognized values.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+                type: string
+              kind:
+                description: |-
+                  Kind is a string value representing the REST resource this object represents.
+                  Servers may infer this from the endpoint the client submits requests to.
+                  Cannot be updated.
+                  In CamelCase.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                type: string
+              metadata:
+                type: object
+              spec: $<SPEC_DEFINITION>
+              status: $<STATUS_DEFINITION>

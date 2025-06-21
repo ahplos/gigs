@@ -1,0 +1,75 @@
+{
+  "name": "teknetes-gigs",
+  "version": "0.0.1",
+  "description": "Declartive, browser-based UI's from CRD's in Kubernetes",
+  "private": true,
+  "license": "LGPL-2.1-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/teknetes/teknetes-gigs.git"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "yarn clean && NODE_ENV=prod yarn webpack",
+    "build-dev": "yarn clean && yarn webpack",
+    "build-image": "podman build -f Dockerfile --tag $IMAGE_TAG",
+    "push-image": "podman push --tls-verify=false $IMAGE_TAG",
+    "build-push-image": "yarn image-build && yarn push-image",
+    "lint": "yarn eslint src integration-tests --fix && stylelint 'src/**/*.css' --allow-empty-input --fix",
+    "webpack": "node -r ts-node/register ./node_modules/.bin/webpack"
+  },
+  "devDependencies": {
+    "@openshift-console/dynamic-plugin-sdk": "1.8.0",
+    "@openshift-console/dynamic-plugin-sdk-webpack": "1.3.0",
+    "@patternfly/react-core": "5.4.1",
+    "@patternfly/react-icons": "5.4.1",
+    "@patternfly/react-table": "5.4.1",
+    "@types/node": "^18.0.0",
+    "@types/react": "^17.0.37",
+    "@types/react-helmet": "^6.1.4",
+    "@types/react-router-dom": "^5.3.2",
+    "@typescript-eslint/eslint-plugin": "^5.14.0",
+    "@typescript-eslint/parser": "^5.14.0",
+    "css-loader": "^6.7.1",
+    "eslint": "^8.10.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-react": "^7.29.1",
+    "i18next-parser": "^3.11.0",
+    "pluralize": "^8.0.0",
+    "prettier": "^2.7.1",
+    "prettier-stylelint": "^0.4.2",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-helmet": "^6.1.0",
+    "react-i18next": "^11.7.3",
+    "react-router": "5.3.x",
+    "react-router-dom": "5.3.x",
+    "style-loader": "^3.3.1",
+    "stylelint": "^15.3.0",
+    "stylelint-config-standard": "^31.0.0",
+    "ts-loader": "^9.3.1",
+    "ts-node": "^10.8.1",
+    "typescript": "^4.7.4",   
+    "webpack-cli": "^5.1.4"
+  },
+  "consolePlugin": {
+    "name": "teknetes-gigs",
+    "version": "0.0.1",
+    "displayName": "Teknetes Kubernetes Teknetes Gigs",
+    "description": "Run's ad-hoc jobs natively in Kubernetes",
+    "exposedModules": {
+      "GigDefinitionsListPage": "./components/GigDefinitionsListPage"
+    },
+    "dependencies": {
+      "@console/pluginAPI": "*"
+    }
+  },
+  "peerDependencies": {
+    "@babel/core": "^7.0.1",
+    "@babel/preset-env": "^7.0.0",
+    "babel-loader": "^8.0.2",
+    "i18next": "^23.11.5",
+    "webpack": "^5.0.0"
+  }
+}
