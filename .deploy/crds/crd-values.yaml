@@ -5,45 +5,6 @@ elCicdDefs:
   GIG_TYPES: [$<GIG_DEF>, $<GIG>, $<GIG_RUN>]
   
   SCOPE: Namespaced
-  CATEGORIES: $<GIG_TYPES>
-
-  GIG_DESCRIPTION: |-
-      represents an impromptu Job with arbitrary scripts, and implies user input is required, potentially in mutliple stages.
-  GIG_DEF_SPEC_DEFINITION:
-    description: GigDefintionSpec defines a Gig, and the optional and/or required parameters to launch it.
-    type: object
-    properties:
-      stages:
-        description: |
-          A related unit of work in a single shell.
-        type: array
-        items:
-          type: object
-          properties:
-            name:
-              type: string
-            runType:
-              type: string
-              enum:
-              - unmanaged
-              - managed
-              default: unmanaged
-            shell:
-              type: string
-              enum:
-              - bash
-              - python
-              default: bash
-            secrets:
-              type: array
-              items:
-                type: string
-            script:
-              type: string
-          required:
-          - name
-          - script
-      formSpec: $<FORM_SPEC>
 
   FORM_SPEC:
     type: array
@@ -95,6 +56,9 @@ elCicdDefs:
 
 elCicdDefs-$<GIG_DEF>:
   TITLE_CASE_NAME: GigDefinition
+  SHORT_NAMES:
+  - gigdef
+  - gigdefs
   SCOPE: Cluster
   CONFIG_MAP_REF: 
     type: object
@@ -103,13 +67,47 @@ elCicdDefs-$<GIG_DEF>:
         type: string
       key:
         type: string
-  SPEC_DEFINITION: $<GIG_DEF_SPEC_DEFINITION>
-  DESCRIPTION: A $<TITLE_CASE_NAME> $<GIG_DESCRIPTION>
+  SPEC_DEFINITION:
+    description: $<TITLE_CASE_NAME>Spec defines a GigDefinition, and the optional and/or required parameters to launch it.
+    type: object
+    properties:
+      stages:
+        description: |
+          A related unit of work in a single shell.
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            runType:
+              type: string
+              enum:
+              - unmanaged
+              - managed
+              default: unmanaged
+            shell:
+              type: string
+              enum:
+              - bash
+              - python
+              - groovy
+              default: bash
+            secrets:
+              type: array
+              items:
+                type: string
+            script:
+              type: string
+          required:
+          - name
+          - script
+      formSpec: $<FORM_SPEC>
 
 elCicdDefs-$<GIG>:
   TITLE_CASE_NAME: Gig
   SPEC_DEFINITION:
-    description: $<TITLE_CASE_NAME>Spec defines the relationship between a $<GIG_DEF> and CronJob.
+    description: $<TITLE_CASE_NAME>Spec defines the relationship between a $<GIG_DEF> and specific CronJob (i.e. JobTemplate).
     type: object
     properties:
       cronJobRef:
@@ -129,18 +127,44 @@ elCicdDefs-$<GIG>:
             type: string
         required:
         - name
+  STATUS_DEFINITION:
+    type: object
+    properties:
+      lastRunBy:
+        type: object
+        properties:
+          account: 
+            type: string
+          startTime:
+            type: string
+          result:
+            type: string
+            enum:
+            - UNKNOWN
+            - SUCCESS
+            - FAIL
 
 elCicdDefs-$<GIG_RUN>:
   TITLE_CASE_NAME: GigRun
   SPEC_DEFINITION: 
-    description: $<TITLE_CASE_NAME>Spec defines a specific run produced from a GigBinding.
+    description: $<TITLE_CASE_NAME>Spec defines a specific Job run produced from a GigBinding.
     type: object
     properties:
       formSpec: $<FORM_SPEC>
-      input:
-        type: array
-        items:
-          type: object
+      createdBy:
+        type: object
+        properties:
+          account: 
+            type: string
+          runTime:
+            type: string
+          result:
+            type: string
+            enum:
+            - RUNNING
+            - SUCCESS
+            - FAIL
+            - AWAITING_INPUT
   STATUS_DEFINITION:
     type: object
     properties:
@@ -167,7 +191,7 @@ elCicdTemplates:
         kind: $<TITLE_CASE_NAME>
         plural: $<BASE_OBJ_NAME>s
         singular: $<BASE_OBJ_NAME>
-        categories: $<GIG_TYPES>
+        shortNames: $<SHORT_NAMES>
       scope: $<SCOPE>
       preserveUnknownFields: false
       versions:

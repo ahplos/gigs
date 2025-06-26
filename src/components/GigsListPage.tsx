@@ -5,23 +5,26 @@ import {
 } from '@patternfly/react-core';
 
 import {
-  ListPageHeader,
+  K8sResourceCommon,
   ListPageBody,
   ListPageCreate,
-  VirtualizedTable,
-  useK8sWatchResource,
-  K8sResourceCommon,
-  TableData,
+  ListPageHeader,
+  NamespaceBar,
   RowProps,
   ResourceLink,
   TableColumn,
-  Timestamp
+  TableData,
+  Timestamp,
+  useK8sWatchResource,
+  VirtualizedTable,
 } from '@openshift-console/dynamic-plugin-sdk';
 
 import {
-  Gig.
-  GigDefinition,
-  GigRun
+  cronJobGroupVersionKind,
+  Gig,
+  gigGroupVersionKind,
+  gigDefinitionGroupVersionKind,
+  nsGroupVersionKind
 } from '../utilities/objectDefs';
 
 type GigTableProps = {
@@ -31,16 +34,16 @@ type GigTableProps = {
   loadError: any;
 };
 
-let gdGroupVersionKind = { group: 'batch.teknetes.org', version: 'v1beta1', kind: 'GigDefinition' }
-let gigGroupVersionKind = { group: 'batch.teknetes.org', version: 'v1beta1', kind: 'Gig' }
-let cjGroupVersionKind = { group: 'batch', version: 'vi', kind: 'CronJob' }
-
-const GigDefinitionsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, loadError }) => {
+const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, loadError }) => {
 
   const columns: TableColumn<K8sResourceCommon>[] = [
     {
       title: 'Name',
       id: 'name',
+    },
+    {
+      title: 'Namespace',
+      id: 'namespace',
     },
     {
       title: 'GigDefinition',
@@ -49,10 +52,6 @@ const GigDefinitionsTable: React.FC<GigTableProps> = ({ data, unfilteredData, lo
     {
       title: 'CronJob',
       id: 'cronjob',
-    },
-    {
-      title: 'Params',
-      id: 'params',
     },
     {
       title: 'Latest Run',
@@ -64,41 +63,31 @@ const GigDefinitionsTable: React.FC<GigTableProps> = ({ data, unfilteredData, lo
     },
   ];
 
-  type Gig = K8sResourceCommon & {
-    spec: {
-      cronJobRef: {
-        name: string
-      }
-      gigDefinitionRef: {
-        name: string
-      }
-    }
-  }
-
-  let listItems = (gigDef: Gig) => {
-    return gigDef.spec.formSpec?.map((widget) => <ListItem><b>{widget.var}</b> [{widget.components[0].inputType}]</ListItem>)
-  };
-
-  const PodRow: React.FC<RowProps<GigDefinition>> = ({ obj, activeColumnIDs }) => {
-
-
+  const GigRow: React.FC<RowProps<Gig>> = ({ obj, activeColumnIDs }) => {
     return (
       <>
         <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-          <ResourceLink groupVersionKind={gdGroupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
+          <ResourceLink groupVersionKind={gigGroupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
         </TableData>
         <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-          <ResourceLink groupVersionKind={gdGroupVersionKind} name={obj.metadata.name} />
+          <ResourceLink groupVersionKind={nsGroupVersionKind} name={obj.metadata.namespace} />
         </TableData>
         <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
-          <ResourceLink groupVersionKind={cjGroupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
+          <ResourceLink groupVersionKind={gigDefinitionGroupVersionKind} name={obj.spec.gigDefinitionRef.name} />
         </TableData>
-        <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-          <List isPlain>
-            {listItems(obj)}
-          </List>
+        <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
+          <ResourceLink groupVersionKind={cronJobGroupVersionKind} name={obj.spec.cronJobRef.name} namespace={obj.metadata.namespace} />
         </TableData>
-        <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
+        <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
+          { obj?.status?.lastRunBy &&
+            <List isPlain>
+                <ListItem>Account: {obj.status.lastRunBy.account}</ListItem>
+                <ListItem>Start Time: {obj.status.lastRunBy.startTime}</ListItem>
+                <ListItem>Result: {obj.status.lastRunBy.result}</ListItem>
+            </List>
+          }
+        </TableData>
+        <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
           <Timestamp timestamp={obj.metadata.creationTimestamp} />
         </TableData>
       </>
@@ -112,30 +101,30 @@ const GigDefinitionsTable: React.FC<GigTableProps> = ({ data, unfilteredData, lo
       loaded={loaded}
       loadError={loadError}
       columns={columns}
-      Row={PodRow}
+      Row={GigRow}
     />
   );
 }
 
 const GigsListPage = () => {
-
-  const [gds, gdLoaded, gdLoadError] = useK8sWatchResource<K8sResourceCommon[]>({
-    groupVersionKind: gdGroupVersionKind,
+  const [gigs, gigLoaded, gigLoadError] = useK8sWatchResource<K8sResourceCommon[]>({
+    groupVersionKind: gigGroupVersionKind,
     isList: true,
-    namespaced: false,
+    namespaced: true,
   });
 
   return (
     <>
-      <ListPageHeader title={'Teknetes GigDefinitions'}>
-        <ListPageCreate groupVersionKind={gdGroupVersionKind}>{'Create GigDefinition'}</ListPageCreate>
+      <NamespaceBar />
+      <ListPageHeader title={'Teknetes Gigs'}>
+        <ListPageCreate groupVersionKind={gigGroupVersionKind}>{'Create Gig'}</ListPageCreate>
       </ListPageHeader>
       <ListPageBody>
-        <GigDefinitionsTable
-          data={gds}
-          unfilteredData={gds}
-          loaded={gdLoaded}
-          loadError={gdLoadError}
+        <GigsTable
+          data={gigs}
+          unfilteredData={gigs}
+          loaded={gigLoaded}
+          loadError={gigLoadError}
         />
       </ListPageBody>
     </>

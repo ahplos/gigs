@@ -5,11 +5,11 @@ import {
 } from '@openshift-console/dynamic-plugin-sdk';
 
 
-export const cronJobGroupVersionKind = { group: 'batch', version: 'vi', kind: 'CronJob' };
+export const nsGroupVersionKind = { kind: 'Namespace', version: 'v1' };
+export const cronJobGroupVersionKind = { group: 'batch', version: 'v1', kind: 'CronJob' };
 export const gigGroupVersionKind = { group: 'batch.teknetes.org', version: 'v1beta1', kind: 'Gig' }
 export const gigDefinitionGroupVersionKind = { group: 'batch.teknetes.org', version: 'v1beta1', kind: 'GigDefinition' }
 export const gigRunGroupVersionKind = { group: 'batch.teknetes.org', version: 'v1beta1', kind: 'GigRun' }
-
 
 export type GigDefinition = K8sResourceCommon & {
     spec: {
@@ -30,7 +30,14 @@ export type Gig = K8sResourceCommon & {
         gigDefinitionRef: { 
             name: string;
         };
-    }
+    };
+    status?: {
+        lastRunBy?: {
+          account: string;
+          startTime: string;
+          result: string;
+        };
+    };
 }
 
 export type GigRun = K8sResourceCommon & {

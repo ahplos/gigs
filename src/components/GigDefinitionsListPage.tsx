@@ -19,7 +19,8 @@ import {
 } from '@openshift-console/dynamic-plugin-sdk';
 
 import {
-  GigDefinition
+  GigDefinition,
+  gigDefinitionGroupVersionKind,
 } from '../utilities/objectDefs';
 
 type GigDefinitionTableProps = {
@@ -28,8 +29,6 @@ type GigDefinitionTableProps = {
   loaded: boolean;
   loadError: any;
 };
-
-let gdGroupVersionKind = { group: 'batch.teknetes.org', version: 'v1beta1', kind: 'GigDefinition' }
 
 const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilteredData, loaded, loadError }) => {
 
@@ -52,11 +51,11 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
     return gigDef.spec.formSpec?.map((widget) => <ListItem><b>{widget.var}</b> [{widget.components[0].inputType}]</ListItem>)
   };
 
-  const PodRow: React.FC<RowProps<GigDefinition>> = ({ obj: GigDefintion, activeColumnIDs }) => {
+  const GigDefinitionsRow: React.FC<RowProps<GigDefinition>> = ({ obj, activeColumnIDs }) => {
     return (
       <>
         <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-          <ResourceLink groupVersionKind={gdGroupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
+          <ResourceLink groupVersionKind={gigDefinitionGroupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
         </TableData>
         <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
           <List isPlain>
@@ -77,7 +76,7 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
       loaded={loaded}
       loadError={loadError}
       columns={columns}
-      Row={PodRow}
+      Row={GigDefinitionsRow}
     />
   );
 }
@@ -85,7 +84,7 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
 const GigDefinitionsListPage = () => {
 
   const [gds, gdLoaded, gdLoadError] = useK8sWatchResource<K8sResourceCommon[]>({
-    groupVersionKind: gdGroupVersionKind,
+    groupVersionKind: gigDefinitionGroupVersionKind,
     isList: true,
     namespaced: false,
   });
@@ -93,7 +92,7 @@ const GigDefinitionsListPage = () => {
   return (
     <>
       <ListPageHeader title={'Teknetes GigDefinitions'}>
-        <ListPageCreate groupVersionKind={gdGroupVersionKind}>{'Create GigDefinition'}</ListPageCreate>
+        <ListPageCreate groupVersionKind={gigDefinitionGroupVersionKind}>{'Create GigDefinition'}</ListPageCreate>
       </ListPageHeader>
       <ListPageBody>
         <GigDefinitionsTable

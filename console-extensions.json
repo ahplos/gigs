@@ -34,5 +34,42 @@
       "name": "Gigs",
       "href": "/gigs"
     }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "path": "/gigs",
+      "component": { "$codeRef": "GigsListPage" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "page": {
+        "name": "Preview Form",
+        "href": "gigrun-preview"
+      },
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigDefinition"
+      },
+      "component": { "$codeRef": "GigRunFormTab" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "page": {
+        "name": "Run",
+        "href": "gigrun"
+      },
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "Gig"
+      },
+      "component": { "$codeRef": "GigRunFormTab" }
+    }
   }
 ]

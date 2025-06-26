@@ -8,32 +8,32 @@ import {
     FormGroup,
 }  from '@patternfly/react-core';
 
-import inputComps from './InputComps';
+import inputComps from '../utilities/inputComps';
 
-interface TeknetesFormProps {
-    teknetesForm: any;
+interface GigDefinitionFormProps {
+    gigDefinition: any;
     submissionAction(formState: Object): any;
 }
 
-const TeknetesForm = ({teknetesForm, submissionAction}: TeknetesFormProps) => {
-    const [teknetesFormState, setTeknetesFormState] = React.useState({});
+const GigDefinitionForm = ({gigDefinition, submissionAction}: GigDefinitionFormProps) => {
+    const [gigDefFormState, setGigDefFormState] = React.useState({});
 
-    let formName = teknetesForm?.metadata?.name ?? 'generic-form';
-    let formGroups = teknetesForm?.spec?.formGroups?.map( (formGroup, index) => {
+    let formName = gigDefinition?.metadata?.name ?? 'generic-form';
+    let formSpec = gigDefinition?.spec?.formSpec?.map( (formGroup, index) => {
         let formGroupId = `${formName}-${index}`;
-        return createFormGroup(formGroup, formGroupId, teknetesFormState, setTeknetesFormState);
+        return createFormGroup(formGroup, formGroupId, gigDefFormState, setGigDefFormState);
     }) ?? [];
 
     return (
         <Form id={formName} name={formName}>
-            {formGroups.length ? <>{formGroups}<Divider/></> : <></> }
+            {formSpec.length ? <>{formSpec}<Divider/></> : <></> }
             <ActionGroup>
                 <Button
                     type={ButtonType.submit}
                     variant='primary'
                     onClick={(e) => {
                         e.preventDefault();
-                        submissionAction(teknetesFormState);
+                        submissionAction(gigDefFormState);
                     }}
                 >
                     Launch
@@ -43,7 +43,7 @@ const TeknetesForm = ({teknetesForm, submissionAction}: TeknetesFormProps) => {
     );
 };
 
-const createFormGroup = (formGroup, formGroupId, teknetesFormState, setTeknetesFormState) => {
+const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormState) => {
     formGroup.attributes.name = formGroupId;
     formGroup.attributes.id = formGroupId;
     formGroup.attributes.fieldId = formGroupId;
@@ -55,8 +55,8 @@ const createFormGroup = (formGroup, formGroupId, teknetesFormState, setTeknetesF
         const Tag = inputComps[component.inputType];
         return (
             <Tag formGroup={formGroup}
-                 teknetesFormState={teknetesFormState}
-                 setTeknetesFormState={setTeknetesFormState}
+                 gigDefFormState={gigDefFormState}
+                 setGigDefFormState={setGigDefFormState}
                  props={component.attributes ?? {}}
                  index={index}/>
         )
@@ -69,4 +69,4 @@ const createFormGroup = (formGroup, formGroupId, teknetesFormState, setTeknetesF
     );
 };
 
-export default TeknetesForm;
+export default GigDefinitionForm;

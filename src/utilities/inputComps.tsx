@@ -22,15 +22,15 @@ import {
 
 interface TekRadioProps {
     formGroup: any;
-    teknetesFormState: Map<string, string|boolean>;
-    setTeknetesFormState: React.Dispatch<React.SetStateAction<Map<string, string|boolean>>>;
+    gigDefFormState: Map<string, string|boolean>;
+    setGigDefFormState: React.Dispatch<React.SetStateAction<Map<string, string|boolean>>>;
     props: any;
     index: Number;
 }
 
-function TekRadio({formGroup, teknetesFormState, setTeknetesFormState, props, index}: TekRadioProps) {
+function TekRadio({formGroup, gigDefFormState, setGigDefFormState, props, index}: TekRadioProps) {
     props.onChange = (e) => {
-        setTeknetesFormState(prevFormValues => ({
+        setGigDefFormState(prevFormValues => ({
             ...prevFormValues,
             [formGroup.var]: props.label
         }));
@@ -39,22 +39,22 @@ function TekRadio({formGroup, teknetesFormState, setTeknetesFormState, props, in
     return <Radio {...props} />
 }
 
-function TekCheckBox({formGroup, teknetesFormState, setTeknetesFormState, props, index}: TekRadioProps) {
+function TekCheckBox({formGroup, gigDefFormState, setGigDefFormState, props, index}: TekRadioProps) {
     props.onChange = (e) => {
-        setTeknetesFormState(prevFormValues => ({
+        setGigDefFormState(prevFormValues => ({
             ...prevFormValues,
             [formGroup.var]: !prevFormValues[formGroup.var]
         }));
     };
 
     return (
-        <Checkbox {...props} isChecked={teknetesFormState[formGroup.var]} defaultChecked={props.defaultChecked ?? false} />
+        <Checkbox {...props} isChecked={gigDefFormState[formGroup.var]} defaultChecked={props.defaultChecked ?? false} />
     );
 }
 
-function TekTextInput({formGroup, teknetesFormState, setTeknetesFormState, props, index}: TekRadioProps) {
+function TekTextInput({formGroup, gigDefFormState, setGigDefFormState, props, index}: TekRadioProps) {
     props.onChange = (e) => {
-        setTeknetesFormState(prevFormValues => ({
+        setGigDefFormState(prevFormValues => ({
             ...prevFormValues,
             [formGroup.var]: e.target.value
         }));
