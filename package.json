@@ -13,11 +13,11 @@
     "clean-all": "rm -rf dist node_modules",
     "build": "yarn clean && yarn install && NODE_ENV=prod yarn webpack",
     "build-dev": "yarn clean && yarn install && yarn webpack",
-    "build-image": "build_image() { podman build -f Dockerfile --tag $1; } ; build_image",
+    "build-image": "build_image() { podman build --squash -f ${2:-Dockerfile} --tag $1; } ; build_image",
     "push-image": "push_image() { podman push --tls-verify=false $1; }; push_image",
-    "build-push-image": "build_push_image() { yarn build-image $1 && yarn push-image $1; }; build_push_image",
-    "build-all": "build_all() { yarn build && yarn build-push-image $1; }; build_all",
-    "build-all-dev": "build_all_dev() { yarn build-dev && yarn build-push-image $1; }; build_all_dev",
+    "build-push-image": "build_push_image() { yarn build-image $1 $2 && yarn push-image $1; }; build_push_image",
+    "build-all": "build_all() { yarn build && yarn build-push-image $1 $2; }; build_all",
+    "build-all-dev": "build_all_dev() { yarn build-dev && yarn build-push-image $1 $2; }; build_all_dev",
     "lint": "yarn eslint src integration-tests --fix && stylelint 'src/**/*.css' --allow-empty-input --fix",
     "webpack": "node -r ts-node/register ./node_modules/.bin/webpack"
   },
@@ -53,18 +53,18 @@
     "stylelint-config-standard": "^31.0.0",
     "ts-loader": "^9.3.1",
     "ts-node": "^10.8.1",
-    "typescript": "^4.7.4",   
+    "typescript": "^4.7.4",
     "webpack-cli": "^5.1.4"
   },
   "consolePlugin": {
-    "name": "teknetes-gigs",
+    "name": "teknetes-gigs-console-plugin",
     "version": "0.0.1",
     "displayName": "Teknetes Gigs",
     "description": "Run's ad-hoc jobs natively in Kubernetes",
     "exposedModules": {
-      "GigDefinitionsListPage": "./components/GigDefinitionsListPage",
-      "GigsListPage": "./components/GigsListPage",
-      "GigRunFormTab": "./components/GigRunFormTab"
+      "GigDefinitionsListPage": "./ui/components/GigDefinitionsListPage",
+      "GigsListPage": "./ui/components/GigsListPage",
+      "GigRunFormTab": "./ui/components/GigRunFormTab"
     },
     "dependencies": {
       "@console/pluginAPI": "*"

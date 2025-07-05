@@ -60,45 +60,56 @@ elCicdDefs-$<GIG_DEF>:
   - gigdef
   - gigdefs
   SCOPE: Cluster
-  CONFIG_MAP_REF: 
-    type: object
-    properties:
-      name:
-        type: string
-      key:
-        type: string
   SPEC_DEFINITION:
     description: $<TITLE_CASE_NAME>Spec defines a GigDefinition, and the optional and/or required parameters to launch it.
     type: object
-    properties:
+    properties:              
+      command:
+        type: array
+        items:
+          type: string
+      args:
+        type: array
+        items:
+          type: string
+      filename:
+        type: string
+        default: gigrun.sh
+      logDescriptions:
+        type: boolean
+        default: true
       stages:
         description: |
-          A related unit of work in a single shell.
+          A unit of work.  User input may potentially be required at the end of a stage.
         type: array
         items:
           type: object
           properties:
             name:
               type: string
-            runType:
+              description: |
+                Name of stage. Must start and end with an alphanumeric character, and '-' and '.' may be used.
+              pattern: '(?:^\w(?:[-\w.]{0,251}[\w])?)$'
+            description:
               type: string
-              enum:
-              - unmanaged
-              - managed
-              default: unmanaged
-            shell:
-              type: string
-              enum:
-              - bash
-              - python
-              - groovy
-              default: bash
             secrets:
               type: array
               items:
-                type: string
+                type: object
+                properties:
+                  secretRef:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      keys:
+                        type: array
+                        items:
+                          type: string
             script:
               type: string
+            userInputRequested:
+              type: boolean
           required:
           - name
           - script
@@ -111,16 +122,16 @@ elCicdDefs-$<GIG>:
     type: object
     properties:
       cronJobRef:
-        description: reference to a CronJob in the same Namespace
+        description: Reference to a CronJob in the same Namespace as the Gig.
         type: object
         properties:
           name:
-            description: name of a CronJob in the same Namespace
+            description: Name of a CronJob in the same Namespace as the Gig.
             type: string
         required:
         - name
       gigDefinitionRef:
-        description: reference to either a ClusterGig or a Gig in the same Namespace
+        description: Reference to a GigDefinition.
         type: object
         properties:
           name:
@@ -150,6 +161,11 @@ elCicdDefs-$<GIG_RUN>:
     description: $<TITLE_CASE_NAME>Spec defines a specific Job run produced from a GigBinding.
     type: object
     properties:
+      gigRef:
+        type: object
+        properties:
+          name:
+            type: string
       formSpec: $<FORM_SPEC>
       createdBy:
         type: object
