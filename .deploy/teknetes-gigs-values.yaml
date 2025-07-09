@@ -33,14 +33,15 @@ elCicdTemplates:
   - name: $<TEKNETES_GIGS_IMAGE_PULL_SECRET>
   imagePullPolicy: $<IMAGE_PULL_POLICY>
   serviceAccountName: $<OBJ_NAME>
+  workingDir: /teknetes-gigs-controller
   command:
   - bash
   - -c
   - |-
     set -ex
     python --version
-    python /teknetes-gigs-controller/utilities/console_patch.py $<PLUGIN_NAME>
-    kopf run --quiet --all-namespaces --verbose /teknetes-gigs-controller/gig_controller.py
+    python ./utilities/console_patch.py $<PLUGIN_NAME>
+    kopf run --quiet --all-namespaces --verbose gig_controller.py
   env:
   - name: TEKNETES_GIGS_OPERATOR_NAMESPACE
     value: $<HELM_RELEASE_NAMESPACE>
@@ -205,10 +206,16 @@ elCicdTemplates:
     - '*'
     apiGroups:
     - batch.teknetes.org
+    - batch
     resources:
     - gigdefinitions
     - gigs
     - gigruns
+    - gigdefinitions/status
+    - gigs/status
+    - gigruns/status
+    - cronjobs/finalizers
+    - jobs/finalizers
 
 - templateName: clusterRoleBinding
   objName: $<GIGS_ADMIN_ROLE>

@@ -3,7 +3,7 @@ elCicdDefs:
   GIG_DEF: $<GIG>definition
   GIG_RUN: $<GIG>run
   GIG_TYPES: [$<GIG_DEF>, $<GIG>, $<GIG_RUN>]
-  
+
   SCOPE: Namespaced
 
   FORM_SPEC:
@@ -63,35 +63,32 @@ elCicdDefs-$<GIG_DEF>:
   SPEC_DEFINITION:
     description: $<TITLE_CASE_NAME>Spec defines a GigDefinition, and the optional and/or required parameters to launch it.
     type: object
-    properties:              
-      command:
-        type: array
-        items:
-          type: string
-      args:
-        type: array
-        items:
-          type: string
-      filename:
-        type: string
-        default: gigrun.sh
-      logDescriptions:
-        type: boolean
-        default: true
+    properties:
       stages:
-        description: |
-          A unit of work.  User input may potentially be required at the end of a stage.
+        description: A unit of work.  User input may potentially be required at the end of a stage.
         type: array
         items:
           type: object
           properties:
+            command:
+              type: array
+              descriptions: |
+                Scripts are assumed to be bash scripts and all stages will be run from a single shell file.  If the
+                script is run in an alternative language, define the command to run the script here, and use the notation
+                '{}` to define where the filename should be referenced in the command. If your command need to use squiggly
+                brackets, double them up; e.g. "${FOO}" would be "${{FOO}}" in the command.
+              items:
+                type: string
+            displayName:
+              type: string
+              description: What will be displayed in the logs during a GigRun.
             name:
               type: string
               description: |
                 Name of stage. Must start and end with an alphanumeric character, and '-' and '.' may be used.
+                If a command is defined, will be used to generate a filename for the script, so name appropiately;
+                e.g. <some-name>.py if running a Python script.
               pattern: '(?:^\w(?:[-\w.]{0,251}[\w])?)$'
-            description:
-              type: string
             secrets:
               type: array
               items:
@@ -108,7 +105,7 @@ elCicdDefs-$<GIG_DEF>:
                           type: string
             script:
               type: string
-            userInputRequested:
+            waitForUserInput:
               type: boolean
           required:
           - name
@@ -144,7 +141,7 @@ elCicdDefs-$<GIG>:
       lastRunBy:
         type: object
         properties:
-          account: 
+          account:
             type: string
           startTime:
             type: string
@@ -157,7 +154,7 @@ elCicdDefs-$<GIG>:
 
 elCicdDefs-$<GIG_RUN>:
   TITLE_CASE_NAME: GigRun
-  SPEC_DEFINITION: 
+  SPEC_DEFINITION:
     description: $<TITLE_CASE_NAME>Spec defines a specific Job run produced from a GigBinding.
     type: object
     properties:
@@ -170,26 +167,24 @@ elCicdDefs-$<GIG_RUN>:
       createdBy:
         type: object
         properties:
-          account: 
+          account:
             type: string
           runTime:
             type: string
           result:
             type: string
             enum:
-            - RUNNING
             - SUCCESS
             - FAIL
-            - AWAITING_INPUT
   STATUS_DEFINITION:
     type: object
     properties:
-      inputPhase:
+      phase:
         type: string
         enum:
-        - WaitingForUser
-        - Posted
-        default: WaitingForUser
+        - WaitingForUserInput
+        - Running
+        default: Running
 
 elCicdTemplates:
 - apiVersion: apiextensions.k8s.io/v1
@@ -217,7 +212,7 @@ elCicdTemplates:
         subresources:
           status: {}
         schema:
-          openAPIV3Schema:          
+          openAPIV3Schema:
             description: |-
               A Gig represents an impromptu Job with arbitrary scripts, and implies user input is required, potentially in mutliple stages.
             type: object

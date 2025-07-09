@@ -4,14 +4,17 @@ USER root
 ARG OKD_VERSION=4
 ARG OC_CLI_URL=https://mirror.openshift.com/pub/openshift-v${OKD_VERSION}/clients/oc/latest/linux/oc.tar.gz
 
+
 COPY requirements.txt src/operator /teknetes-gigs-controller/
+
+WORKDIR /teknetes-gigs-controller
 
 RUN <<EOF
     set -ex
     python --version
     python -m ensurepip
     python -m pip install --upgrade pip
-    python -m pip install -r /teknetes-gigs-controller/requirements.txt
+    python -m pip install -r requirements.txt
     curl -fsSLo /tmp/oc.tar.gz ${OC_CLI_URL}
     tar -C /usr/local/bin/ -xf /tmp/oc.tar.gz  'oc' 'kubectl'
     dnf clean all

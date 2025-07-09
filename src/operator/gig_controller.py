@@ -1,11 +1,17 @@
 import os
 import logging
 import random
+import textwrap
 from typing import AsyncIterator
+from copy import deepcopy
+
+from box import Box, BoxList
 
 import kopf
-from kr8s.objects import CronJob
+from kr8s.objects import CronJob, ConfigMap, Job
 from gig_types import GigRun, GigDefinition, Gig
+
+from collections.abc import Mapping
 
 class ServiceTunnel:
     URL = 'url'
@@ -15,6 +21,7 @@ class ServiceTunnel:
 
     def __init__(self):
         self.logger = logging.getLogger()
+        self.logger.setLevel(logging.INFO)
 
         self.namespace = os.environ['TEKNETES_GIGS_OPERATOR_NAMESPACE']
         self.name = os.environ['TEKNETES_GIGS_OPERATOR_NAME']
@@ -64,30 +71,123 @@ def on_startup(settings: kopf.OperatorSettings, logger, **_):
 
 GIG_DEFINITION_ANNOTATION = 'batch.tenknetes.org/gigdefinition'
 CONTAINER_NAME_ANNOTATION = 'batch.tenknetes.org/containername'
+WORKING_DIR_NAME_ANNOTATION = 'batch.tenknetes.org/workingdirname'
 
-@kopf.on.mutate('batch/v1', 'cronjobs', annotations={GIG_DEFINITION_ANNOTATION: kopf.PRESENT}) # type: ignore
-def onmutatecronjob(patch, annotations, logger, **_):
-    jobAnnotations = patch.spec.setdefault('jobTemplate', {}).setdefault('metadata', {}).setdefault('annotations', {})
-    jobAnnotations[GIG_DEFINITION_ANNOTATION] = annotations[GIG_DEFINITION_ANNOTATION]
+@kopf.on.mutate(CronJob.version, CronJob.plural, annotations={GIG_DEFINITION_ANNOTATION: kopf.PRESENT}) # type: ignore
+def onmutatecronjob(patch, meta, annotations, logger, **_):
+    if (not CronJob(meta.name, meta.namespace).exists()):
+        logger.info(f'ANNOTATING jobTemplate in CronJob: {meta.namespace}:{meta.name}')
+        jobAnnotations = patch.spec.setdefault('jobTemplate', {}).setdefault('metadata', {}).setdefault('annotations', {})
+        jobAnnotations[GIG_DEFINITION_ANNOTATION] = annotations[GIG_DEFINITION_ANNOTATION]
+    else:
+        logger.info(f'CronJob exist; skipping jobTemplate annotation: {meta.namespace}:{meta.name}')
 
-@kopf.on.validate(CronJob.version, CronJob.singular, annotations={GIG_DEFINITION_ANNOTATION: kopf.PRESENT}) # type: ignore
+@kopf.on.validate(CronJob.version, CronJob.plural, annotations={GIG_DEFINITION_ANNOTATION: kopf.PRESENT}) # type: ignore
 def onvalidatecronjob(annotations, meta, **_):
     gigDef = GigDefinition(annotations[GIG_DEFINITION_ANNOTATION])
     if (not gigDef.exists()):
         raise kopf.AdmissionError(f'The GigDefinition for the batch.tenknetes.org/gig-definition annotation in CronJob {meta.name} does not exist.', code=499)
 
-@kopf.on.create(CronJob.version, CronJob.singular, annotations={GIG_DEFINITION_ANNOTATION: kopf.PRESENT}) # type: ignore
-def onCreateCronJob(body, logger, **_):
-    gig = Gig(body.metadata.name, namespace=body.metadata.namespace)
-    gig.cronJobRef = body.metadata.name
-    gig.gigDefinitionRef = body.metadata.annotations[GIG_DEFINITION_ANNOTATION]
-    kopf.adopt(gig.to_dict())
-    logger.error(f'GIG: {gig.to_dict()}')
+@kopf.on.create(CronJob.version, CronJob.plural, annotations={GIG_DEFINITION_ANNOTATION: kopf.PRESENT}) # type: ignore
+def on_create_cronjob(body, meta, logger, **_):
+    gig = Gig(meta.name, namespace=meta.namespace)
+    gig.cronJobRef = meta.name
+    gig.gigDefinitionRef = meta.annotations[GIG_DEFINITION_ANNOTATION]
+    logger.info(f'NEW GIG CREATED: {gig.to_dict()}')
     gig.create()
+    gig.set_owner(CronJob(body))
 
-@kopf.on.update(CronJob.version, CronJob.singular, annotations={GIG_DEFINITION_ANNOTATION: kopf.PRESENT}) # type: ignore
-def onUpdateCronJob(old, new, **_):
+@kopf.on.update(CronJob.version, CronJob.plural, annotations={GIG_DEFINITION_ANNOTATION: kopf.PRESENT}) # type: ignore
+def on_update_cronjob(old, new, logger, **_):
     if (new.metadata.annotations[GIG_DEFINITION_ANNOTATION] != old.metadata.annotations[GIG_DEFINITION_ANNOTATION]):
         gig = Gig.get(new.name, new.namespace)
-        gigDefinitionRef = new.metadata.annotations[GIG_DEFINITION_ANNOTATION]
-        gig.patch({'spec': { 'gigDefinitionRef': gigDefinitionRef }})
+        oldGigDef = old.metadata.annotations[GIG_DEFINITION_ANNOTATION]
+        newGigDef = new.metadata.annotations[GIG_DEFINITION_ANNOTATION]
+        logger.info(f'MODIFIED: GIG {gig.name} FROM {oldGigDef} TO {newGigDef} GigDefinition')
+        gig.patch({'spec': { 'gigDefinitionRef': newGigDef }})
+
+@kopf.on.create(GigRun.version, GigRun.plural) # type: ignore
+def on_create_gigrun(meta, **_):
+    gig_run = GigRun.get(meta.name, meta.namespace)
+    gig = Gig.get(gig_run.gigRef, meta.namespace)
+    cron_job = CronJob.get(gig.name, gig.namespace)
+    gig_def = GigDefinition.get(gig.gigDefinitionRef)
+
+    job = create_job(cron_job, gig_run)
+    gig_run.set_owner(job)
+
+    config_map = create_gigrun_configmap(job, gig_run, gig_def)
+
+@kopf.on.update(GigRun.version, GigRun.plural) # type: ignore
+def on_update_gigrun(old, new, logger, **_):
+    pass
+
+def create_gigrun_configmap(job: Job, gig_run: GigRun, gig_def: GigDefinition) -> ConfigMap:
+    config_map = ConfigMap(gig_run.name, namespace=gig_run.namespace)
+
+    script: str = ''
+    script = 'touch .env'
+    for stage in gig_def.stages:
+        stage_command = stage.command.format(stage.name) if stage.command else ''
+        script += f"""
+            source .env
+
+            stage_log.sh '{stage.name}' "${{STAGE_DESCRIPTION}}"
+
+            {stage_command if stage_command else stage.script}
+
+            kubectl wait gigrun/{gig_run.name} --for=jsonpath='{{.status.phase}}'='RUNNING' -n {gig_run.namespace}
+        """
+
+        if (stage_command):config_map.data[stage.name] = stage.script
+    config_map.raw.setdefault('data', {})['script'] = script
+    with open('./resources/stage_log.sh') as stage_log_script:
+        config_map.data['stage_log.sh'] = stage_log_script.read()
+    config_map.create()
+    config_map.set_owner(job)
+
+    return config_map
+
+def create_job(cron_job: CronJob, gig_run: GigRun) -> Job:
+    spec = deepcopy(cron_job.spec.jobTemplate)
+    job = Job(spec)
+    job.name = gig_run.name
+
+    configmap_volume = Box(name = gig_run.name, configMap = Box(name = gig_run.name))
+    job.spec.template.spec.setdefault('volumes', BoxList()).append(configmap_volume)
+
+    configmap_volume_mount = Box(name = gig_run.name, mountPath = f'/{GigRun.singular}')
+    job.spec.template.spec.containers[0].setdefault('volumeMounts', BoxList()).append(configmap_volume_mount)
+
+    set_job_working_dir(job, cron_job)
+
+    job.spec.template.spec.containers[0].args = BoxList(
+        ['''
+         echo howdy
+         ''']
+    )
+
+    job.create()
+    job.set_owner(cron_job)
+
+    return job
+
+def set_job_working_dir(job: Job, cron_job: CronJob):
+    working_dir = cron_job.annotations.get(WORKING_DIR_NAME_ANNOTATION)
+    if (working_dir):
+        for workingDir in job.spec.template.spec.containers[0].volumeMounts:
+            if (workingDir.name == working_dir):
+                job.spec.template.spec.containers[0].workingDir = workingDir.mountPath
+                break
+        if (not job.spec.template.spec.containers[0].get('workingDir')):
+            msg = f'volumeMount NOT FOUND -> {WORKING_DIR_NAME_ANNOTATION}: {working_dir}'
+            logging.error(msg)
+            raise kopf.PermanentError(msg)
+    else:
+        working_dir = 'working-dir'
+        working_dir_volume = Box(name = working_dir, emptyDir = Box(sizeLimit = '10Mi'))
+        job.spec.template.spec.volumes.append(working_dir_volume)
+
+        working_dir_volumemount = Box(name = working_dir, mountPath = f'/{working_dir}')
+        job.spec.template.spec.containers[0].volumeMounts.append(working_dir_volumemount)
+        job.spec.template.spec.containers[0].workingDir = working_dir
