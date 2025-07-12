@@ -41,7 +41,7 @@ elCicdTemplates:
     set -ex
     python --version
     python ./utilities/console_patch.py $<PLUGIN_NAME>
-    kopf run --quiet --all-namespaces --verbose gig_controller.py
+    kopf run --quiet --all-namespaces --verbose cronjob_controller.py gigrun_controller.py
   env:
   - name: TEKNETES_GIGS_OPERATOR_NAMESPACE
     value: $<HELM_RELEASE_NAMESPACE>
@@ -199,6 +199,17 @@ elCicdTemplates:
     kind: ClusterRole
     name: $<OBJ_NAME>
 
+- templateName: clusterRoleBinding
+  objName: $<OPERATOR_NAME>-admin
+  subjects:
+  - kind: ServiceAccount
+    name: $<OPERATOR_NAME>
+    namespace: $<HELM_RELEASE_NAMESPACE>
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: admin
+
 - templateName: clusterRole
   objName: $<GIGS_ADMIN_ROLE>
   rules:
@@ -216,28 +227,6 @@ elCicdTemplates:
     - gigruns/status
     - cronjobs/finalizers
     - jobs/finalizers
-
-- templateName: clusterRoleBinding
-  objName: $<GIGS_ADMIN_ROLE>
-  subjects:
-  - kind: ServiceAccount
-    name: $<OPERATOR_NAME>
-    namespace: $<HELM_RELEASE_NAMESPACE>
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: $<OBJ_NAME>
-
-- templateName: clusterRoleBinding
-  objName: $<OPERATOR_NAME>-admin
-  subjects:
-  - kind: ServiceAccount
-    name: $<OPERATOR_NAME>
-    namespace: $<HELM_RELEASE_NAMESPACE>
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: admin
 
 - templateName: clusterRole
   objName: gigs-aggregate-to-edit

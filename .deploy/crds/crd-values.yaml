@@ -64,6 +64,10 @@ elCicdDefs-$<GIG_DEF>:
     description: $<TITLE_CASE_NAME>Spec defines a GigDefinition, and the optional and/or required parameters to launch it.
     type: object
     properties:
+      name:
+        type: string
+      description:
+        type: string
       stages:
         description: A unit of work.  User input may potentially be required at the end of a stage.
         type: array
@@ -71,17 +75,18 @@ elCicdDefs-$<GIG_DEF>:
           type: object
           properties:
             command:
-              type: array
+              type: string
               descriptions: |
-                Scripts are assumed to be bash scripts and all stages will be run from a single shell file.  If the
+                By default, stage scripts are bash scripts and all stages will be run isnide a single shell file.  If the
                 script is run in an alternative language, define the command to run the script here, and use the notation
                 '{}` to define where the filename should be referenced in the command. If your command need to use squiggly
                 brackets, double them up; e.g. "${FOO}" would be "${{FOO}}" in the command.
-              items:
-                type: string
             displayName:
               type: string
-              description: What will be displayed in the logs during a GigRun.
+              description: Human readable title of stage
+            description:
+              type: string
+              description: Description of stage
             name:
               type: string
               description: |
@@ -164,27 +169,29 @@ elCicdDefs-$<GIG_RUN>:
           name:
             type: string
       formSpec: $<FORM_SPEC>
-      createdBy:
-        type: object
-        properties:
-          account:
-            type: string
-          runTime:
-            type: string
-          result:
-            type: string
-            enum:
-            - SUCCESS
-            - FAIL
   STATUS_DEFINITION:
     type: object
+    x-kubernetes-preserve-unknown-fields: true
     properties:
-      phase:
+      createdBy:
+        type: string
+      state:
         type: string
         enum:
         - WaitingForUserInput
         - Running
+        - Completed
         default: Running
+      result:
+        type: string
+        enum:
+        - Success
+        - Failure
+        default: Failure
+      runtime:
+        type: string
+      startime:
+        type: string
 
 elCicdTemplates:
 - apiVersion: apiextensions.k8s.io/v1

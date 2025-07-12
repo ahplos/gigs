@@ -6,37 +6,36 @@ import random
 import os
 
 import kopf
-from kr8s.objects import CronJob
-from gig_types import GigRun, GigDefinition, Gig
+from kr8s.objects import CronJob, Job
+
+from utilities.gig_types import GigRun, GigDefinition, Gig
+from utilities.gigrun_controller_helper import GIG_DEFINITION_ANNOTATION, create_gigrun_configmap, create_job
 
 WORKING_DIR = os.path.join(os.path.curdir, 'WORKING_DIR')
 
-@kopf.on.create(GigRun.singular, GigRun.version)
-def on_create(meta, spec, namespace, logger, body, **kwargs):
-    gig = GigRun.get(meta.name)
+@kopf.on.event(Job.version, Job.plural, annotations={GIG_DEFINITION_ANNOTATION: kopf.PRESENT}) # type: ignore
+def on_event_job(meta, status, logger, **kwargs):
+    if ('succeeded' in status):
+        gig_run = GigRun(meta.name, namespace=meta.namespace)
+        state = 'Completed'
+        result = 'Success' if (status['succeeded'] == 1) else 'Failure'
+        gig_run.patch({'status': {'state': state, 'result': result}}, subresource='status', type='merge')
 
-    gig_dir = os.path.join(WORKING_DIR, namespace, gig.name)
-    if (os.path.isdir(gig_dir)):
-        os.rmdir(gig_dir)
-    os.makedirs(gig_dir)
+@kopf.on.create(GigRun.version, GigRun.plural) # type: ignore
+def on_create_gigrun(body, meta, logger, **_):
+    gig_run = GigRun(body)
+    gig = Gig.get(gig_run.gigRef, meta.namespace)
+    cron_job = CronJob.get(gig.name, gig.namespace)
+    gig_def = GigDefinition.get(gig.gigDefinitionRef)
 
-    gig_def = GigDefinition(gig.gigDefinitionRef)
+    job = create_job(cron_job, gig_run)
+    create_gigrun_configmap(job, gig_run, gig_def)
 
-    for stage, index in gig_def.stages:
-        script_file_name = f'{index:03}-{stage.name}'
-        with open(script_file_name, 'w') as script_file:
-            script_file.write(stage.script)
-
-        os.chmod(script_file_name, 0o0777)
+    gig_run.set_owner(job)
+    job.wait("jsonpath='{.status.ready}'=1", timeout=60)
+    return {'state': 'Running'}
 
 
-
-@kopf.on.update('batch.teknetes.org', 'v1beta1', 'gigruns')
-def on_update(body, diff, spec, status, namespace, logger, **kwargs):
-    logger.warn(f'========== UPDATE ===============')
-    logger.warn('body:')
-    logger.warn(f'{body}')
-    logger.warn(f'-------------------------')
-    logger.warn('diff:')
-    logger.warn(f'{diff}')
-    logger.warn(f'========== UPDATE END ===========')
+@kopf.on.update(GigRun.version, GigRun.plural) # type: ignore
+def on_update_gigrun(old, new, logger, **_):
+    pass
