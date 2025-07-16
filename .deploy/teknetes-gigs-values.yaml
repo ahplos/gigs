@@ -21,6 +21,8 @@ elCicdDefs:
 
   GIGS_ADMIN_ROLE: gigs-admin
 
+  GIGS_OCP_CONSOLE_ROLE: $<OPERATOR_NAME>-openshift-console
+
 elCicdDefs-dev:
   IMAGE_PULL_POLICY: Always
 
@@ -41,7 +43,13 @@ elCicdTemplates:
     set -ex
     python --version
     python ./utilities/console_patch.py $<PLUGIN_NAME>
-    kopf run --quiet --all-namespaces --verbose cronjob_controller.py gigrun_controller.py
+    kopf run --quiet \
+             --all-namespaces\
+             --verbose \
+             tekenetes-gigs-operator.py \
+             cronjob_controller.py \
+             job_controller.py \
+             gigrun_controller.py
   env:
   - name: TEKNETES_GIGS_OPERATOR_NAMESPACE
     value: $<HELM_RELEASE_NAMESPACE>
@@ -149,7 +157,7 @@ elCicdTemplates:
           basePath: /
 
 - templateName: clusterRole
-  objName: $<OPERATOR_NAME>
+  objName: $<GIGS_OCP_CONSOLE_ROLE>
   rules:
   - apiGroups:
     - operator.openshift.io
@@ -188,28 +196,6 @@ elCicdTemplates:
     resources:
     - customresourcedefinitions
 
-- templateName: clusterRoleBinding
-  objName: $<OPERATOR_NAME>
-  subjects:
-  - kind: ServiceAccount
-    name: $<OBJ_NAME>
-    namespace: $<HELM_RELEASE_NAMESPACE>
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: $<OBJ_NAME>
-
-- templateName: clusterRoleBinding
-  objName: $<OPERATOR_NAME>-admin
-  subjects:
-  - kind: ServiceAccount
-    name: $<OPERATOR_NAME>
-    namespace: $<HELM_RELEASE_NAMESPACE>
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: admin
-
 - templateName: clusterRole
   objName: $<GIGS_ADMIN_ROLE>
   rules:
@@ -241,6 +227,7 @@ elCicdTemplates:
     resources:
     - gigs
     - gigruns
+    - gigruns/status
 
 - templateName: clusterRole
   objName: gigs-aggregate-to-view
@@ -268,6 +255,7 @@ elCicdTemplates:
     - batch.teknetes.org
     resources:
     - gigruns
+    - gigruns/status
   - verbs:
     - get
     - list
@@ -276,3 +264,36 @@ elCicdTemplates:
     - batch.teknetes.org
     resources:
     - gigs
+
+- templateName: clusterRoleBinding
+  objName: $<GIGS_OCP_CONSOLE_ROLE>
+  subjects:
+  - kind: ServiceAccount
+    name: $<OPERATOR_NAME>
+    namespace: $<HELM_RELEASE_NAMESPACE>
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: $<OBJ_NAME>
+
+- templateName: clusterRoleBinding
+  objName: $<OPERATOR_NAME>-namespace-admin
+  subjects:
+  - kind: ServiceAccount
+    name: $<OPERATOR_NAME>
+    namespace: $<HELM_RELEASE_NAMESPACE>
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: admin
+
+- templateName: clusterRoleBinding
+  objName: $<OPERATOR_NAME>-$<GIGS_ADMIN_ROLE>
+  subjects:
+  - kind: ServiceAccount
+    name: $<OPERATOR_NAME>
+    namespace: $<HELM_RELEASE_NAMESPACE>
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: $<GIGS_ADMIN_ROLE>

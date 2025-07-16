@@ -6,23 +6,33 @@ import random
 import os
 
 import kopf
+from kopf import AdmissionError
 from kr8s.objects import CronJob, Job
 
 from utilities.gig_types import GigRun, GigDefinition, Gig
-from utilities.gigrun_controller_helper import GIG_DEFINITION_ANNOTATION, create_gigrun_configmap, create_job
+from utilities.controller_helper import STATE, STATUS, create_gigrun_configmap, create_job
 
 WORKING_DIR = os.path.join(os.path.curdir, 'WORKING_DIR')
 
-@kopf.on.event(Job.version, Job.plural, annotations={GIG_DEFINITION_ANNOTATION: kopf.PRESENT}) # type: ignore
-def on_event_job(meta, status, logger, **kwargs):
-    if ('succeeded' in status):
-        gig_run = GigRun(meta.name, namespace=meta.namespace)
-        state = 'Completed'
-        result = 'Success' if (status['succeeded'] == 1) else 'Failure'
-        gig_run.patch({'status': {'state': state, 'result': result}}, subresource='status', type='merge')
+GIG_REF = 'gigRef'
+NAME = 'name'
+STARTED_BY = 'startedBy'
+
+@kopf.on.mutate(GigRun.version, GigRun.plural, operation='CREATE') # type: ignore
+def onmutategigrun(userinfo, patch, spec, **kwargs):
+    patch.metadata['labels'] = {
+        f'{Gig.group}/{Gig.kind}': spec[GIG_REF][NAME],
+        f'{GigRun.group}/{STARTED_BY}': userinfo['username'].rpartition(':')[-1]
+    }
+
+@kopf.on.validate(GigRun.version, GigRun.plural) # type: ignore
+def onvalidategigrun(spec, meta, **kwargs):
+    gig = Gig(spec[GIG_REF][NAME], meta.namespace)
+    if (not gig.exists()):
+        raise AdmissionError(f'Gig NOT FOUND: {gig.namespace}:{gig.name}')
 
 @kopf.on.create(GigRun.version, GigRun.plural) # type: ignore
-def on_create_gigrun(body, meta, logger, **_):
+def on_create_gigrun(body, meta, patch, labels, **_):
     gig_run = GigRun(body)
     gig = Gig.get(gig_run.gigRef, meta.namespace)
     cron_job = CronJob.get(gig.name, gig.namespace)
@@ -33,7 +43,10 @@ def on_create_gigrun(body, meta, logger, **_):
 
     gig_run.set_owner(job)
     job.wait("jsonpath='{.status.ready}'=1", timeout=60)
-    return {'state': 'Running'}
+    patch[STATUS] = {
+        STATE: 'Running',
+        STARTED_BY: labels[f'{GigRun.group}/{STARTED_BY}']
+    }
 
 
 @kopf.on.update(GigRun.version, GigRun.plural) # type: ignore

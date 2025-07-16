@@ -71,5 +71,20 @@
       },
       "component": { "$codeRef": "GigRunFormTab" }
     }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "Gig"
+      },
+      "page": {
+        "name": "GigRuns",
+        "href": "gigruns"
+      },
+      "component": { "$codeRef": "GigRunsListPage" }
+    }
   }
 ]

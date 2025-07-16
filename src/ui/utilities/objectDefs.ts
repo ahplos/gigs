@@ -11,23 +11,26 @@ export const gigGroupVersionKind = { group: 'batch.teknetes.org', version: 'v1be
 export const gigDefinitionGroupVersionKind = { group: 'batch.teknetes.org', version: 'v1beta1', kind: 'GigDefinition' }
 export const gigRunGroupVersionKind = { group: 'batch.teknetes.org', version: 'v1beta1', kind: 'GigRun' }
 
+export type FormSpec = {
+    var: string;
+    components: {
+        inputType: string;
+    }[];
+}
+
 export type GigDefinition = K8sResourceCommon & {
     spec: {
-        formSpec?: { 
-            var: string;
-            components: {
-                inputType: string;
-            }[];
-        }[];
+        name: string;
+        formSpec?: FormSpec[];
     }
 }
 
 export type Gig = K8sResourceCommon & {
     spec: {
-        cronJobRef: { 
+        cronJobRef: {
             name: string;
         };
-        gigDefinitionRef: { 
+        gigDefinitionRef: {
             name: string;
         };
     };
@@ -40,10 +43,31 @@ export type Gig = K8sResourceCommon & {
     };
 }
 
+enum GigRunState {
+    WaitingForUserInput,
+    Running,
+    Completed
+}
+
+enum GigRunResult {
+    Success,
+    Failure
+}
+
 export type GigRun = K8sResourceCommon & {
     spec: {
+        gigRef: {
+            name: string
+        };
+        formSpec?: FormSpec;
     };
+
     status: {
+      startedBy: string
+      state: GigRunState
+      result: GigRunResult
+      completionTime: string
+      startime: string
     };
 }
 

@@ -10,18 +10,18 @@ import {
 
 import inputComps from '../utilities/inputComps';
 
-interface GigDefinitionFormProps {
-    gigDefinition: any;
+interface GigRunFormProps {
+    formName: string;
+    formSpec: any;
     submissionAction(formState: Object): any;
 }
 
-const GigDefinitionForm = ({gigDefinition, submissionAction}: GigDefinitionFormProps) => {
-    const [gigDefFormState, setGigDefFormState] = React.useState({});
+const GigRunForm = ({formName, formSpec, submissionAction}: GigRunFormProps) => {
+    const [gigRunFormState, setGigRunFormState] = React.useState({});
 
-    let formName = gigDefinition?.metadata?.name ?? 'generic-form';
-    let formSpec = gigDefinition?.spec?.formSpec?.map( (formGroup, index) => {
+    formSpec = formSpec?.map( (formGroup, index) => {
         let formGroupId = `${formName}-${index}`;
-        return createFormGroup(formGroup, formGroupId, gigDefFormState, setGigDefFormState);
+        return createFormGroup(formGroup, formGroupId, gigRunFormState, setGigRunFormState);
     }) ?? [];
 
     return (
@@ -33,7 +33,7 @@ const GigDefinitionForm = ({gigDefinition, submissionAction}: GigDefinitionFormP
                     variant='primary'
                     onClick={(e) => {
                         e.preventDefault();
-                        submissionAction(gigDefFormState);
+                        submissionAction(gigRunFormState);
                     }}
                 >
                     Launch
@@ -43,7 +43,7 @@ const GigDefinitionForm = ({gigDefinition, submissionAction}: GigDefinitionFormP
     );
 };
 
-const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormState) => {
+const createFormGroup = (formGroup, formGroupId, gigRunFormState, setGigRunFormState) => {
     formGroup.attributes.name = formGroupId;
     formGroup.attributes.id = formGroupId;
     formGroup.attributes.fieldId = formGroupId;
@@ -55,8 +55,8 @@ const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormS
         const Tag = inputComps[component.inputType];
         return (
             <Tag formGroup={formGroup}
-                 gigDefFormState={gigDefFormState}
-                 setGigDefFormState={setGigDefFormState}
+                 gigRunFormState={gigRunFormState}
+                 setGigRunFormState={setGigRunFormState}
                  props={component.attributes ?? {}}
                  index={index}/>
         )
@@ -69,4 +69,4 @@ const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormS
     );
 };
 
-export default GigDefinitionForm;
+export default GigRunForm;

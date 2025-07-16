@@ -8,7 +8,11 @@ from kr8s._types import SpecType
 
 from box import Box, BoxList
 
-class GigDefinition(new_class('GigDefinition', version='batch.teknetes.org/v1beta1', namespaced=False)):
+BATCH_TEKNETES_ORG = 'batch.teknetes.org'
+
+class GigDefinition(new_class('GigDefinition', version=f'{BATCH_TEKNETES_ORG}/v1beta1', namespaced=False)):
+
+    group: str = f'{BATCH_TEKNETES_ORG}'
 
     def __init__(self, resource: SpecType, api: Api | None = None) -> None:
         super().__init__(resource, None, api)
@@ -25,7 +29,9 @@ class GigDefinition(new_class('GigDefinition', version='batch.teknetes.org/v1bet
         self.spec.setdefault('stages', BoxList())
         return self.spec.stages
 
-class Gig(new_class('Gig', version='batch.teknetes.org/v1beta1', namespaced=True)):
+class Gig(new_class('Gig', version=f'{BATCH_TEKNETES_ORG}/v1beta1', namespaced=True)):
+
+    group: str = f'{BATCH_TEKNETES_ORG}'
 
     def __init__(self, resource: SpecType, namespace: str | None = None, api: Api | None = None) -> None:
         super().__init__(resource, namespace, api)
@@ -47,10 +53,14 @@ class Gig(new_class('Gig', version='batch.teknetes.org/v1beta1', namespaced=True
     def cronJobRef(self, value):
         self.spec.setdefault('cronJobRef', Box())['name'] = value
 
-class GigRun(new_class('GigRun', version='batch.teknetes.org/v1beta1', namespaced=True)):
+class GigRun(new_class('GigRun', version=f'{BATCH_TEKNETES_ORG}/v1beta1', namespaced=True)):
 
-    plural: str = 'gigruns'
-    singular: str = 'gigrun'
+    group: str = f'{BATCH_TEKNETES_ORG}'
+
+    def __init__(self, resource: SpecType, namespace: str | None = None, api: Api | None = None) -> None:
+        super().__init__(resource, namespace, api)
+        self.raw.setdefault('spec', {})
+        self.raw.setdefault('status', {})
 
     @property
     def gigRef(self) -> str:
@@ -60,4 +70,40 @@ class GigRun(new_class('GigRun', version='batch.teknetes.org/v1beta1', namespace
     def formSpec(self) -> BoxList:
         self.spec.setdefault('formSpec', BoxList())
         return self.spec.formSpec
+
+    @formSpec.setter
+    def formSpec(self, formSpec: BoxList):
+        self.spec['formSpec'] = formSpec
+
+    @property
+    def result(self) -> str:
+        return self.status['result']
+
+    @result.setter
+    def result(self, result: str):
+        self.status['result'] = result
+
+    @property
+    def runTime(self) -> str:
+        return self.status['runTime']
+
+    @runTime.setter
+    def runTime(self, runTime: str):
+        self.status['runTime'] = runTime
+
+    @property
+    def startedBy(self) -> str:
+        return self.status['startedBy']
+
+    @startedBy.setter
+    def startedBy(self, startedBy: str):
+        self.status['startedBy'] = startedBy
+
+    @property
+    def state(self) -> str:
+        return self.status['state']
+
+    @state.setter
+    def state(self, state: str):
+        self.status['state'] = state
 

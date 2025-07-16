@@ -64,7 +64,8 @@
     "exposedModules": {
       "GigDefinitionsListPage": "./ui/components/GigDefinitionsListPage",
       "GigsListPage": "./ui/components/GigsListPage",
-      "GigRunFormTab": "./ui/components/GigRunFormTab"
+      "GigRunFormTab": "./ui/components/GigRunFormTab",
+      "GigRunsListPage": "./ui/components/GigRunsListPage"
     },
     "dependencies": {
       "@console/pluginAPI": "*"

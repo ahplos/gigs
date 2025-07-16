@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ gig_run.name }}
+  namespace: {{ gig_run.namespace }}
+data:
+  {{ STAGE_LOG_SH }}: |-
+    #!/usr/bin/sh
+
+    echo
+    echo "******************************************************************"
+    echo "**"
+    echo "**  ${1}: ${2}"
+    if [[ ${3} ]]
+    then
+        echo "**"
+        echo "** ${3}"
+    fi
+    echo "**"
+    echo "******************************************************************"
+    echo
+  {{ GIG_RUN_SH }}: |-
+    #!/usr/bin/bash
+    echo 'kubectl version'
+    echo
+    kubectl version
+    echo '======================='
+    /{{ GIG_RUN_DIR }}/{{ STAGE_LOG_SH }} GIG '{{ gig_def.name }}' '{{ gig_def.description }}'
+    touch .env
+
+    {% for stage in gig_def.stages %}
+    set -o allexport
+    source .env
+    set +o allexport
+
+    /{{ GIG_RUN_DIR }}/{{ STAGE_LOG_SH }} STAGE '{{ stage.name }}' '{{ stage.description }}'
+
+    set -x
+    {% if 'command' in stage %}
+    {% set STAGE_SCRIPT = '/%s/%s' % (GIG_RUN_DIR, stage.name) %}
+    {{ stage.command % STAGE_SCRIPT | indent() }}
+    {% else %}
+    {{ stage.script | indent() }}
+    {% endif %}
+    set +x
+
+    kubectl wait gigrun/{{ gig_run.name }} --for=jsonpath='{.status.state}'='Running' -n {{ gig_run.namespace }}
+    {% endfor %}
+
+  {% for stage in gig_def.stages %}
+  {% if stage.get('command') %}
+  {{ stage.name }}: |-
+    {{ stage.script | indent() }}
+  {% endif %}
+  {% endfor %}
+
