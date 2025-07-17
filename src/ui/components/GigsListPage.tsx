@@ -15,16 +15,16 @@ import {
   TableColumn,
   TableData,
   Timestamp,
-  useK8sWatchResource,
   VirtualizedTable,
 } from '@openshift-console/dynamic-plugin-sdk';
 
 import {
-  cronJobGroupVersionKind,
+  CRONJOB_GVK,
   Gig,
-  gigGroupVersionKind,
-  gigDefinitionGroupVersionKind,
-  nsGroupVersionKind
+  getGigs,
+  GIG_GVK,
+  GIG_DEFINITION_GVK,
+  NS_GVK
 } from '../utilities/objectDefs';
 
 type GigTableProps = {
@@ -67,16 +67,16 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
     return (
       <>
         <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-          <ResourceLink groupVersionKind={gigGroupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
+          <ResourceLink groupVersionKind={GIG_GVK} name={obj.metadata.name} namespace={obj.metadata.namespace} />
         </TableData>
         <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-          <ResourceLink groupVersionKind={nsGroupVersionKind} name={obj.metadata.namespace} />
+          <ResourceLink groupVersionKind={NS_GVK} name={obj.metadata.namespace} />
         </TableData>
         <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
-          <ResourceLink groupVersionKind={gigDefinitionGroupVersionKind} name={obj.spec.gigDefinitionRef.name} />
+          <ResourceLink groupVersionKind={GIG_DEFINITION_GVK} name={obj.spec.gigDefinitionRef.name} />
         </TableData>
         <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
-          <ResourceLink groupVersionKind={cronJobGroupVersionKind} name={obj.spec.cronJobRef.name} namespace={obj.metadata.namespace} />
+          <ResourceLink groupVersionKind={CRONJOB_GVK} name={obj.spec.cronJobRef.name} namespace={obj.metadata.namespace} />
         </TableData>
         <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
           { obj?.status?.lastRunBy &&
@@ -107,17 +107,13 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
 }
 
 const GigsListPage = () => {
-  const [gigs, gigLoaded, gigLoadError] = useK8sWatchResource<K8sResourceCommon[]>({
-    groupVersionKind: gigGroupVersionKind,
-    isList: true,
-    namespaced: true,
-  });
+  const [gigs, gigLoaded, gigLoadError] = getGigs()
 
   return (
     <>
       <NamespaceBar />
       <ListPageHeader title={'Teknetes Gigs'}>
-        <ListPageCreate groupVersionKind={gigGroupVersionKind}>{'Create Gig'}</ListPageCreate>
+        <ListPageCreate groupVersionKind={GIG_GVK}>{'Create Gig'}</ListPageCreate>
       </ListPageHeader>
       <ListPageBody>
         <GigsTable

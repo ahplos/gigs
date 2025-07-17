@@ -19,7 +19,8 @@ import {
 import {
   Gig,
   GigRun,
-  gigRunGroupVersionKind,
+  GIG_GVK,
+  GIG_RUN_GVK,
 } from '../utilities/objectDefs';
 
 type GigRunTableProps = {
@@ -35,6 +36,10 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
     {
       title: 'Name',
       id: 'name',
+    },
+    {
+      title: 'Gig',
+      id: 'Gig',
     },
     {
       title: 'Started By',
@@ -58,26 +63,30 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
     }
   ];
 
+
   const GigRunsRow: React.FC<RowProps<GigRun>> = ({ obj, activeColumnIDs }) => {
     return (
       <>
         <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-          <ResourceLink groupVersionKind={gigRunGroupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
+          <ResourceLink groupVersionKind={GIG_RUN_GVK} name={obj.metadata.name} namespace={obj.metadata.namespace} />
         </TableData>
         <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-          {obj.status.startedBy}
+          <ResourceLink groupVersionKind={GIG_GVK} name={obj.spec.gigRef.name} namespace={obj.metadata.namespace} />
         </TableData>
         <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
-          {obj.status.state}
+          {obj.status?.startedBy}
         </TableData>
         <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
-          {obj.status.result}
+          {obj.status?.state}
         </TableData>
         <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
-          <Timestamp timestamp={obj.status.completionTime} />
+          {obj.status?.result}
         </TableData>
         <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
           <Timestamp timestamp={obj.metadata.creationTimestamp} />
+        </TableData>
+        <TableData id={columns[6].id} activeColumnIDs={activeColumnIDs}>
+          {obj.status?.runTime ? new Date(obj.status?.runTime * 1000).toISOString().slice(11, 19) : null}
         </TableData>
       </>
     );
@@ -100,9 +109,11 @@ const GigRunsListPage = (model, page, component) => {
   let gig: Gig = model.obj
 
   const [gigRuns, gdLoaded, gdLoadError] = useK8sWatchResource<GigRun[]>({
-    groupVersionKind: gigRunGroupVersionKind,
+    groupVersionKind: GIG_RUN_GVK,
     selector: {
-      matchLabels: { 'batch.teknetes.org/gig': gig.metadata.name },
+      matchLabels: {
+        [`${GIG_RUN_GVK.group.toLowerCase()}/${gig.kind.toLowerCase()}`]: gig.metadata.name
+      },
     },
     isList: true,
     namespaced: true,

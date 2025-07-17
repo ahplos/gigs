@@ -1,9 +1,5 @@
 import * as React from 'react';
 import {
-    useK8sWatchResource
-} from '@openshift-console/dynamic-plugin-sdk';
-// consoleFetchJSON [console-dynamic-plugin-sdk/src/utils/fetch/console-fetch.ts]
-import {
     Banner,
     TabContent,
     TabContentBody
@@ -11,45 +7,30 @@ import {
 
 import GigDefinitionForm from './GigDefinitionForm';
 
-import { GigDefinition } from '../utilities/objectDefs';
+import { getGigDefinition, GIG_GVK } from '../utilities/objectDefs';
 
 export default function GigRunFormTab(model, page, component) {
 
-    let name;
-    let formSpec;
-    let objectLoaded;
-    let objectLoadError;
-    let previewOnly = false;
+    let gig;
+    let formSpec = [];
+    let objectLoaded = false;
+    let objectLoadError: string;
 
-    switch (model.obj.kind) {
-        case 'Gig':
-            const [gigDefRef, gdLoaded, gdLoadError] = useK8sWatchResource<GigDefinition>({
-                groupVersionKind: {
-                    version: 'v1beta1',
-                    group: 'batch.teknetes.org',
-                    kind: 'GigDefinition',
-                },
-                name: model.obj.spec.gigDefinitionRef.name
-            });
+    if (model.obj.kind == GIG_GVK.kind) {
+        gig = model.obj
+        const [gigDefRef, gdLoaded, gdLoadError] = getGigDefinition(gig.spec.gigDefinitionRef.name)
 
-            name = gigDefRef.spec.name;
-            formSpec = gigDefRef.spec.formSpec;
-            objectLoaded = gdLoaded;
-            objectLoadError = gdLoadError ?? 'Unknown Error';
-        case 'GigRun':
-            if (!model.obj.spec.formSpec) {
-            }
-        case 'GigDefinition':
-            let gigDef = structuredClone(model.obj)
-            name = gigDef.spec.name;
-            formSpec = gigDef.spec.formSpec;
-            objectLoaded = true;
-            previewOnly = true;
+        formSpec = gigDefRef?.spec?.formSpec ?? [];
+        objectLoaded = gdLoaded;
+        objectLoadError = gdLoadError ?? 'Unknown Error';
+    }
+    else {
+        formSpec = structuredClone(model.obj.spec.formSpec ?? []);
+        objectLoaded = true;
     }
 
-
     const submissionAction = (formState: any) => {
-        if (previewOnly) {
+        if (gig) {
             alert("Starting Job");
         }
         else {
@@ -57,11 +38,9 @@ export default function GigRunFormTab(model, page, component) {
         }
     }
 
-    let bodyContent = formSpec && objectLoaded ?
-        <GigDefinitionForm formName={name ?? 'GigRun Form'}
-                           formSpec={formSpec}
-                           submissionAction={submissionAction} /> :
-        <Banner color="red">{objectLoadError}</Banner>
+    let bodyContent = objectLoaded ?
+        <GigDefinitionForm formSpec={formSpec} submissionAction={submissionAction} /> :
+        <Banner color="red">ERROR: {objectLoadError}</Banner>
 
     return (
         <TabContent id="run-job-tab">

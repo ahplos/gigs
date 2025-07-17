@@ -178,9 +178,10 @@ elCicdDefs-$<GIG_RUN>:
         enum:
         - Success
         - Failure
-        default: Failure
+        - Pending
+        default: Pending
       runTime:
-        type: string
+        type: integer
       startedBy:
         type: string
       state:

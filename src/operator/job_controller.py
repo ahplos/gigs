@@ -1,13 +1,9 @@
-import asyncio
-import datetime
-import json
+import time
 import logging
-import random
-import os
+import dateutil.parser as timeparser
 
 import kopf
-from kopf import AdmissionError
-from kr8s.objects import CronJob, Job
+from kr8s.objects import Job
 
 from utilities.gig_types import GigRun, GigDefinition, Gig
 from utilities.controller_helper import STATE, STATUS, GIG_DEFINITION_ANNOTATION, create_gigrun_configmap, create_job
@@ -17,8 +13,10 @@ def on_job_status_succeeded_change(meta, status, **kwargs):
     gig_run = GigRun(meta.name, namespace=meta.namespace)
     state = 'Completed'
     result = 'Success' if (status['succeeded'] == 1) else 'Failure'
+    delta = timeparser.parse(status['completionTime']) - timeparser.parse(status['startTime'])
     patch_values = {STATUS: {
         STATE: state,
-        'result': result
+        'result': result,
+        'runTime': int(delta.total_seconds())
     }}
     gig_run.patch(patch_values, subresource=STATUS, type='merge')

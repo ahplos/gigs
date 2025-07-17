@@ -61,7 +61,7 @@
     "type": "console.tab/horizontalNav",
     "properties": {
       "page": {
-        "name": "Run",
+        "name": "New GigRun",
         "href": "gigrun"
       },
       "model": {

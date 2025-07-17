@@ -9,7 +9,6 @@ import {
   ListPageBody,
   ListPageCreate,
   VirtualizedTable,
-  useK8sWatchResource,
   K8sResourceCommon,
   TableData,
   RowProps,
@@ -20,7 +19,8 @@ import {
 
 import {
   GigDefinition,
-  gigDefinitionGroupVersionKind,
+  GIG_DEFINITION_GVK,
+  getGigDefinitions
 } from '../utilities/objectDefs';
 
 type GigDefinitionTableProps = {
@@ -55,7 +55,7 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
     return (
       <>
         <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-          <ResourceLink groupVersionKind={gigDefinitionGroupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
+          <ResourceLink groupVersionKind={GIG_DEFINITION_GVK} name={obj.metadata.name} namespace={obj.metadata.namespace} />
         </TableData>
         <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
           <List isPlain>
@@ -83,16 +83,12 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
 
 const GigDefinitionsListPage = () => {
 
-  const [gds, gdLoaded, gdLoadError] = useK8sWatchResource<K8sResourceCommon[]>({
-    groupVersionKind: gigDefinitionGroupVersionKind,
-    isList: true,
-    namespaced: false,
-  });
+  const [gds, gdLoaded, gdLoadError] = getGigDefinitions();
 
   return (
     <>
       <ListPageHeader title={'Teknetes GigDefinitions'}>
-        <ListPageCreate groupVersionKind={gigDefinitionGroupVersionKind}>{'Create GigDefinition'}</ListPageCreate>
+        <ListPageCreate groupVersionKind={GIG_DEFINITION_GVK}>{'Create GigDefinition'}</ListPageCreate>
       </ListPageHeader>
       <ListPageBody>
         <GigDefinitionsTable

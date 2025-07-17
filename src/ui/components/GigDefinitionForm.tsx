@@ -10,30 +10,30 @@ import {
 
 import inputComps from '../utilities/inputComps';
 
-interface GigRunFormProps {
-    formName: string;
-    formSpec: any;
+interface GigDefinitionFormProps {
+    formSpec: Array<object>;
     submissionAction(formState: Object): any;
 }
 
-const GigRunForm = ({formName, formSpec, submissionAction}: GigRunFormProps) => {
-    const [gigRunFormState, setGigRunFormState] = React.useState({});
+const GigDefinitionForm = ({formSpec, submissionAction}: GigDefinitionFormProps) => {
+    const [gigDefFormState, setGigDefFormState] = React.useState({});
 
-    formSpec = formSpec?.map( (formGroup, index) => {
+    let formName = 'generic-form';
+    let formSpecGroups = formSpec?.map( (formGroup, index) => {
         let formGroupId = `${formName}-${index}`;
-        return createFormGroup(formGroup, formGroupId, gigRunFormState, setGigRunFormState);
+        return createFormGroup(formGroup, formGroupId, gigDefFormState, setGigDefFormState);
     }) ?? [];
 
     return (
         <Form id={formName} name={formName}>
-            {formSpec.length ? <>{formSpec}<Divider/></> : <></> }
+            {formSpecGroups.length ? <>{formSpecGroups}<Divider/></> : <></> }
             <ActionGroup>
                 <Button
                     type={ButtonType.submit}
                     variant='primary'
                     onClick={(e) => {
                         e.preventDefault();
-                        submissionAction(gigRunFormState);
+                        submissionAction(gigDefFormState);
                     }}
                 >
                     Launch
@@ -43,7 +43,7 @@ const GigRunForm = ({formName, formSpec, submissionAction}: GigRunFormProps) => 
     );
 };
 
-const createFormGroup = (formGroup, formGroupId, gigRunFormState, setGigRunFormState) => {
+const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormState) => {
     formGroup.attributes.name = formGroupId;
     formGroup.attributes.id = formGroupId;
     formGroup.attributes.fieldId = formGroupId;
@@ -55,8 +55,8 @@ const createFormGroup = (formGroup, formGroupId, gigRunFormState, setGigRunFormS
         const Tag = inputComps[component.inputType];
         return (
             <Tag formGroup={formGroup}
-                 gigRunFormState={gigRunFormState}
-                 setGigRunFormState={setGigRunFormState}
+                 gigDefFormState={gigDefFormState}
+                 setGigDefFormState={setGigDefFormState}
                  props={component.attributes ?? {}}
                  index={index}/>
         )
@@ -69,4 +69,4 @@ const createFormGroup = (formGroup, formGroupId, gigRunFormState, setGigRunFormS
     );
 };
 
-export default GigRunForm;
+export default GigDefinitionForm;

@@ -1,8 +1,7 @@
 from collections.abc import MutableMapping
 from typing import Any
 
-from kr8s.objects import new_class, APIObject
-from enum import Enum
+from kr8s.objects import new_class
 from kr8s._api import Api
 from kr8s._types import SpecType
 
@@ -84,11 +83,11 @@ class GigRun(new_class('GigRun', version=f'{BATCH_TEKNETES_ORG}/v1beta1', namesp
         self.status['result'] = result
 
     @property
-    def runTime(self) -> str:
+    def runTime(self) -> int:
         return self.status['runTime']
 
     @runTime.setter
-    def runTime(self, runTime: str):
+    def runTime(self, runTime: int):
         self.status['runTime'] = runTime
 
     @property

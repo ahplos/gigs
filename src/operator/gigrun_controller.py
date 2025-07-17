@@ -10,7 +10,7 @@ from kopf import AdmissionError
 from kr8s.objects import CronJob, Job
 
 from utilities.gig_types import GigRun, GigDefinition, Gig
-from utilities.controller_helper import STATE, STATUS, create_gigrun_configmap, create_job
+from utilities.controller_helper import STATUS, create_gigrun_configmap, create_job
 
 WORKING_DIR = os.path.join(os.path.curdir, 'WORKING_DIR')
 
@@ -21,7 +21,7 @@ STARTED_BY = 'startedBy'
 @kopf.on.mutate(GigRun.version, GigRun.plural, operation='CREATE') # type: ignore
 def onmutategigrun(userinfo, patch, spec, **kwargs):
     patch.metadata['labels'] = {
-        f'{Gig.group}/{Gig.kind}': spec[GIG_REF][NAME],
+        f'{Gig.group}/{Gig.singular}': spec[GIG_REF][NAME],
         f'{GigRun.group}/{STARTED_BY}': userinfo['username'].rpartition(':')[-1]
     }
 
@@ -32,7 +32,7 @@ def onvalidategigrun(spec, meta, **kwargs):
         raise AdmissionError(f'Gig NOT FOUND: {gig.namespace}:{gig.name}')
 
 @kopf.on.create(GigRun.version, GigRun.plural) # type: ignore
-def on_create_gigrun(body, meta, patch, labels, **_):
+def on_create_gigrun(body, meta, patch, labels, logger, **_):
     gig_run = GigRun(body)
     gig = Gig.get(gig_run.gigRef, meta.namespace)
     cron_job = CronJob.get(gig.name, gig.namespace)
@@ -42,10 +42,8 @@ def on_create_gigrun(body, meta, patch, labels, **_):
     create_gigrun_configmap(job, gig_run, gig_def)
 
     gig_run.set_owner(job)
-    job.wait("jsonpath='{.status.ready}'=1", timeout=60)
     patch[STATUS] = {
-        STATE: 'Running',
-        STARTED_BY: labels[f'{GigRun.group}/{STARTED_BY}']
+        STARTED_BY: labels.get(f'{GigRun.group}/{STARTED_BY}')
     }
 
 

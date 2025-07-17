@@ -1,4 +1,5 @@
 from copy import deepcopy
+import logging
 import yaml
 
 from jinja2 import Environment, FileSystemLoader
@@ -18,8 +19,8 @@ WORKING_DIR_NAME_ANNOTATION = 'batch.tenknetes.org/workingdirname'
 GIG_DEFINITION_ANNOTATION = 'batch.tenknetes.org/gigdefinition'
 WORKING_DIR_NAME_ANNOTATION = 'batch.tenknetes.org/workingdirname'
 
-STATE = 'state'
 STATUS = 'status'
+STATE = 'state'
 
 GIG_RUN_DIR = f'{GigRun.singular}'
 GIG_RUN_SH = f'{GigRun.singular}-controller.sh'
@@ -28,6 +29,7 @@ def create_job(cron_job: CronJob, gig_run: GigRun) -> Job:
     spec = deepcopy(cron_job.spec.jobTemplate)
     job = Job(spec)
     job.name = gig_run.name
+    job.namespace = gig_run.metadata.namespace
     job.spec.template.spec['restartPolicy'] = 'Never'
     job.spec['backoffLimit'] = 0
 
