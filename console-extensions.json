@@ -15,13 +15,14 @@
       "perspective": "admin",
       "section": "teknetes-gigs-section",
       "name": "GigDefinitions",
-      "href": "/gigdefinitions"
+      "href": "/k8s/cluster/batch.teknetes.org~v1beta1~GigDefinition"
     }
   },
   {
     "type": "console.page/route",
     "properties": {
-      "path": "/gigdefinitions",
+      "exact": true,
+      "path": "/k8s/cluster/batch.teknetes.org~v1beta1~GigDefinition",
       "component": { "$codeRef": "GigDefinitionsListPage" }
     }
   },
@@ -29,17 +30,58 @@
     "type": "console.navigation/href",
     "properties": {
       "id": "teknetes-gigs",
-      "perspective": "admin",
       "section": "teknetes-gigs-section",
       "name": "Gigs",
-      "href": "/gigs"
+      "href": "/gigs",
+      "namespaced": true
     }
   },
   {
     "type": "console.page/route",
     "properties": {
-      "path": "/gigs",
+      "exact": true,
+      "path": [
+        "/k8s/all-namespaces/batch.teknetes.org~v1beta1~Gig",
+        "/k8s/ns/:ns/batch.teknetes.org~v1beta1~Gig"
+      ],
+      "component": { "$codeRef": "GigsList" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": [
+        "/gigs/all-namespaces",
+        "/gigs/ns/:ns"
+      ],
       "component": { "$codeRef": "GigsListPage" }
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "teknetes-gigruns",
+      "perspective": "admin",
+      "section": "teknetes-gigs-section",
+      "name": "GigRuns",
+      "href": "/gigruns",
+      "namespaced": true
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "path": "/gigruns",
+      "component": { "$codeRef": "GigRunsListPage" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/k8s/ns/:ns/batch.teknetes.org~v1beta1~GigRun",
+      "component": { "$codeRef": "GigRunsListPage" }
     }
   },
   {
@@ -61,7 +103,7 @@
     "type": "console.tab/horizontalNav",
     "properties": {
       "page": {
-        "name": "New GigRun",
+        "name": "Run Gig",
         "href": "gigrun"
       },
       "model": {

@@ -63,6 +63,7 @@
     "description": "Run's ad-hoc jobs natively in Kubernetes",
     "exposedModules": {
       "GigDefinitionsListPage": "./ui/components/GigDefinitionsListPage",
+      "GigsList": "./ui/components/GigsList",
       "GigsListPage": "./ui/components/GigsListPage",
       "GigRunFormTab": "./ui/components/GigRunFormTab",
       "GigRunsListPage": "./ui/components/GigRunsListPage"

@@ -1,14 +1,18 @@
 import * as React from 'react';
 
+import { Navigate } from 'react-router-dom-v5-compat';
+
+
+
 import {
-  VirtualizedTable,
   useK8sWatchResource,
   K8sResourceCommon,
-  TableData,
   RowProps,
   ResourceLink,
   TableColumn,
-  Timestamp
+  TableData,
+  Timestamp,
+  VirtualizedTable,
 } from '@openshift-console/dynamic-plugin-sdk';
 
 import {
@@ -22,6 +26,9 @@ import {
   GIG_GVK,
   GIG_RUN_GVK,
 } from '../utilities/objectDefs';
+
+import { GIG_MAP } from '../utilities/GigContext';
+
 
 type GigRunTableProps = {
   data: K8sResourceCommon[];
@@ -104,35 +111,52 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
   );
 }
 
+const CURRENT_GIG = 'CURRNET_GIG';
+
 const GigRunsListPage = (model, page, component) => {
+  if (model.obj) {
+    let gig: Gig = model.obj;
+    GIG_MAP.set(CURRENT_GIG, gig);
 
-  let gig: Gig = model.obj
-
-  const [gigRuns, gdLoaded, gdLoadError] = useK8sWatchResource<GigRun[]>({
-    groupVersionKind: GIG_RUN_GVK,
-    selector: {
+    let selector = {
       matchLabels: {
         [`${GIG_RUN_GVK.group.toLowerCase()}/${gig.kind.toLowerCase()}`]: gig.metadata.name
-      },
-    },
-    isList: true,
-    namespaced: true,
-  });
+      }
+    }
 
-  return (
-    <>
-      <TabContent id="run-job-tab">
-          <TabContentBody hasPadding>
+    const [gigRuns, gdLoaded, gdLoadError] = useK8sWatchResource<GigRun[]>({
+      groupVersionKind: GIG_RUN_GVK,
+      selector:selector,
+      isList: true,
+      namespaced: true,
+    });
+
+    let gigRunsTable =
+      <>
         <GigRunsTable
           data={gigRuns}
           unfilteredData={gigRuns}
           loaded={gdLoaded}
           loadError={gdLoadError}
         />
-          </TabContentBody>
+      </>;
+
+    return (
+      <TabContent id="run-job-tab">
+        <TabContentBody hasPadding>
+          {gigRunsTable}
+        </TabContentBody>
       </TabContent>
-    </>
-  );
+    );
+  }
+  else {
+    const gig: Gig = GIG_MAP.get(CURRENT_GIG);
+    return (
+      <>
+        <Navigate to={'/k8s/ns/' + gig.metadata.namespace + '/batch.teknetes.org~v1beta1~Gig/' + gig.metadata.name + '/gigruns'} />;
+      </>
+    );
+  }
 };
 
 export default GigRunsListPage;

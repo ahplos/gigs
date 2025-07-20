@@ -26,6 +26,10 @@ export type GigDefinition = K8sResourceCommon & {
 }
 
 export type Gig = K8sResourceCommon & {
+    metadata: {
+        name: string;
+        namespace: string;
+    }
     spec: {
         cronJobRef: {
             name: string;
