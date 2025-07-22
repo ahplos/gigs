@@ -75,6 +75,14 @@ class GigRun(new_class('GigRun', version=f'{BATCH_TEKNETES_ORG}/v1beta1', namesp
         self.spec['formSpec'] = formSpec
 
     @property
+    def creationTimestamp(self) -> str:
+        return self.status['crescreationTimestampult']
+
+    @creationTimestamp.setter
+    def creationTimestamp(self, creationTimestamp: str):
+        self.status['creationTimestamp'] = creationTimestamp
+
+    @property
     def result(self) -> str:
         return self.status['result']
 

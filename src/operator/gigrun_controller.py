@@ -20,9 +20,11 @@ STARTED_BY = 'startedBy'
 
 @kopf.on.mutate(GigRun.version, GigRun.plural, operation='CREATE') # type: ignore
 def onmutategigrun(userinfo, patch, spec, **kwargs):
+    patch.metadata['annotations'] = {
+        f'{GigRun.group}/{STARTED_BY}': userinfo['username'].rpartition(':')[-1]
+    }
     patch.metadata['labels'] = {
         f'{Gig.group}/{Gig.singular}': spec[GIG_REF][NAME],
-        f'{GigRun.group}/{STARTED_BY}': userinfo['username'].rpartition(':')[-1]
     }
 
 @kopf.on.validate(GigRun.version, GigRun.plural) # type: ignore
@@ -32,7 +34,7 @@ def onvalidategigrun(spec, meta, **kwargs):
         raise AdmissionError(f'Gig NOT FOUND: {gig.namespace}:{gig.name}')
 
 @kopf.on.create(GigRun.version, GigRun.plural) # type: ignore
-def on_create_gigrun(body, meta, patch, labels, logger, **_):
+def on_create_gigrun(body, meta, patch, annotations, **_):
     gig_run = GigRun(body)
     gig = Gig.get(gig_run.gigRef, meta.namespace)
     cron_job = CronJob.get(gig.name, gig.namespace)
@@ -43,7 +45,7 @@ def on_create_gigrun(body, meta, patch, labels, logger, **_):
 
     gig_run.set_owner(job)
     patch[STATUS] = {
-        STARTED_BY: labels.get(f'{GigRun.group}/{STARTED_BY}')
+        STARTED_BY: annotations.get(f'{GigRun.group}/{STARTED_BY}')
     }
 
 

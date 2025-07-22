@@ -175,18 +175,10 @@ elCicdTemplates:
     - validatingwebhookconfigurations
     - mutatingwebhookconfigurations
     - cronjobs/status
+    - jobs/status
     verbs:
     - create
     - patch
-  - apiGroups:
-    - operator.openshift.io
-    resources:
-    - consoles
-    verbs:
-    - get
-    - list
-    - patch
-    - update
   - verbs:
     - list
     - get

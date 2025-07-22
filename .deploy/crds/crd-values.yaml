@@ -54,6 +54,30 @@ elCicdDefs:
             required:
             - inputType
 
+  GIG_RUN_STATUS:
+    type: object
+    properties:
+      creationTimestamp:
+        type: string
+      result:
+        type: string
+        enum:
+        - Success
+        - Failure
+        - Pending
+        default: Pending
+      runTime:
+        type: integer
+      startedBy:
+        type: string
+      state:
+        type: string
+        enum:
+        - WaitingForUserInput
+        - Running
+        - Completed
+        default: Running
+
 elCicdDefs-$<GIG_DEF>:
   TITLE_CASE_NAME: GigDefinition
   SHORT_NAMES:
@@ -143,19 +167,7 @@ elCicdDefs-$<GIG>:
   STATUS_DEFINITION:
     type: object
     properties:
-      lastRunBy:
-        type: object
-        properties:
-          account:
-            type: string
-          startTime:
-            type: string
-          result:
-            type: string
-            enum:
-            - UNKNOWN
-            - SUCCESS
-            - FAIL
+      latestGigRun: $<GIG_RUN_STATUS>
 
 elCicdDefs-$<GIG_RUN>:
   TITLE_CASE_NAME: GigRun
@@ -169,28 +181,7 @@ elCicdDefs-$<GIG_RUN>:
           name:
             type: string
       formSpec: $<FORM_SPEC>
-  STATUS_DEFINITION:
-    type: object
-    x-kubernetes-preserve-unknown-fields: true
-    properties:
-      result:
-        type: string
-        enum:
-        - Success
-        - Failure
-        - Pending
-        default: Pending
-      runTime:
-        type: integer
-      startedBy:
-        type: string
-      state:
-        type: string
-        enum:
-        - WaitingForUserInput
-        - Running
-        - Completed
-        default: Running
+  STATUS_DEFINITION: $<GIG_RUN_STATUS>
 
 elCicdTemplates:
 - apiVersion: apiextensions.k8s.io/v1
