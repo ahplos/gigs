@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ gig_run.name }}
+  namespace: {{ gig_run.namespace }}
+data:
+{%- for configMapFile in configMapFiles %}
+  {{ configMapFile }}: |-
+    {% filter indent(width=4) %}
+    {%- include configMapFile %}
+    {%- endfilter %}
+{%- endfor %}
+
+{%- for stage in gig_def.stages %}
+  {%- if stage.processor != 'Shell' %}
+  {{ stage.name }}: |-
+    {% filter indent(width=4) %}
+    {{- stage.script }}
+    {%- endfilter %}
+  {% endif %}
+{%- endfor %}

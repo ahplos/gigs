@@ -13,20 +13,13 @@ class GigDefinition(new_class('GigDefinition', version=f'{BATCH_TEKNETES_ORG}/v1
 
     group: str = f'{BATCH_TEKNETES_ORG}'
 
-    def __init__(self, resource: SpecType, api: Api | None = None) -> None:
-        super().__init__(resource, None, api)
-        self.raw.setdefault('spec', Box()).setdefault('formSpec', BoxList())
-        self.spec.setdefault('stages', BoxList())
-
     @property
     def formSpec(self) -> BoxList:
-        self.spec.setdefault('formSpec', BoxList())
-        return self.spec.formSpec
+        return  self.spec.setdefault('formSpec', {})
 
     @property
-    def stages(self) -> BoxList:
-        self.spec.setdefault('stages', BoxList())
-        return self.spec.stages
+    def stages(self) -> Box:
+        return  self.spec.setdefault('stages', {})
 
 class Gig(new_class('Gig', version=f'{BATCH_TEKNETES_ORG}/v1beta1', namespaced=True)):
 

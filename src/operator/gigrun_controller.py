@@ -18,6 +18,8 @@ GIG_REF = 'gigRef'
 NAME = 'name'
 STARTED_BY = 'startedBy'
 
+STATE = 'state'
+
 @kopf.on.mutate(GigRun.version, GigRun.plural, operation='CREATE') # type: ignore
 def onmutategigrun(userinfo, patch, spec, **kwargs):
     patch.metadata['annotations'] = {
@@ -48,7 +50,28 @@ def on_create_gigrun(body, meta, patch, annotations, **_):
         STARTED_BY: annotations.get(f'{GigRun.group}/{STARTED_BY}')
     }
 
+@kopf.on.update(GigRun.plural, field='spec.formSpec')  # type: ignore
+def on_update_gigrun_form_spec(old, new, logger, **kwargs):
+    gig_run = GigRun(new)
 
-@kopf.on.update(GigRun.version, GigRun.plural) # type: ignore
-def on_update_gigrun(old, new, logger, **_):
-    pass
+    patch_values = {
+        STATE: 'WaitingForUserInput',
+    }
+    gig_run.patch({STATUS: patch_values}, subresource=STATUS, type='merge')
+
+@kopf.on.update(GigRun.plural, field='spec.submissionData')  # type: ignore
+def on_update_gigrun_submission_data(old, new, patch, logger, **kwargs):
+    gig_run = GigRun(new)
+    with open('/{{ GIGRUN_WORKING_DIR }}/.env', 'a') as env_file:
+        for key, value in new['spec']['submissionData']:
+            env_file.writelines(f"{key}='{value}'")
+
+    patch['spec'] = {
+        'spec': {
+            'formSpec': None,
+            'submissionData': None
+        },
+        STATUS: {
+            STATE: 'Running',
+        }
+    }

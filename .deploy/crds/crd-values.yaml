@@ -101,10 +101,9 @@ elCicdDefs-$<GIG_DEF>:
             command:
               type: string
               descriptions: |
-                By default, stage scripts are bash scripts and all stages will be run inside a single shell file.  If the
-                script is run in an alternative language, define the command to run the script here, and use the notation
-                '{}` to define where the filename should be referenced in the command. If your command need to use squiggly
-                brackets, double them up; e.g. "${FOO}" would be "${{FOO}}" in the command.
+                Express a custom command to run this stage's script. The command should have the form
+                <command> <args...> %s <args...>. %s will be used by Teknetes Gigs to inject the filename
+                where the script is stored.
             displayName:
               type: string
               description: Human readable title of stage
@@ -115,14 +114,16 @@ elCicdDefs-$<GIG_DEF>:
               type: string
               description: |
                 Name of stage. Must start and end with an alphanumeric character, and '-' and '.' may be used.
-                If a command is defined, will be used to generate a filename for the script, so name appropiately;
-                e.g. <some-name>.py if running a Python script.
+                The name will reflect the name of the file used to store the script, so name appropiately;
+                e.g. <some-name>.py if writing a Python script for the stage.
               pattern: '(?:^\w(?:[-\w.]{0,251}[\w])?)$'
             secrets:
               type: array
               items:
                 type: object
                 properties:
+                  var:
+                    type: string
                   secretRef:
                     type: object
                     properties:
@@ -134,11 +135,18 @@ elCicdDefs-$<GIG_DEF>:
                           type: string
             script:
               type: string
-            waitForUserInput:
-              type: boolean
+            processor:
+              type: string
+              enum:
+              - Custom
+              - Go
+              - Input
+              - Jinja
+              - Python
+              - Shell
+              default: Shell
           required:
           - name
-          - script
       formSpec: $<FORM_SPEC>
 
 elCicdDefs-$<GIG>:
@@ -164,6 +172,9 @@ elCicdDefs-$<GIG>:
             type: string
         required:
         - name
+    required:
+    - cronJobRef
+    - gigDefinitionRef
   STATUS_DEFINITION:
     type: object
     properties:
@@ -181,6 +192,10 @@ elCicdDefs-$<GIG_RUN>:
           name:
             type: string
       formSpec: $<FORM_SPEC>
+      submissionData:
+        type: object
+    required:
+    - gigRef
   STATUS_DEFINITION: $<GIG_RUN_STATUS>
 
 elCicdTemplates:

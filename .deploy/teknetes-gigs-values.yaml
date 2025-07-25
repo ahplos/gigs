@@ -23,6 +23,8 @@ elCicdDefs:
 
   GIGS_OCP_CONSOLE_ROLE: $<OPERATOR_NAME>-openshift-console
 
+  TEKNETES_GIGS_PROCESSOR_MAP: teknetes-gigs-stage-processors
+
 elCicdDefs-dev:
   IMAGE_PULL_POLICY: Always
 
@@ -43,13 +45,7 @@ elCicdTemplates:
     set -ex
     python --version
     python ./utilities/console_patch.py $<PLUGIN_NAME>
-    kopf run --quiet \
-             --all-namespaces\
-             --verbose \
-             tekenetes-gigs-operator.py \
-             cronjob_controller.py \
-             job_controller.py \
-             gigrun_controller.py
+    kopf run --quiet --all-namespaces --verbose $(ls *.py)
   env:
   - name: TEKNETES_GIGS_OPERATOR_NAMESPACE
     value: $<HELM_RELEASE_NAMESPACE>
@@ -57,6 +53,8 @@ elCicdTemplates:
     value: $<OPERATOR_NAME>
   - name: TEKNETES_GIGS_OPERATOR_PORT
     value: $<toString|PORT>
+  - name: TEKNETES_GIGS_PROCESSOR_MAP
+    value: $<TEKNETES_GIGS_PROCESSOR_MAP>
   volumeMounts:
     - name: $<CERT_NAME>
       readOnly: true
@@ -66,6 +64,14 @@ elCicdTemplates:
       secret:
         secretName: $<CERT_NAME>
         defaultMode: 0420
+
+- templateName: configMap
+  objName: $<TEKNETES_GIGS_PROCESSOR_MAP>
+  data:
+    Go: go run %s
+    Input: python -m teknetes-gigs-jinja.py %s --user-input=true
+    Jinja: python -m teknetes-gigs-jinja.py %s
+    Python: python -m trace -t %s
 
 - templateNames: [deployment, service, serviceAccount]
   annotations:
