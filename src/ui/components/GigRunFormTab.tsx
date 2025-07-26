@@ -9,6 +9,8 @@ import GigDefinitionForm from './GigDefinitionForm';
 
 import { getGigDefinition, GIG_GVK } from '../utilities/objectDefs';
 
+import { createGigRun } from '../utilities/createGigRun'
+
 export default function GigRunFormTab(model, page, component) {
 
     let gig;
@@ -31,7 +33,7 @@ export default function GigRunFormTab(model, page, component) {
 
     const submissionAction = (formState: any) => {
         if (gig) {
-            alert("Starting Job");
+            createGigRun(gig, formState);
         }
         else {
             alert("Preview ONLY");

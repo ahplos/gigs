@@ -80,13 +80,14 @@ export type GigRun = K8sResourceCommon & {
             name: string;
         };
         formSpec?: FormSpec;
+        inputParams?: object;
     };
 
-    status: {
-        result: GigRunResult;
-        runTime: number;
-        startedBy: string;
-        state: GigRunState;
+    status?: {
+        result?: GigRunResult;
+        runTime?: number;
+        startedBy?: string;
+        state?: GigRunState;
     };
 };
 

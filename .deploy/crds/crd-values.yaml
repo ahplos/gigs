@@ -192,8 +192,9 @@ elCicdDefs-$<GIG_RUN>:
           name:
             type: string
       formSpec: $<FORM_SPEC>
-      submissionData:
+      inputParams:
         type: object
+        x-kubernetes-preserve-unknown-fields: true
     required:
     - gigRef
   STATUS_DEFINITION: $<GIG_RUN_STATUS>
