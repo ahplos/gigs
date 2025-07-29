@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import {
     Banner,
     TabContent,
@@ -11,8 +12,7 @@ import { getGigDefinition, GIG_GVK } from '../utilities/objectDefs';
 
 import { createGigRun } from '../utilities/createGigRun'
 
-export default function GigRunFormTab(model, page, component) {
-
+const GigRunFormTab = (model) => {
     let gig;
     let formSpec = [];
     let objectLoaded = false;
@@ -52,3 +52,5 @@ export default function GigRunFormTab(model, page, component) {
         </TabContent>
     );
 };
+
+export default GigRunFormTab;

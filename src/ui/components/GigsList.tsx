@@ -36,7 +36,7 @@ import {
     GigRunStartedBy,
     GigRunState,
     GigRunRunTime,
-} from './components';
+} from './gigUiComponents';
 
 type GigTableProps = {
     data: K8sResourceCommon[];

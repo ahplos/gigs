@@ -40,10 +40,6 @@ export type GigDefinition = K8sResourceCommon & {
 };
 
 export type Gig = K8sResourceCommon & {
-    metadata: {
-        name: string;
-        namespace: string;
-    };
     spec: {
         cronJobRef: {
             name: string;
@@ -63,13 +59,13 @@ export type Gig = K8sResourceCommon & {
     };
 };
 
-enum GigRunState {
+export enum GigRunState {
     WaitingForUserInput,
     Running,
     Completed,
 }
 
-enum GigRunResult {
+export enum GigRunResult {
     Success,
     Failure,
 }

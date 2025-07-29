@@ -10,6 +10,32 @@ import {
 
 import inputComps from '../utilities/inputComps';
 
+const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormState) => {
+    formGroup.attributes.name = formGroupId;
+    formGroup.attributes.id = formGroupId;
+    formGroup.attributes.fieldId = formGroupId;
+    let widgets = formGroup.components.map( (component, index) => {
+        component.attributes ??= {};
+        component.attributes.id = `${formGroup.attributes.id}-${index}`;
+        component.attributes.name = formGroup.attributes.name;
+
+        const Tag = inputComps[component.inputType];
+        return (
+            <Tag formGroup={formGroup}
+                 gigDefFormState={gigDefFormState}
+                 setGigDefFormState={setGigDefFormState}
+                 props={component.attributes ?? {}}
+                 index={index}/>
+        )
+    });
+
+    return (
+        <FormGroup {...formGroup.attributes}>
+            {widgets}
+        </FormGroup>
+    );
+};
+
 interface GigDefinitionFormProps {
     formSpec: Array<object>;
     submissionAction(formState: Object): any;
@@ -40,32 +66,6 @@ const GigDefinitionForm = ({formSpec, submissionAction}: GigDefinitionFormProps)
                 </Button>
             </ActionGroup>
         </Form>
-    );
-};
-
-const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormState) => {
-    formGroup.attributes.name = formGroupId;
-    formGroup.attributes.id = formGroupId;
-    formGroup.attributes.fieldId = formGroupId;
-    let widgets = formGroup.components.map( (component, index) => {
-        component.attributes ??= {};
-        component.attributes.id = `${formGroup.attributes.id}-${index}`;
-        component.attributes.name = formGroup.attributes.name;
-
-        const Tag = inputComps[component.inputType];
-        return (
-            <Tag formGroup={formGroup}
-                 gigDefFormState={gigDefFormState}
-                 setGigDefFormState={setGigDefFormState}
-                 props={component.attributes ?? {}}
-                 index={index}/>
-        )
-    });
-
-    return (
-        <FormGroup {...formGroup.attributes}>
-            {widgets}
-        </FormGroup>
     );
 };
 

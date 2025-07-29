@@ -36,7 +36,7 @@ import {
     GigRunStartedBy,
     GigRunState,
     GigRunRunTime,
-} from './components';
+} from './gigUiComponents';
 
 type GigRunTableProps = {
     data: K8sResourceCommon[];
@@ -162,8 +162,10 @@ const GigRunsListPage = (model, page, component) => {
     }
     else {
         let gig = GIG_MAP.get(CURRENT_GIG);
-        let path = '/k8s/ns/' + gig.metadata.namespace + '/batch.teknetes.org~v1beta1~Gig/' + gig.metadata.name + '/gigruns';
-        return <Navigate to={path}/>;
+        if (gig) {
+            let path = '/k8s/ns/' + gig.metadata.namespace + '/batch.teknetes.org~v1beta1~Gig/' + gig.metadata.name + '/gigruns';
+            return <Navigate to={path}/>;
+        }
     }
 };
 

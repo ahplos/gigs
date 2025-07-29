@@ -184,5 +184,20 @@
       },
       "component": { "$codeRef": "components.GigRunResult" }
     }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "page": {
+        "name": "Run Logs",
+        "href": "gigrun-log-viewer"
+      },
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigRun"
+      },
+      "component": { "$codeRef": "components.GigRunRunTab" }
+    }
   }
 ]
