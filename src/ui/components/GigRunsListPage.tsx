@@ -28,7 +28,7 @@ import {
     GigRun,
     GIG_RUN_GVK,
     GIG_MAP,
-    CURRENT_GIG
+    CURRENT_GIG_RUN
 } from '../utilities/objectDefs';
 
 import {
@@ -127,8 +127,6 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
 const GigRunsListPage = (model, page, component) => {
     if (model.obj) {
         let gig: Gig = model.obj;
-        GIG_MAP.set(CURRENT_GIG, gig);
-
         let selector = {
             matchLabels: {
                 [`${GIG_RUN_GVK.group.toLowerCase()}/${gig.kind.toLowerCase()}`]: gig.metadata.name
@@ -161,11 +159,14 @@ const GigRunsListPage = (model, page, component) => {
         );
     }
     else {
-        let gig = GIG_MAP.get(CURRENT_GIG);
-        if (gig) {
-            let path = '/k8s/ns/' + gig.metadata.namespace + '/batch.teknetes.org~v1beta1~Gig/' + gig.metadata.name + '/gigruns';
-            return <Navigate to={path}/>;
+        let path='/gigs/all-namespaces';
+
+        let gigRun = GIG_MAP.get(CURRENT_GIG_RUN);
+        if (gigRun) {
+            path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.teknetes.org~v1beta1~Gig/' + gigRun.spec.gigRef.name + '/gigruns';
         }
+
+        return <Navigate to={path}/>;
     }
 };
 

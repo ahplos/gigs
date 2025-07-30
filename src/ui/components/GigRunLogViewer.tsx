@@ -1,11 +1,17 @@
 import * as React from 'react';
 
 import {
+    Button,
+    Divider,
     Flex,
     FlexItem,
     Switch,
     Text,
 } from '@patternfly/react-core';
+
+import CompressIcon from '@patternfly/react-icons/dist/dynamic/icons/compress-icon';
+import CopyIcon from '@patternfly/react-icons/dist/dynamic/icons/copy-icon';
+import ExpandIcon from '@patternfly/react-icons/dist/dynamic/icons/expand-icon';
 
 import {
     LogViewer,
@@ -27,11 +33,12 @@ interface GigRunLogViewerprops {
 
 const PERCENT_HEIGHT_100 = '100%'
 
-export default function GigRunLogViewer({gigRun}: GigRunLogViewerprops) {
+export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
     const logViewerRef = React.useRef(null);
 
+    const [isLinesWrppped, setLinesWrppped] = React.useState<boolean>(false);
     const [isShowLineNumbers, setShowLineNumbers] = React.useState<boolean>(true);
-    const [showAllLines, setShowAllLines] = React.useState<boolean>(false);
+    const [isFullScreen, setFullScreen] = React.useState<boolean>(false);
 
     let lines = (data.data.match(/\n/g) || '').length + 1;
 
@@ -39,49 +46,53 @@ export default function GigRunLogViewer({gigRun}: GigRunLogViewerprops) {
         setShowLineNumbers(checked);
     }
 
-    const changeShowAllLines = (event: React.FormEvent<HTMLInputElement>, checked: boolean) => {
-        setShowAllLines(checked);
+    const changeLinesWrapped = (event: React.FormEvent<HTMLInputElement>, checked: boolean) => {
+        setLinesWrppped(checked);
+    }
+
+    const clickExpandCollapse = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setFullScreen(!isFullScreen);
 
         const element = document.querySelector('#' + gigRun.metadata.name);
-        if (checked) {
-            if (element.requestFullscreen) {
-                element.requestFullscreen();
-            }
-        } else {
-            document.exitFullscreen();
-        }
+        isFullScreen ? document.exitFullscreen() :  element.requestFullscreen();
     }
 
     const LogToolbar = () => {
         return (
-            <Flex>
-                <Flex>
-                    <FlexItem>
-                        <LogViewerSearch/>
-                    </FlexItem>
-                    <FlexItem>
-                        <Switch
-                            id='gigrun-log-viewer-show-line-numbers'
-                            label="Hide Line Numbers"
-                            labelOff="Show Line Numbers"
-                            isChecked={isShowLineNumbers}
-                            onChange={showLineNumbers}
-                            ouiaId="BasicSwitch"
-                        />
-                    </FlexItem>
-                </Flex>
-                <Flex align={{ default: 'alignRight' }} spacer={{ default: 'spacerXs' }}>
-                    <FlexItem>
-                        <Switch
-                            id='gigrun-log-viewer-show-all-lines'
-                            label="Collapse Log Viewer"
-                            labelOff="Expand Log Viewer"
-                            isChecked={showAllLines}
-                            onChange={changeShowAllLines}
-                            ouiaId="BasicSwitch"
-                        />
-                    </FlexItem>
-                </Flex>
+            <Flex columnGap={{ default: 'columnGapMd' }}>
+                <FlexItem>
+                    <LogViewerSearch />
+                </FlexItem>
+                <FlexItem>
+                    <Switch
+                        id='gigrun-log-viewer-show-line-numbers'
+                        label='Hide Line Numbers'
+                        labelOff='Show Line Numbers'
+                        isChecked={isShowLineNumbers}
+                        onChange={showLineNumbers}
+                        ouiaId='BasicSwitch'
+                    />
+                </FlexItem>
+                <FlexItem >
+                    <Switch
+                        id='gigrun-log-viewer-lines-wrapped'
+                        label='Wrap Lines'
+                        isChecked={isLinesWrppped}
+                        onChange={changeLinesWrapped}
+                        ouiaId='BasicSwitch'
+                    />
+                </FlexItem>
+                <FlexItem align={{ default: 'alignRight' }}>
+                    <Button onClick={() => navigator.clipboard.writeText(data.data)} variant='link' icon={<CopyIcon/>}>
+                        Copy to Clipboard
+                    </Button>
+                </FlexItem>
+                <Divider orientation={{ default: 'vertical' }}/>
+                <FlexItem>
+                    <Button onClick={clickExpandCollapse} variant='link' icon={isFullScreen ? <CompressIcon/> : <ExpandIcon/> }>
+                        {isFullScreen ? 'Collapse' : 'Expand'}
+                    </Button>
+                </FlexItem>
             </Flex>
         );
     };
@@ -98,16 +109,16 @@ export default function GigRunLogViewer({gigRun}: GigRunLogViewerprops) {
                 </Flex>
                 <Flex align={{ default: 'alignRight' }} spacer={{ default: 'spacerXs' }}>
                     <FlexItem >
-                        <GigRunStartedBy obj={gigRun}/>
+                        <GigRunStartedBy obj={gigRun} />
                     </FlexItem>
                     <FlexItem >
-                        <GigRunState obj={gigRun}/>
+                        <GigRunState obj={gigRun} />
                     </FlexItem>
                     <FlexItem >
-                        <GigRunResult obj={gigRun}/>
+                        <GigRunResult obj={gigRun} />
                     </FlexItem>
                     <FlexItem >
-                        <GigRunRunTime obj={gigRun}/>
+                        <GigRunRunTime obj={gigRun} />
                     </FlexItem>
                 </Flex>
             </Flex>
@@ -118,9 +129,10 @@ export default function GigRunLogViewer({gigRun}: GigRunLogViewerprops) {
         <LogViewer
             id={gigRun.metadata.name}
             ref={logViewerRef}
-            header={<LogHeader/>}
-            toolbar={<LogToolbar/>}
+            header={<LogHeader />}
+            toolbar={<LogToolbar />}
             hasLineNumbers={isShowLineNumbers}
+            isTextWrapped={isLinesWrppped}
             data={data.data}
             initialIndexWidth={3}
             height={PERCENT_HEIGHT_100}
@@ -128,7 +140,8 @@ export default function GigRunLogViewer({gigRun}: GigRunLogViewerprops) {
     );
 };
 
-const data = { data: `\
+const data = {
+    data: `\
     Lorem ipsum dolor sit amet, consectetur adipiscing elit,
     sed do eiusmod tempor incididunt ut labore et dolore magna
     aliqua. Ut enim ad minim veniam, quis nostrud exercitation
@@ -138,7 +151,7 @@ const data = { data: `\
     sint occaecat cupidatat non proident, sunt in culpa qui
     officia deserunt mollit anim id est laborum.
 
-    <a href="https://github.com/teknetes/teknetes-gigs/blob/development/src/ui/utilities/createJob.ts/">Testing</a>
+    <a href='https://github.com/teknetes/teknetes-gigs/blob/development/src/ui/utilities/createJob.ts/'>Testing</a>
 
     https://github.com/teknetes/teknetes-gigs/blob/development/src/ui/utilities/createJob.ts
 

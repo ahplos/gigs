@@ -50,6 +50,7 @@ export const GigIcon: React.FC<GigIconProps> = ({type, status, label, gvk}) => {
             break;
         case IconType.PENDING:
             PicIcon = PendingIcon;
+            isInProgress = true;
             break;
         case IconType.RESOURCE:
             PicIcon = ResourceIcon
@@ -69,7 +70,7 @@ export const GigIcon: React.FC<GigIconProps> = ({type, status, label, gvk}) => {
     return (
         <TextContent>
             <Text>
-                <Icon status={status} isInline  isInProgress={isInProgress} progressIcon={<Spinner diameter="1em" aria-label="Running..." />}>
+                <Icon status={status} isInline isInProgress={isInProgress} progressIcon={<Spinner diameter="1em" aria-label="Running..." />}>
                     <PicIcon groupVersionKind={gvk}/>
                 </Icon>
                 &nbsp;{label}

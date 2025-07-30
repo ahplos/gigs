@@ -59,24 +59,6 @@
     }
   },
   {
-    "type": "console.navigation/href",
-    "properties": {
-      "id": "teknetes-gigruns",
-      "perspective": "admin",
-      "section": "teknetes-gigs-section",
-      "name": "GigRuns",
-      "href": "/gigruns",
-      "namespaced": true
-    }
-  },
-  {
-    "type": "console.page/route",
-    "properties": {
-      "path": "/gigruns",
-      "component": { "$codeRef": "components.GigRunsListPage" }
-    }
-  },
-  {
     "type": "console.page/route",
     "properties": {
       "exact": true,
@@ -183,6 +165,20 @@
         "kind": "GigRun"
       },
       "component": { "$codeRef": "components.GigRunResult" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "gigrun-details-list",
+      "column": "right",
+      "title": "",
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigRun"
+      },
+      "component": { "$codeRef": "components.GigRunHidden" }
     }
   },
   {

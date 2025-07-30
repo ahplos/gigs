@@ -22,8 +22,8 @@ export const GIG_RUN_GVK = {
     kind: "GigRun",
 };
 
-export const GIG_MAP: Map<string, Gig> = new Map();
-export const CURRENT_GIG = "CURRENT_GIG";
+export const GIG_MAP: Map<string, GigRun> = new Map();
+export const CURRENT_GIG_RUN = "CURRENT_GIG_RUN";
 
 export type FormSpec = {
     var: string;
