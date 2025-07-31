@@ -74,6 +74,7 @@ export type GigRun = K8sResourceCommon & {
     spec: {
         gigRef: {
             name: string;
+            containerName?: string;
         };
         formSpec?: FormSpec;
         inputParams?: object;

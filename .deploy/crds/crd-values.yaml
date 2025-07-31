@@ -191,6 +191,10 @@ elCicdDefs-$<GIG_RUN>:
         properties:
           name:
             type: string
+          containerName:
+            type: string
+        required:
+        - name
       formSpec: $<FORM_SPEC>
       inputParams:
         type: object
