@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Base64 } from "js-base64";
+import { Base64 } from 'js-base64';
 
 import {
     Button,
@@ -8,11 +8,14 @@ import {
     FlexItem,
     Switch,
     Text,
+    Tooltip,
 } from '@patternfly/react-core';
 
 import CompressIcon from '@patternfly/react-icons/dist/dynamic/icons/compress-icon';
 import CopyIcon from '@patternfly/react-icons/dist/dynamic/icons/copy-icon';
 import ExpandIcon from '@patternfly/react-icons/dist/dynamic/icons/expand-icon';
+import PauseIcon from '@patternfly/react-icons/dist/dynamic/icons/pause-icon';
+import PlayIcon from '@patternfly/react-icons/dist/dynamic/icons/play-icon';
 
 import {
     LogViewer,
@@ -46,21 +49,20 @@ const PERCENT_HEIGHT_100 = '100%'
 const podModel: K8sModel = {
     apiVersion: 'v1',
     label: 'Pod',
-    labelKey: 'public~Pod',
     plural: 'pods',
     abbr: 'P',
     namespaced: true,
     kind: 'Pod',
-    id: 'pod',
     labelPlural: 'Pods',
-    labelPluralKey: 'public~Pods',
 };
 
 export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
     const logViewerRef = React.useRef(null);
-    const [pod, setPod] = React.useState<K8sResourceKind>(null);
+    const [webSocket, setWebSocket] = React.useState<WSFactory>(null);
     const [podLogs, setPodLogs] = React.useState('');
     const [totalLines, setTotalLines] = React.useState<number>(0);
+    const [paused, setPaused] = React.useState<boolean>(false);
+    const [pauseDisabled, setPauseDisabled] = React.useState<boolean>(true);
 
     const [isLinesWrppped, setLinesWrppped] = React.useState<boolean>(false);
     const [isShowLineNumbers, setShowLineNumbers] = React.useState<boolean>(true);
@@ -71,8 +73,6 @@ export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
     const retryWebSocket = (
         watchURL: string,
         wsOpts: any,
-        onMessage: (message: string) => void,
-        onError: (msg) => void,
         retryCount = 0
     ) => {
         const webSocket = new WSFactory(watchURL, wsOpts);
@@ -82,95 +82,89 @@ export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
                     retryWebSocket(
                         watchURL,
                         wsOpts,
-                        onMessage,
-                        onError,
                         retryCount + 1
                     );
                 }, 3000);
             }
             else {
-                onError('Unable to connect to pod logs');
+                setErrData('Unable to connect to pod logs');
             }
         };
 
         webSocket.onmessage((msg) => {
             const message = Base64.decode(msg);
-            onMessage(message);
+            setPodLogs((prevLogs) => prevLogs + message);
         }).onerror(() => {
             handleError();
         });
 
-        return webSocket;
+        webSocket.onclose((event) => {
+            webSocket.destroy();
+            setPauseDisabled(true);
+        });
+
+        setWebSocket(webSocket);
+        setPauseDisabled(false);
     };
 
-    if (!pod) {
-        let selector = 'batch.kubernetes.io/job-name=' + gigRun.metadata.name;
-        k8sGet({ model: podModel, queryParams: { labelSelector: selector } })
-            .then((response) => {
-                setErrData('');
-                setPod(response['items'][0]);
-            })
-            .catch((e) => {
-                setErrData(e.message);
-                console.error(e);
-            });
-    }
+    const readLogs = (pod: K8sResourceKind) => {
+        let podName = pod.metadata.name;
+        let podNamespace = pod.metadata.namespace;
+
+        const watchURL = '/api/kubernetes/api/v1/namespaces/' + podNamespace + '/pods/' + podName + '/log?follow';
+        let podPhase = pod.status['phase'];
+        if (podPhase === 'Succeeded' || podPhase === 'Failed') {
+            consoleFetchText(watchURL)
+                .then((response) => {
+                    setPodLogs(response);
+                })
+                .catch((e) => {
+                    setErrData(e.getMessage);
+                });
+        }
+        else {
+            const wsOpts = {
+                host: 'auto',
+                path: watchURL,
+                subprotocols: ['base64.binary.k8s.io'],
+            };
+
+            retryWebSocket(
+                watchURL,
+                wsOpts,
+            );
+        }
+    };
 
     React.useEffect(() => {
-        if (pod) {
-            let podName = pod.metadata.name;
-            let podNamespace = pod.metadata.namespace;
+        if (webSocket && !paused && !pauseDisabled) {
+            logViewerRef.current.scrollToBottom();
+        }
+    }, [paused]);
 
-            let loaded = false;
-            let webSocket: WSFactory;
-            // const watchURL = resourceURL(podModel, urlOpts);
-            const watchURL = '/api/kubernetes/api/v1/namespaces/' + podNamespace + '/pods/' + podName + '/log?follow';
+    React.useEffect(() => {
+        if (!webSocket) {
+            let selector = 'batch.kubernetes.io/job-name=' + gigRun.metadata.name;
+            k8sGet({ model: podModel, queryParams: { labelSelector: selector } })
+                .then((response) => {
+                    setErrData('');
 
-            let podPhase = pod.status['Phase'];
-            if (podPhase === 'Completed' || podPhase === 'Failure') {
-                consoleFetchText(watchURL)
-                    .then((response) => {
-                        if (loaded) return;
-                        setPodLogs(response);
-                    })
-                    .catch((e) => {
-                        if (loaded) return;
-                        setErrData(e.getMessage);
-                    });
-            }
-            else {
-                const wsOpts = {
-                    host: 'auto',
-                    path: watchURL,
-                    subprotocols: ['base64.binary.k8s.io'],
-                };
-                webSocket = retryWebSocket(
-                    watchURL,
-                    wsOpts,
-                    (message) => {
-                        if (loaded) return;
-                        setErrData('');
-                        setPodLogs(podLogs + message);
-                    },
-                    (msg) => {
-                        if (loaded) return;
-                        setErrData(msg);
-                    },
-                );
-            }
-
-            return () => {
-                loaded = true;
-                if (webSocket) {
-                    webSocket.destroy();
-                }
-            };
-        };
-    }, [pod]);
+                    readLogs(response['items'][0]);
+                })
+                .catch((e) => {
+                    setErrData(e.message);
+                    console.error(e);
+                });
+        }
+    }, [webSocket]);
 
     React.useEffect(() => {
         let lines = (podLogs.match(/\n/g) || '').length + 1;
         setTotalLines(lines);
+
+        if (webSocket && !paused && !pauseDisabled) {
+            logViewerRef.current.scrollToBottom();
+        }
     }, [podLogs]);
 
     const showLineNumbers = (event: React.FormEvent<HTMLInputElement>, checked: boolean) => {
@@ -192,13 +186,19 @@ export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
         return (
             <Flex columnGap={{ default: 'columnGapMd' }}>
                 <FlexItem>
+                    <Tooltip content={paused ? 'Resume autoscrolling' : 'Pause autoscrolling'} entryDelay={1500} isVisible={!pauseDisabled}>
+                        <Button variant='plain' onClick={() => setPaused(!paused)} isDisabled={pauseDisabled}>
+                            {paused ? <PlayIcon/> : <PauseIcon/>}
+                        </Button>
+                    </Tooltip>
+                </FlexItem>
+                <FlexItem>
                     <LogViewerSearch />
                 </FlexItem>
                 <FlexItem>
                     <Switch
                         id='gigrun-log-viewer-show-line-numbers'
-                        label='Hide Line Numbers'
-                        labelOff='Show Line Numbers'
+                        label='Line Numbers'
                         isChecked={isShowLineNumbers}
                         onChange={showLineNumbers}
                         ouiaId='BasicSwitch'

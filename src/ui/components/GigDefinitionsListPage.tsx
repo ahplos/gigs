@@ -84,7 +84,7 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
 
 const GigDefinitionsListPage = () => {
 
-    const [gds, gdLoaded, gdLoadError] = getGigDefinitions();
+    const [gds, loaded, loadError] = getGigDefinitions();
 
     return (
         <>
@@ -95,8 +95,8 @@ const GigDefinitionsListPage = () => {
                 <GigDefinitionsTable
                     data={gds}
                     unfilteredData={gds}
-                    loaded={gdLoaded}
-                    loadError={gdLoadError}
+                    loaded={loaded}
+                    loadError={loadError}
                 />
             </ListPageBody>
         </>

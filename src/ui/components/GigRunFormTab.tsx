@@ -8,19 +8,19 @@ import {
 
 import GigDefinitionForm from './GigDefinitionForm';
 
-import { getGigDefinition, GIG_GVK } from '../utilities/objectDefs';
+import { getGigDefinition, Gig, GIG_GVK } from '../utilities/objectDefs';
 
 import { createGigRun } from '../utilities/createGigRun'
 
 const GigRunFormTab = (model) => {
-    let gig;
+    let gig: Gig;
     let formSpec = [];
     let objectLoaded = false;
     let objectLoadError: string;
 
     if (model.obj.kind == GIG_GVK.kind) {
         gig = model.obj
-        const [gigDefRef, gdLoaded, gdLoadError] = getGigDefinition(gig.spec.gigDefinitionRef.name)
+        const [gigDefRef, gdLoaded, gdLoadError] = getGigDefinition({name: gig.spec.gigDefinitionRef.name});
 
         formSpec = gigDefRef?.spec?.formSpec ?? [];
         objectLoaded = gdLoaded;

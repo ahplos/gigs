@@ -140,7 +140,7 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
 }
 
 const GigsList = () => {
-    const [gigs, gigLoaded, gigLoadError] = getGigs()
+    const [gigs, loaded, loadError] = getGigs();
 
     return (
         <>
@@ -151,8 +151,8 @@ const GigsList = () => {
                 <GigsTable
                     data={gigs}
                     unfilteredData={gigs}
-                    loaded={gigLoaded}
-                    loadError={gigLoadError}
+                    loaded={loaded}
+                    loadError={loadError}
                 />
             </ListPageBody>
         </>

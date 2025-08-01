@@ -13,7 +13,6 @@ import {
 } from '@patternfly/react-table';
 
 import {
-    useK8sWatchResource,
     K8sResourceCommon,
     RowProps,
     ResourceLink,
@@ -24,6 +23,7 @@ import {
 } from '@openshift-console/dynamic-plugin-sdk';
 
 import {
+    getGigRuns,
     Gig,
     GigRun,
     GIG_RUN_GVK,
@@ -127,18 +127,14 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
 const GigRunsListPage = (model, page, component) => {
     if (model.obj) {
         let gig: Gig = model.obj;
-        let selector = {
-            matchLabels: {
-                [`${GIG_RUN_GVK.group.toLowerCase()}/${gig.kind.toLowerCase()}`]: gig.metadata.name
-            }
-        }
 
-        const [gigRuns, gdLoaded, gdLoadError] = useK8sWatchResource<GigRun[]>({
-            groupVersionKind: GIG_RUN_GVK,
-            selector: selector,
-            isList: true,
-            namespaced: true,
-        });
+        let gigRunsGetOption = {
+            namespace: gig.metadata.namespace,
+            selectors: {
+                [`${GIG_RUN_GVK.group.toLowerCase()}/${GIG_RUN_GVK.kind.toLowerCase()}`]: gig.metadata.name
+            }
+        };
+        const [gigRuns, gdLoaded, gdLoadError] = getGigRuns(gigRunsGetOption);
 
         let gigRunsTable =
             <>
