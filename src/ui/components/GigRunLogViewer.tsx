@@ -2,10 +2,13 @@ import * as React from 'react';
 import { Base64 } from 'js-base64';
 
 import {
+    Bullseye,
+    Banner,
     Button,
     Divider,
     Flex,
     FlexItem,
+    Spinner,
     Switch,
     Text,
     Tooltip,
@@ -23,15 +26,18 @@ import {
 } from '@patternfly/react-log-viewer';
 
 import {
-    k8sGet,
     K8sResourceKind,
-    K8sModel,
     consoleFetchText,
 } from '@openshift-console/dynamic-plugin-sdk';
 
-import { WSFactory } from '@openshift-console/dynamic-plugin-sdk/lib/utils/k8s/ws-factory';
+import {
+    WSFactory
+} from '@openshift-console/dynamic-plugin-sdk/lib/utils/k8s/ws-factory';
 
-import { GigRun } from '../utilities/objectDefs';
+import {
+    getPod,
+    GigRun,
+} from '../utilities/objectDefs';
 
 import {
     GigRunResult,
@@ -41,28 +47,23 @@ import {
 } from './gigUiComponents';
 
 interface GigRunLogViewerprops {
-    gigRun: GigRun
+    gigRun: GigRun,
+    pod?: K8sResourceKind
 }
 
 const PERCENT_HEIGHT_100 = '100%'
 
-const podModel: K8sModel = {
-    apiVersion: 'v1',
-    label: 'Pod',
-    plural: 'pods',
-    abbr: 'P',
-    namespaced: true,
-    kind: 'Pod',
-    labelPlural: 'Pods',
-};
+function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
+    const podPhase = pod.status['phase'];
+    const POD_COMPLETED =  podPhase === 'Succeeded' || podPhase === 'Failed';
 
-export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
     const logViewerRef = React.useRef(null);
-    const [webSocket, setWebSocket] = React.useState<WSFactory>(null);
-    const [podLogs, setPodLogs] = React.useState('');
-    const [totalLines, setTotalLines] = React.useState<number>(0);
+
+    const [podLogs, setPodLogs] = React.useState<string>('');
+    const [initialized, setInitialized] = React.useState<boolean>(false);
+
     const [paused, setPaused] = React.useState<boolean>(false);
-    const [pauseDisabled, setPauseDisabled] = React.useState<boolean>(true);
+    const [pauseDisabled, setPauseDisabled] = React.useState<boolean>(POD_COMPLETED);
 
     const [isLinesWrppped, setLinesWrppped] = React.useState<boolean>(false);
     const [isShowLineNumbers, setShowLineNumbers] = React.useState<boolean>(true);
@@ -70,102 +71,11 @@ export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
 
     const [errData, setErrData] = React.useState<string>('');
 
-    const retryWebSocket = (
-        watchURL: string,
-        wsOpts: any,
-        retryCount = 0
-    ) => {
-        const webSocket = new WSFactory(watchURL, wsOpts);
-        const handleError = () => {
-            if (retryCount < 5) {
-                setTimeout(() => {
-                    retryWebSocket(
-                        watchURL,
-                        wsOpts,
-                        retryCount + 1
-                    );
-                }, 3000);
-            }
-            else {
-                setErrData('Unable to connect to pod logs');
-            }
-        };
-
-        webSocket.onmessage((msg) => {
-            const message = Base64.decode(msg);
-            setPodLogs((prevLogs) => prevLogs + message);
-        }).onerror(() => {
-            handleError();
-        });
-
-        webSocket.onclose((event) => {
-            webSocket.destroy();
-            setPauseDisabled(true);
-        });
-
-        setWebSocket(webSocket);
-        setPauseDisabled(false);
-    };
-
-    const readLogs = (pod: K8sResourceKind) => {
-        let podName = pod.metadata.name;
-        let podNamespace = pod.metadata.namespace;
-
-        const watchURL = '/api/kubernetes/api/v1/namespaces/' + podNamespace + '/pods/' + podName + '/log?follow';
-        let podPhase = pod.status['phase'];
-        if (podPhase === 'Succeeded' || podPhase === 'Failed') {
-            consoleFetchText(watchURL)
-                .then((response) => {
-                    setPodLogs(response);
-                })
-                .catch((e) => {
-                    setErrData(e.getMessage);
-                });
-        }
-        else {
-            const wsOpts = {
-                host: 'auto',
-                path: watchURL,
-                subprotocols: ['base64.binary.k8s.io'],
-            };
-
-            retryWebSocket(
-                watchURL,
-                wsOpts,
-            );
-        }
-    };
-
     React.useEffect(() => {
-        if (webSocket && !paused && !pauseDisabled) {
+        if (!paused && !pauseDisabled) {
             logViewerRef.current.scrollToBottom();
         }
-    }, [paused]);
-
-    React.useEffect(() => {
-        if (!webSocket) {
-            let selector = 'batch.kubernetes.io/job-name=' + gigRun.metadata.name;
-            k8sGet({ model: podModel, queryParams: { labelSelector: selector } })
-                .then((response) => {
-                    setErrData('');
-
-                    readLogs(response['items'][0]);
-                })
-                .catch((e) => {
-                    setErrData(e.message);
-                    console.error(e);
-                });
-        }
-    }, [webSocket]);
-
-    React.useEffect(() => {
-        let lines = (podLogs.match(/\n/g) || '').length + 1;
-        setTotalLines(lines);
-
-        if (webSocket && !paused && !pauseDisabled) {
-            logViewerRef.current.scrollToBottom();
-        }
-    }, [podLogs]);
+    }, [paused, podLogs]);
 
     const showLineNumbers = (event: React.FormEvent<HTMLInputElement>, checked: boolean) => {
         setShowLineNumbers(checked);
@@ -229,6 +139,7 @@ export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
     };
 
     const LogHeader = () => {
+        let totalLines = (podLogs?.match(/\n/g) || '')?.length + 1;
         return (
             <Flex>
                 <Flex>
@@ -256,6 +167,76 @@ export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
         );
     }
 
+    const retryWebSocket = (
+        watchURL: string,
+        wsOpts: any,
+        retryCount = 0
+    ) => {
+        const webSocket = new WSFactory(watchURL, wsOpts);
+        const handleError = () => {
+            if (retryCount < 5) {
+                setTimeout(() => {
+                    retryWebSocket(
+                        watchURL,
+                        wsOpts,
+                        retryCount + 1
+                    );
+                }, 3000);
+            }
+            else {
+                setErrData('Unable to connect to pod logs');
+            }
+        };
+
+        webSocket.onmessage((msg) => {
+            const message = Base64.decode(msg);
+            setPodLogs((prevState) => {
+                return prevState += message;;
+            });
+        }).onerror(() => {
+            handleError();
+        });
+
+        webSocket.onclose((event) => {
+            webSocket.destroy();
+            setPauseDisabled(true);
+        });
+    };
+
+
+    const readLogs = (pod: K8sResourceKind) => {
+        let podName = pod.metadata.name;
+        let podNamespace = pod.metadata.namespace;
+
+        const watchURL = '/api/kubernetes/api/v1/namespaces/' + podNamespace + '/pods/' + podName + '/log?follow';
+        if (POD_COMPLETED) {
+            consoleFetchText(watchURL)
+                .then((response) => {
+                    setPodLogs((prevState) => {
+                        return prevState += response;
+                    });
+                })
+                .catch((e) => {
+                    setErrData(e.getMessage);
+                });
+
+        }
+        else {
+            const wsOpts = {
+                host: 'auto',
+                path: watchURL,
+                subprotocols: ['base64.binary.k8s.io'],
+            };
+
+            retryWebSocket(watchURL, wsOpts);
+        }
+    };
+
+    if (!initialized) {
+        readLogs(pod);
+        setInitialized(true);
+    }
+
     return (
         <LogViewer
             id={gigRun.metadata.name}
@@ -270,3 +251,25 @@ export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
         />
     );
 };
+
+export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
+
+    const [pod, _, errorMessage] = getPod({
+        namespace: gigRun.metadata.namespace,
+        selector: {
+            matchLabels: {
+                'batch.kubernetes.io/job-name': gigRun.metadata.name,
+            },
+        },
+    });
+
+    if (pod) {
+        return <GigRunLogViewerContent pod={pod} gigRun={gigRun}/>;
+    }
+    else if (errorMessage?.length > 0) {
+        return <Banner variant='red'>ERROR: {errorMessage}</Banner>;
+    }
+    else {
+        return <Bullseye><Spinner size="lg" aria-label="Fetching logs..." /></Bullseye>;
+    }
+}

@@ -2,33 +2,42 @@ import * as React from 'react';
 
 import {
     Banner,
+    Bullseye,
+    Spinner,
     TabContent,
     TabContentBody
 }  from '@patternfly/react-core';
 
 import GigDefinitionForm from './GigDefinitionForm';
 
-import { getGigDefinition, Gig, GIG_GVK } from '../utilities/objectDefs';
+import {
+    getGigDefinition,
+    Gig,
+    GigDefinition,
+    GIG_GVK
+} from '../utilities/objectDefs';
 
-import { createGigRun } from '../utilities/createGigRun'
+import {
+    createGigRun,
+} from '../utilities/createGigRun';
 
 const GigRunFormTab = (model) => {
     let gig: Gig;
     let formSpec = [];
-    let objectLoaded = false;
-    let objectLoadError: string;
+    let gigDefRef: GigDefinition;
+    let errorMessage: string;
 
     if (model.obj.kind == GIG_GVK.kind) {
         gig = model.obj
-        const [gigDefRef, gdLoaded, gdLoadError] = getGigDefinition({name: gig.spec.gigDefinitionRef.name});
+        const [gd, _, gdLoadError] = getGigDefinition({name: gig.spec.gigDefinitionRef.name});
 
+        gigDefRef = gd;
         formSpec = gigDefRef?.spec?.formSpec ?? [];
-        objectLoaded = gdLoaded;
-        objectLoadError = gdLoadError ?? 'Unknown Error';
+        errorMessage = gdLoadError;
     }
     else {
         formSpec = structuredClone(model.obj.spec.formSpec ?? []);
-        objectLoaded = true;
+        gigDefRef = model.obj;
     }
 
     const submissionAction = (formState: any) => {
@@ -40,9 +49,16 @@ const GigRunFormTab = (model) => {
         }
     }
 
-    let bodyContent = objectLoaded ?
-        <GigDefinitionForm formSpec={formSpec} submissionAction={submissionAction} /> :
-        <Banner color="red">ERROR: {objectLoadError}</Banner>
+    let bodyContent;
+    if (gigDefRef) {
+        bodyContent = <GigDefinitionForm formSpec={formSpec} submissionAction={submissionAction}/>;
+    }
+    else if (errorMessage) {
+        bodyContent = <Banner color="red">ERROR: {errorMessage}</Banner>;
+    }
+    else {
+        bodyContent = <Bullseye><Spinner size="lg" aria-label="Rendering form..." /></Bullseye>;
+    }
 
     return (
         <TabContent id="run-job-tab">
