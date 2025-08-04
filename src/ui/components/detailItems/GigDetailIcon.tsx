@@ -21,7 +21,7 @@ import{
     K8sGroupVersionKind
 } from '@openshift-console/dynamic-plugin-sdk';
 
-interface GigIconProps {
+interface GigDetailIconProps {
     type: string
     status: IconStatus
     label: string
@@ -38,7 +38,7 @@ export enum IconType {
     STOP_WATCH = 'Stopwatch',
 }
 
-export const GigIcon: React.FC<GigIconProps> = ({type, status, label, gvk}) => {
+export const GigDetailIcon: React.FC<GigDetailIconProps> = ({type, status, label, gvk}) => {
     let PicIcon;
     let isInProgress = false;
     switch (type) {
@@ -79,4 +79,4 @@ export const GigIcon: React.FC<GigIconProps> = ({type, status, label, gvk}) => {
     );
 }
 
-export default GigIcon;
+export default GigDetailIcon;

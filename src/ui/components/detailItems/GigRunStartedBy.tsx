@@ -3,9 +3,9 @@ import * as React from 'react';
 import { IconStatus } from '@patternfly/react-component-groups/dist/dynamic/Status';
 
 import {
-    GigIcon,
+    GigDetailIcon,
     IconType,
-} from '../../utilities/gigIcon';
+} from './GigDetailIcon';
 
 const USER_GVK = { group: 'rbac.authorization.k8s.io', version: 'v1', kind: 'User' }
 const SA_GVK = { version: 'v1', kind: 'ServiceAccount' }
@@ -15,7 +15,7 @@ const GigRunStartedBy = (model) => {
 
     const gvk = (startedBy && (startedBy.indexOf(':') > 0)) ? SA_GVK : USER_GVK;
 
-    return <GigIcon type={IconType.RESOURCE} label={startedBy} status={IconStatus.custom} gvk={gvk}/>;
+    return <GigDetailIcon type={IconType.RESOURCE} label={startedBy} status={IconStatus.custom} gvk={gvk}/>;
 }
 
 export default GigRunStartedBy;

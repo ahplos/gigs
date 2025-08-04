@@ -3,9 +3,9 @@ import * as React from 'react';
 import { IconStatus } from '@patternfly/react-component-groups/dist/dynamic/Status';
 
 import {
-    GigIcon,
+    GigDetailIcon,
     IconType,
-} from '../../utilities/gigIcon';
+} from './GigDetailIcon';
 
 const GigRunState = (model) => {
     let state = model.obj.status?.state ?? model.obj.status?.latestGigRun?.state;
@@ -20,7 +20,7 @@ const GigRunState = (model) => {
             break;
     };
 
-    return <GigIcon type={iconType} label={state} status={IconStatus.success} />
+    return <GigDetailIcon type={iconType} label={state} status={IconStatus.success} />
 }
 
 

@@ -3,20 +3,20 @@ import * as React from 'react';
 import { IconStatus } from '@patternfly/react-component-groups/dist/esm/Status';
 
 import {
-    GigIcon,
+    GigDetailIcon,
     IconType,
-} from '../../utilities/gigIcon';
+} from './GigDetailIcon';
 
 const GigRunResult = (model) => {
     let result = model.obj.status?.result ?? model.obj.status?.latestGigRun?.result;
 
-    let icon = <GigIcon type={IconType.PENDING} label={result} status={IconStatus.custom} />;
+    let icon = <GigDetailIcon type={IconType.PENDING} label={result} status={IconStatus.custom} />;
     switch (result) {
         case 'Success':
-            icon = <GigIcon type={IconType.CHECK_CIRCLE} label={result} status={IconStatus.success} />
+            icon = <GigDetailIcon type={IconType.CHECK_CIRCLE} label={result} status={IconStatus.success} />
             break;
         case 'Failure':
-            icon = <GigIcon type={IconType.ERROR_CIRCLE} label={result} status={IconStatus.danger} />
+            icon = <GigDetailIcon type={IconType.ERROR_CIRCLE} label={result} status={IconStatus.danger} />
             break;
     };
 
