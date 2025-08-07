@@ -20,7 +20,7 @@ const gigRunModel: K8sModel = {
     plural: 'gigruns',
 };
 
-export const createGigRun = (gig: Gig, formStateObj: object) => {
+export const createGigRun = (gig: Gig, formStateObj: object): Promise<GigRun> => {
     let formState: any = formStateObj instanceof Map ? Object.fromEntries(formStateObj) : formStateObj;
 
     const gigRun: GigRun = {
@@ -46,12 +46,5 @@ export const createGigRun = (gig: Gig, formStateObj: object) => {
     };
     console.log('GigRun defined: ' + JSON.stringify(gigRun));
 
-    try {
-        let gigRunResult = k8sCreate({model: gigRunModel, data: gigRun});
-
-        console.log('GigRun created: ' + JSON.stringify(gigRunResult));
-    }
-    catch(err) {
-        console.error(`Failed to create GigRun:`, err);
-    };
+    return k8sCreate({model: gigRunModel, data: gigRun})
 };

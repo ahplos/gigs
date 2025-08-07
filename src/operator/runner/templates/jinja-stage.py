@@ -4,10 +4,7 @@ from json import load
 
 from jinja2 import Environment, FileSystemLoader
 
-import kopf
-
-
-environment = Environment(loader = FileSystemLoader(['{{ GIG_RUNNER_DIR }}', '{{ GIG_RUNNER_WORKING_DIR }}']))
+environment = Environment(loader = FileSystemLoader(['{{ GIG_RUNNER }}', '{{ GIG_RUNNER_WORKING_DIR }}']))
 environment.filters['from_json'] = load
 template = environment.get_template(sys.argv[1])
 

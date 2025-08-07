@@ -37,6 +37,8 @@ import {
 import {
     getPod,
     GigRun,
+    GIG_MAP,
+    CURRENT_GIG_RUN
 } from '../utilities/objectDefs';
 
 import {
@@ -55,7 +57,7 @@ const PERCENT_HEIGHT_100 = '100%'
 
 function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
     const podPhase = pod.status['phase'];
-    const POD_COMPLETED =  podPhase === 'Succeeded' || podPhase === 'Failed';
+    const POD_COMPLETED = podPhase === 'Succeeded' || podPhase === 'Failed';
 
     const logViewerRef = React.useRef(null);
 
@@ -70,12 +72,6 @@ function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
     const [isFullScreen, setFullScreen] = React.useState<boolean>(false);
 
     const [errData, setErrData] = React.useState<string>('');
-
-    React.useEffect(() => {
-        if (!paused && !pauseDisabled) {
-            logViewerRef.current.scrollToBottom();
-        }
-    }, [paused, podLogs]);
 
     const showLineNumbers = (event: React.FormEvent<HTMLInputElement>, checked: boolean) => {
         setShowLineNumbers(checked);
@@ -98,7 +94,7 @@ function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
                 <FlexItem>
                     <Tooltip content={paused ? 'Resume autoscrolling' : 'Pause autoscrolling'} entryDelay={1500} isVisible={!pauseDisabled}>
                         <Button variant='plain' onClick={() => setPaused(!paused)} isDisabled={pauseDisabled}>
-                            {paused ? <PlayIcon/> : <PauseIcon/>}
+                            {paused ? <PlayIcon /> : <PauseIcon />}
                         </Button>
                     </Tooltip>
                 </FlexItem>
@@ -193,6 +189,10 @@ function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
             setPodLogs((prevState) => {
                 return prevState += message;;
             });
+
+            if (!paused) {
+                logViewerRef.current?.scrollToBottom();
+            }
         }).onerror(() => {
             handleError();
         });
@@ -233,8 +233,11 @@ function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
     };
 
     if (!initialized) {
+        GIG_MAP.set(CURRENT_GIG_RUN, gigRun);
+
         readLogs(pod);
         setInitialized(true);
+
     }
 
     return (
@@ -264,7 +267,7 @@ export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
     });
 
     if (pod) {
-        return <GigRunLogViewerContent pod={pod} gigRun={gigRun}/>;
+        return <GigRunLogViewerContent pod={pod} gigRun={gigRun} />;
     }
     else if (errorMessage?.length > 0) {
         return <Banner variant='red'>ERROR: {errorMessage}</Banner>;

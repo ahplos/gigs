@@ -92,6 +92,19 @@ elCicdDefs-$<GIG_DEF>:
         type: string
       description:
         type: string
+      formSpec: $<FORM_SPEC>
+      secrets:
+        type: array
+        items:
+          type: object
+          properties:
+            envVar:
+              type: string
+            secretRef:
+              type: object
+              properties:
+                name:
+                  type: string
       stages:
         description: A unit of work.  User input may potentially be required at the end of a stage.
         type: array
@@ -117,24 +130,12 @@ elCicdDefs-$<GIG_DEF>:
                 The name will reflect the name of the file used to store the script, so name appropiately;
                 e.g. <some-name>.py if writing a Python script for the stage.
               pattern: '(?:^\w(?:[-\w.]{0,251}[\w])?)$'
-            secrets:
-              type: array
-              items:
-                type: object
-                properties:
-                  var:
-                    type: string
-                  secretRef:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                      keys:
-                        type: array
-                        items:
-                          type: string
             script:
               type: string
+            secretVars:
+              type: array
+              items:
+                type: string
             processor:
               type: string
               enum:
@@ -147,7 +148,7 @@ elCicdDefs-$<GIG_DEF>:
               default: Shell
           required:
           - name
-      formSpec: $<FORM_SPEC>
+          - script
 
 elCicdDefs-$<GIG>:
   TITLE_CASE_NAME: Gig

@@ -8,6 +8,8 @@ import {
     TabContentBody
 }  from '@patternfly/react-core';
 
+import { useNavigate } from 'react-router-dom-v5-compat';
+
 import GigDefinitionForm from './GigDefinitionForm';
 
 import {
@@ -40,9 +42,18 @@ const GigRunFormTab = (model) => {
         gigDefRef = model.obj;
     }
 
+    const navigate = useNavigate();
+
     const submissionAction = (formState: any) => {
         if (gig) {
-            createGigRun(gig, formState);
+            createGigRun(gig, formState)
+                .then((gigRun) => {
+                    let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.teknetes.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-log-viewer';
+                    navigate(path);
+                })
+                .catch((e) => {
+                    console.log(e);
+                });
         }
         else {
             alert("Preview ONLY");

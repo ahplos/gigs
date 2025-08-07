@@ -1,15 +1,15 @@
 #!/usr/bin/bash
-__GIG_NAME=${1}
-__GIG_DESC="${2}"
-
 echo '======================='
-echo "=> GIG: ${__GIG_NAME}"
-if [[ "${__GIG_DESC}" ]]
+echo "GIG: {{ gig_def.name }}"
+if [[ "{{ gig_def.description }}" ]]
 then
-    echo "${__GIG_DESC}"
+    echo "{{ gig_def.description }}"
 fi
+echo
+date
 echo '======================='
 echo
+
 echo '======================='
 echo 'kubectl version'
 echo

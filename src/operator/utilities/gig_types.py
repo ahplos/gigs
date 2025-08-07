@@ -14,6 +14,10 @@ class GigDefinition(new_class('GigDefinition', version=f'{BATCH_TEKNETES_ORG}/v1
     group: str = f'{BATCH_TEKNETES_ORG}'
 
     @property
+    def secrets(self) -> BoxList:
+        return  self.spec.setdefault('secrets', [])
+
+    @property
     def formSpec(self) -> BoxList:
         return  self.spec.setdefault('formSpec', {})
 
@@ -66,6 +70,15 @@ class GigRun(new_class('GigRun', version=f'{BATCH_TEKNETES_ORG}/v1beta1', namesp
     @formSpec.setter
     def formSpec(self, formSpec: BoxList):
         self.spec['formSpec'] = formSpec
+
+    @property
+    def inputParams(self) -> BoxList:
+        self.spec.setdefault('inputParams', Box())
+        return self.spec.inputParams
+
+    @inputParams.setter
+    def inputParams(self, inputParams: Box):
+        self.spec['inputParams'] = inputParams
 
     @property
     def creationTimestamp(self) -> str:

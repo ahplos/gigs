@@ -5,9 +5,11 @@ import logging
 import random
 import os
 
+from box import Box
+
 import kopf
 from kopf import AdmissionError
-from kr8s.objects import CronJob, Job
+from kr8s.objects import CronJob
 
 from utilities.gig_types import GigRun, GigDefinition, Gig
 from utilities.controller_helper import STATUS, create_gigrun_configmap, create_job
@@ -20,14 +22,23 @@ STARTED_BY = 'startedBy'
 
 STATE = 'state'
 
+GIG_RUN_MAP = Box()
+
 @kopf.on.mutate(GigRun.version, GigRun.plural, operation='CREATE') # type: ignore
-def onmutategigrun(userinfo, patch, spec, **kwargs):
+def onmutategigrun(userinfo, body, patch, spec, **kwargs):
+    gig_run = GigRun(body)
+    GIG_RUN_MAP[f'{gig_run.metadata.namespace}/{gig_run.name}'] = gig_run.inputParams
+
     patch.metadata['annotations'] = {
         f'{GigRun.group}/{STARTED_BY}': userinfo['username'].rpartition(':')[-1]
     }
+
     patch.metadata['labels'] = {
         f'{Gig.group}/{Gig.singular}': spec[GIG_REF][NAME],
     }
+
+    patch.spec['inputParams'] = {}
+
 
 @kopf.on.validate(GigRun.version, GigRun.plural) # type: ignore
 def onvalidategigrun(spec, meta, **kwargs):
@@ -43,7 +54,7 @@ def on_create_gigrun(body, meta, patch, annotations, **_):
     gig_def = GigDefinition.get(gig.gigDefinitionRef)
 
     job = create_job(cron_job, gig_run)
-    create_gigrun_configmap(job, gig_run, gig_def)
+    create_gigrun_configmap(job, gig_run, gig_def, meta.namespace)
 
     gig_run.set_owner(job)
     patch[STATUS] = {
