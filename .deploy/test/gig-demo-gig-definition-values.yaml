@@ -1,0 +1,105 @@
+elCicdDefs:
+  GIG_DEF_NAME: test-cluster-gig-definition
+
+elCicdTemplates:
+- apiVersion: batch.teknetes.org/v1beta1
+  kind: GigDefinition
+  objName: $<GIG_DEF_NAME>
+  template:
+    spec:
+      name: Gig Demo
+      secrets:
+      - envVar: CLUSTER_ADMIN_PASSWORD
+      - secretRef:
+          name: gig-demo-secrets
+      form:
+        spec:
+        - attributes:
+            label: Cluster Admin User Name
+          components:
+            - inputType: TextInput
+              booleans:
+              - isRequired
+          var: USER_NAME
+        - attributes:
+            label: Cluster Admin Password
+          components:
+            - attributes:
+                type: password
+              booleans:
+              - isRequired
+              inputType: TextInput
+          var: CLUSTER_ADMIN_PASSWORD
+        - attributes:
+            isInline: 'true'
+            label: Run Mode
+            role: radiogroup
+          components:
+            - attributes:
+                label: GUI Mode
+              inputType: Radio
+            - attributes:
+                label: Debug Mode
+              booleans:
+              - isChecked
+              inputType: Radio
+          var: RUN_DEBUG_MODE
+      stages:
+        - description: Prove the test msg is empty to start.
+          displayName: Test Stage One
+          name: test-stage-one
+          processor: Shell
+          script: |-
+            printTestMsg() {
+              echo "Test Msg: ${TEST_MSG:-<TEST_MSG IS BLANK>}"
+            }
+            printTestMsg
+            sleep 5
+        - description: Set a test msg with a Python script.
+          name: test-stage-two.py
+          processor: Python
+          script: |-
+            with open('.env', 'a') as env_file:
+              env_file.write("TEST_MSG='This value was set in Stage Two with Python'")
+        - description: Print the test msg from stage two.
+          displayName: Test Stage Three
+          name: test-stage-three
+          processor: Shell
+          secretVars:
+          - STAGE_SECRET_VAR
+          script: |-
+            STAGE_SECRET_VAR='testing'
+            printTestMsg
+            sleep 5
+        - description: Set a test msg with a Go script.
+          name: test-stage-four.go
+          processor: Go
+          script: |-
+            package main
+
+            import (
+              "os"
+            )
+
+            func main() {
+              var f, _ = os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
+              defer f.Close()
+              f.WriteString("\nTEST_MSG='This value was set in Stage Four with Go'")
+            }
+        - description: Print the test msg from stage four.
+          displayName: Test Stage Five
+          name: test-stage-five
+          processor: Shell
+          script: |-
+            printTestMsg
+        - description: Prove the secrets are filtered.
+          displayName: Test Stage Six
+          name: test-stage-six
+          processor: Shell
+          script: |-
+            echo 'The secrets for this Gig are:'
+            echo "    STAGE_SECRET_VAR: ${STAGE_SECRET_VAR}"
+            echo "    DEMO_PASSWORD: ${DEMO_PASSWORD}"
+            echo "    ANOTHER_SECRET: ${ANOTHER_SECRET}"
+            echo "    FIRST_SECRET: ${FIRST_SECRET}"
+            echo "    SECOND_SECRET: ${SECOND_SECRET}"

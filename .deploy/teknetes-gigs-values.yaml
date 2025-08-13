@@ -45,7 +45,7 @@ elCicdTemplates:
     set -ex
     python --version
     python ./utilities/console_patch.py $<PLUGIN_NAME>
-    kopf run --quiet --all-namespaces --verbose $(ls *.py)
+    kopf run --all-namespaces --verbose $(ls *.py)
   env:
   - name: TEKNETES_GIGS_OPERATOR_NAMESPACE
     value: $<HELM_RELEASE_NAMESPACE>
@@ -209,6 +209,9 @@ elCicdTemplates:
     - gigdefinitions/status
     - gigs/status
     - gigruns/status
+    - gigdefinitions/finalizers
+    - gigs/finalizers
+    - gigruns/finalizers
     - cronjobs/finalizers
     - jobs/finalizers
 

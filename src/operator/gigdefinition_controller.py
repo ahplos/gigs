@@ -1,12 +1,11 @@
 import os
 
 import kopf
-
 from kr8s.objects import ConfigMap
+from utilities.gig_types import GIG_CONSTS, GigDefinition
 
-from utilities.gig_types import GigDefinition
 
-@kopf.on.mutate(GigDefinition.version, GigDefinition.plural, operations=['CREATE','UPDATE']) # type: ignore
+@kopf.on.mutate(GigDefinition.version, GigDefinition.plural, operations=[GIG_CONSTS.CREATE,GIG_CONSTS.UPDATE]) # type: ignore
 def onmutategigdefinition(patch, body, logger, **kwargs):
     gig_def: GigDefinition = GigDefinition(body)
 
@@ -19,4 +18,4 @@ def onmutategigdefinition(patch, body, logger, **kwargs):
             stage.command = stage_processors.data[stage.processor]
 
 
-    patch.setdefault('spec', {})['stages'] = gig_def.stages
+    patch.setdefault(GIG_CONSTS.SPEC, {})[GIG_CONSTS.STAGES] = gig_def.stages

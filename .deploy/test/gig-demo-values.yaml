@@ -1,0 +1,48 @@
+elCicdDefs:
+  GIG_DEF_NAME: test-cluster-gig-definition
+
+  TEKNETES_GIGS_OPERATOR: teknetes-gigs-operator
+
+  TEKNETES_GIGS_IMAGE_PULL_SECRET: gig-demo-registry-credentials
+
+  IMAGE: dev-demo-image-registry.apps-crc.testing/teknetes-gigs-test-runner:latest
+
+  SCHEDULE: '* * 30 2 *'
+
+  OBJ_NAME_PREFIX: gig-demo
+
+  SERVICE_ACCOUNT_NAME: $<OBJ_NAME_PREFIX>-sa
+
+  SECRET_NAME: $<OBJ_NAME_PREFIX>-secrets
+
+elCicdTemplates:
+- templateName: cronjob
+  objNames: [$<OBJ_NAME_PREFIX>-1, $<OBJ_NAME_PREFIX>-2]
+  annotations:
+    batch.teknetes.org/gigdefinition: $<GIG_DEF_NAME>
+  image: $<IMAGE>
+  imagePullSecrets:
+  - name: $<TEKNETES_GIGS_IMAGE_PULL_SECRET>
+  imagePullPolicy: IfNotPresent
+  serviceAccountName: $<SERVICE_ACCOUNT_NAME>
+  schedule: $<SCHEDULE>
+  envFrom:
+  - secretRef:
+      name: $<SECRET_NAME>
+
+- templateNames: [serviceAccount, roleBinding]
+  objName: $<SERVICE_ACCOUNT_NAME>
+  subjects:
+  - kind: ServiceAccount
+    name: $<OBJ_NAME>
+    namespace: $<HELM_RELEASE_NAMESPACE>
+  roleRef:
+    kind: ClusterRole
+    name: edit
+
+- templateName: secret
+  objName: $<SECRET_NAME>
+  stringData:
+    FIRST_SECRET: first-secret
+    SECOND_SECRET: second-secret
+    ANOTHER_SECRET: third-secret

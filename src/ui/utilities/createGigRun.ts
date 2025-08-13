@@ -34,17 +34,16 @@ export const createGigRun = (gig: Gig, formStateObj: object): Promise<GigRun> =>
             gigRef: {
                 name: gig.metadata.name
             },
-            inputParams: {
+            parameters: {
             }
         }
     };
 
     for (const [key, value] of Object.entries(formState)) {
         if (key) {
-            gigRun['spec']['inputParams'][key] = value;
+            gigRun['spec']['parameters'][key] = value;
         }
     };
-    console.log('GigRun defined: ' + JSON.stringify(gigRun));
 
     return k8sCreate({model: gigRunModel, data: gigRun})
 };

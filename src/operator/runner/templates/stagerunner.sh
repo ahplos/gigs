@@ -1,34 +1,36 @@
 #!/usr/bin/bash
+mkdir .secrets
+stageRunner() {
+    {%- for stage in gig_def.stages %}
+    {% set HAS_SECRETS = 'TRUE' if stage.secretVars else '' %}
+    /{{ GIG_RUNNER }}/stage_banner.sh '{{ stage.name }}' '{{ stage.processor }}' '{{ stage.description }}' {{ HAS_SECRETS }}
 
-{%- for stage in gig_def.stages %}
-/{{ GIG_RUNNER }}/stage_banner.sh '{{ stage.name }}' '{{ stage.processor }}' '{{ stage.description }}'
-
-{%- if 'command' in stage %}
-{%- set STAGE_SCRIPT = stage.command % '/{}/{}'.format(GIG_RUNNER, stage.name) %}
-{%- else %}
-{% set FUNC_NAME = stage.name.replace('-', '_').replace('.', '_') %}
-function {{ FUNC_NAME }}() {
+    loadStageEnv
+    {%- if 'command' in stage %}
+    {%- set STAGE_SCRIPT = stage.command % '/{}/{}'.format(GIG_RUNNER, stage.name) %}
+    {% filter indent(width=4) %}
+    {{- STAGE_SCRIPT }}
+    {%- endfilter %}
+    {%- else %}
+    {% set FUNC_NAME = stage.name.replace('-', '_').replace('.', '_') %}
+    {% if not stage.secretVars %}
     set -x
-    {{ stage.script }}
-    set +x
+    {%- endif %}
+    {% filter indent(width=4) %}
+    {{- stage.script }}
+    {%- endfilter %}
+    { set +x; } 2>/dev/null
+    {%- endif %}
+
+    loadStageEnv
+    {%- if stage.secretVars %}
+    {% for secretVar in stage.secretVars %}
+    echo "${ {{- secretVar }}}" >> .secrets/{{ secretVar }}
+    {%- endfor %}
+    {%- endif %}
+
+    stage_footer {{ stage.name }} {{ stage.type }}
+    {%- endfor %}
 }
-{%- set STAGE_SCRIPT = FUNC_NAME %}
-{%- endif %}
 
-{%- if stage.secretVars %}
-{% set STAGE_SECRET_VARS = '\n'.join(stage.secretVars) %}
-echo {{ STAGE_SECRET_VARS }} >> .secrets
-{%- endif %}
-
-loadStageEnv
-{{ STAGE_SCRIPT }}
-
-if [[ '{{ stage.type }}' == 'Input' ]]
-then
-    waitForUserInput
-fi
-
-echo
-echo "==> STAGE COMPLETED: {{ stage.name }}"
-echo
-{%- endfor %}
+stageRunner 2>&1 | filterLogOutput > gig.log

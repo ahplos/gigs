@@ -65,7 +65,7 @@ function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
     const [initialized, setInitialized] = React.useState<boolean>(false);
 
     const [paused, setPaused] = React.useState<boolean>(false);
-    const [pauseDisabled, setPauseDisabled] = React.useState<boolean>(POD_COMPLETED);
+    const [pauseDisabled, setPauseDisabled] = React.useState<boolean>();
 
     const [isLinesWrppped, setLinesWrppped] = React.useState<boolean>(false);
     const [isShowLineNumbers, setShowLineNumbers] = React.useState<boolean>(true);
@@ -92,7 +92,7 @@ function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
         return (
             <Flex columnGap={{ default: 'columnGapMd' }}>
                 <FlexItem>
-                    <Tooltip content={paused ? 'Resume autoscrolling' : 'Pause autoscrolling'} entryDelay={1500} isVisible={!pauseDisabled}>
+                    <Tooltip content={paused ? 'Resume autoscrolling' : 'Pause autoscrolling'} entryDelay={1500}>
                         <Button variant='plain' onClick={() => setPaused(!paused)} isDisabled={pauseDisabled}>
                             {paused ? <PlayIcon /> : <PauseIcon />}
                         </Button>
@@ -169,6 +169,7 @@ function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
         retryCount = 0
     ) => {
         const webSocket = new WSFactory(watchURL, wsOpts);
+
         const handleError = () => {
             if (retryCount < 5) {
                 setTimeout(() => {
@@ -184,20 +185,39 @@ function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
             }
         };
 
+        let newLogs: string[] = [];
+        const updateLogViewer = () => {
+            if (newLogs.length) {
+                setPodLogs((prevState) => {
+                    return prevState + newLogs.join('');
+                });
+
+                if (!paused) {
+                    logViewerRef.current?.scrollToBottom();
+                }
+                newLogs.length = 0;
+            }
+        }
+
         webSocket.onmessage((msg) => {
             const message = Base64.decode(msg);
-            setPodLogs((prevState) => {
-                return prevState += message;;
-            });
+            newLogs.push(message);
 
-            if (!paused) {
-                logViewerRef.current?.scrollToBottom();
-            }
+            setPauseDisabled(false);
         }).onerror(() => {
             handleError();
         });
 
+        const refreshInterval = setInterval(() => {
+            updateLogViewer();
+        }, 100);
+
         webSocket.onclose((event) => {
+            clearInterval(refreshInterval);
+            if (newLogs.length) {
+                updateLogViewer()
+            }
+
             webSocket.destroy();
             setPauseDisabled(true);
         });
@@ -256,12 +276,12 @@ function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
 };
 
 export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
-
+    const JOB_NAME_SELECTOR = 'batch.kubernetes.io/job-name';
     const [pod, _, errorMessage] = getPod({
         namespace: gigRun.metadata.namespace,
         selector: {
             matchLabels: {
-                'batch.kubernetes.io/job-name': gigRun.metadata.name,
+                [JOB_NAME_SELECTOR]: gigRun.metadata.labels[JOB_NAME_SELECTOR],
             },
         },
     });
@@ -273,6 +293,6 @@ export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
         return <Banner variant='red'>ERROR: {errorMessage}</Banner>;
     }
     else {
-        return <Bullseye><Spinner size="lg" aria-label="Fetching logs..." /></Bullseye>;
+        return <Bullseye><Spinner size='lg' aria-label='Fetching logs...' /></Bullseye>;
     }
 }

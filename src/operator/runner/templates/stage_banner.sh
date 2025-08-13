@@ -1,17 +1,23 @@
 #!/usr/bin/bash
-__STAGE_NAME=${1}
-__STAGE_PROCESSOR=${2}
-__STAGE_DESC="${3}"
+STAGE_NAME=${1}
+STAGE_PROCESSOR=${2}
+STAGE_DESC="${3}"
+STAGE_SECRETS="${4}"
 
 echo '******************************************************************'
-echo "**"
-echo "**  STAGE: ${__STAGE_NAME}"
-echo "**  Processor: ${__STAGE_PROCESSOR}"
-if [[ ${__STAGE_DESC} ]]
+echo '**'
+echo "**  STAGE: ${STAGE_NAME}"
+echo "**  Processor: ${STAGE_PROCESSOR}"
+if [[ ${STAGE_DESC} ]]
 then
-    echo "**"
-    echo "** ${__STAGE_DESC}"
+    echo '**'
+    echo "** ${STAGE_DESC}"
 fi
-echo "**"
+if [[ ${STAGE_SECRETS} ]]
+then
+    echo '**'
+    echo "** WARNING: SHELL LOGGING OUTPUT REDACTED FOR THIS STAGE"
+fi
+echo '**'
 echo "******************************************************************"
 echo

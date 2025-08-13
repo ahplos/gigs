@@ -1,0 +1,23 @@
+
+# TEMPLATE FOR A DEFAULT GIG RUNNER
+FROM registry.access.redhat.com/ubi9/python-312:latest
+USER root
+
+ARG OC_TAR_GZ_FILE=openshift-client-linux.tar.gz
+ARG OC_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/${OC_TAR_GZ_FILE}
+
+COPY requirements.txt src/operator /teknetes-gigs-controller/
+
+RUN <<EOF
+    set -ex
+    dnf install --assumeyes jq go
+    dnf clean all
+    curl -fsSLo /tmp/${OC_TAR_GZ_FILE} ${OC_CLI_URL}
+    tar -C /usr/local/bin/ -xf /tmp/${OC_TAR_GZ_FILE} 'oc' 'kubectl'
+    rm /tmp/${OC_TAR_GZ_FILE}
+    chmod -R 0755 /teknetes-gigs-controller
+EOF
+
+WORKDIR /working-dir
+
+USER 1001

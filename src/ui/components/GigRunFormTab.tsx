@@ -10,7 +10,9 @@ import {
 
 import { useNavigate } from 'react-router-dom-v5-compat';
 
-import GigDefinitionForm from './GigDefinitionForm';
+import {
+    GigDefinitionForm
+} from './gigUiComponents';
 
 import {
     getGigDefinition,
@@ -34,11 +36,11 @@ const GigRunFormTab = (model) => {
         const [gd, _, gdLoadError] = getGigDefinition({name: gig.spec.gigDefinitionRef.name});
 
         gigDefRef = gd;
-        formSpec = gigDefRef?.spec?.formSpec ?? [];
+        formSpec = gigDefRef?.spec?.form?.spec ?? [];
         errorMessage = gdLoadError;
     }
     else {
-        formSpec = structuredClone(model.obj.spec.formSpec ?? []);
+        formSpec = structuredClone(model.obj.spec.form?.spec ?? []);
         gigDefRef = model.obj;
     }
 
@@ -62,7 +64,7 @@ const GigRunFormTab = (model) => {
 
     let bodyContent;
     if (gigDefRef) {
-        bodyContent = <GigDefinitionForm formSpec={formSpec} submissionAction={submissionAction}/>;
+        bodyContent = <GigDefinitionForm formSpec={formSpec} submissionAction={submissionAction} preview={gig ? false : true}/>;
     }
     else if (errorMessage) {
         bodyContent = <Banner color="red">ERROR: {errorMessage}</Banner>;

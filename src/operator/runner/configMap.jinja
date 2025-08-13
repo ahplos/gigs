@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ gig_run.name }}
+  generateName: {{ gig_run.name }}-
   namespace: {{ gig_run.namespace }}
 data:
 {%- for configMapFile in configMapFiles %}
@@ -24,3 +24,4 @@ data:
     {% filter indent(width=4) %}
     {{- SECRET_VARS }}
     {%- endfilter %}
+immutable: true

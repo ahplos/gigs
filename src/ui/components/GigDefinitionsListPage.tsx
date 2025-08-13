@@ -49,7 +49,7 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
     ];
 
     let listItems = (gigDef: GigDefinition) => {
-        return gigDef.spec.formSpec?.map((widget) => <ListItem><b>{widget.var}</b> [{widget.components[0].inputType}]</ListItem>)
+        return gigDef.spec.form?.spec?.map((widget) => <ListItem><b>{widget.var}</b> [{widget.components[0].inputType}]</ListItem>)
     };
 
     const GigDefinitionsRow: React.FC<RowProps<GigDefinition>> = ({ obj, activeColumnIDs }) => {

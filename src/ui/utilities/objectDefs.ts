@@ -10,7 +10,7 @@ export const NS_GVK: K8sGroupVersionKind = { kind: 'Namespace', version: 'v1' };
 export const CRONJOB_GVK: K8sGroupVersionKind = { group: 'batch', version: 'v1', kind: 'CronJob' };
 export const POD_GVK: K8sGroupVersionKind = { group: '', version: 'v1', kind: 'Pod' };
 
-const BATCH_TEKNETES_ORG = 'batch.teknetes.org';
+export const BATCH_TEKNETES_ORG = 'batch.teknetes.org';
 const API_VERSION = 'v1beta1';
 
 export const GIG_GVK: K8sGroupVersionKind = {
@@ -43,7 +43,9 @@ export type FormSpec = {
 export type GigDefinition = K8sResourceCommon & {
     spec: {
         name: string;
-        formSpec?: FormSpec[];
+        form?: {
+            spec?: FormSpec[];
+        }
     };
 };
 
@@ -61,14 +63,14 @@ export type Gig = K8sResourceCommon & {
             creationTimestamp: string;
             result: GigRunResult;
             runTime: number;
-            startedBy: string;
+            startedby: string;
             state: GigRunState;
         };
     };
 };
 
 export enum GigRunState {
-    WaitingForUserInput,
+    WaitingForInput,
     Running,
     Completed,
 }
@@ -84,14 +86,17 @@ export type GigRun = K8sResourceCommon & {
             name: string;
             containerName?: string;
         };
-        formSpec?: FormSpec;
-        inputParams?: object;
+        form?: {
+            spec?: FormSpec;
+        }
+
+        parameters?: object;
     };
 
     status?: {
         result?: GigRunResult;
         runTime?: number;
-        startedBy?: string;
+        startedby?: string;
         state?: GigRunState;
     };
 };

@@ -59,4 +59,4 @@ def on_startup(settings: kopf.OperatorSettings, logger, **_):
 
     # all logs by default go to the k8s event api making api server flooding even more likely
     settings.posting.enabled = False
-    settings.posting.level = logging.WARNING
+    settings.posting.level = logging.INFO

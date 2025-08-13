@@ -11,11 +11,11 @@ const USER_GVK = { group: 'rbac.authorization.k8s.io', version: 'v1', kind: 'Use
 const SA_GVK = { version: 'v1', kind: 'ServiceAccount' }
 
 const GigRunStartedBy = (model) => {
-    let startedBy = model.obj.status?.startedBy ?? model.obj.status?.latestGigRun?.startedBy;
+    let startedby = model.obj.status?.startedby ?? model.obj.status?.latestGigRun?.startedby;
 
-    const gvk = (startedBy && (startedBy.indexOf(':') > 0)) ? SA_GVK : USER_GVK;
+    const gvk = (startedby && (startedby.indexOf(':') > 0)) ? SA_GVK : USER_GVK;
 
-    return <GigDetailIcon type={IconType.RESOURCE} label={startedBy} status={IconStatus.custom} gvk={gvk}/>;
+    return <GigDetailIcon type={IconType.RESOURCE} label={startedby} status={IconStatus.custom} gvk={gvk}/>;
 }
 
 export default GigRunStartedBy;

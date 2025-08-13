@@ -20,12 +20,6 @@ elCicdDefs:
           type: object
           additionalProperties:
             type: string
-        var:
-          description: |-
-            Variable that will be assigned from the values of components in the group. Can be overriden at
-            the component level.
-          type: string
-          pattern: '^\w+$'
         components:
           type: array
           minItems: 1
@@ -51,8 +45,18 @@ elCicdDefs:
                 type: object
                 additionalProperties:
                   type: string
+              booleans:
+                type: array
+                items:
+                  type: string
             required:
             - inputType
+        var:
+          description: |-
+            Variable that will be assigned from the values of components in the group. Can be overriden at
+            the component level.
+          type: string
+          pattern: '^\w+$'
 
   GIG_RUN_STATUS:
     type: object
@@ -68,12 +72,12 @@ elCicdDefs:
         default: Pending
       runTime:
         type: integer
-      startedBy:
+      startedby:
         type: string
       state:
         type: string
         enum:
-        - WaitingForUserInput
+        - WaitingForInput
         - Running
         - Completed
         default: Running
@@ -92,7 +96,10 @@ elCicdDefs-$<GIG_DEF>:
         type: string
       description:
         type: string
-      formSpec: $<FORM_SPEC>
+      form:
+        type: object
+        properties:
+          spec: $<FORM_SPEC>
       secrets:
         type: array
         items:
@@ -197,7 +204,7 @@ elCicdDefs-$<GIG_RUN>:
         required:
         - name
       formSpec: $<FORM_SPEC>
-      inputParams:
+      parameters:
         type: object
         x-kubernetes-preserve-unknown-fields: true
     required:

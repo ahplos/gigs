@@ -1,88 +1,115 @@
-import asyncio
-import datetime
-import json
 import logging
-import random
 import os
-
-from box import Box
+import uuid
 
 import kopf
+from box import Box
 from kopf import AdmissionError
-from kr8s.objects import CronJob
-
-from utilities.gig_types import GigRun, GigDefinition, Gig
-from utilities.controller_helper import STATUS, create_gigrun_configmap, create_job
+from kr8s.objects import CronJob, Job, Secret
+from utilities.controller_helper import create_gigrun_configmap, create_job
+from utilities.gig_types import GIG_CONSTS, Gig, GigDefinition, GigRun
 
 WORKING_DIR = os.path.join(os.path.curdir, 'WORKING_DIR')
 
-GIG_REF = 'gigRef'
-NAME = 'name'
-STARTED_BY = 'startedBy'
+STRING_DATA = 'stringData'
 
-STATE = 'state'
 
-GIG_RUN_MAP = Box()
+PARAMETERS_MAP = Box()
 
-@kopf.on.mutate(GigRun.version, GigRun.plural, operation='CREATE') # type: ignore
-def onmutategigrun(userinfo, body, patch, spec, **kwargs):
-    gig_run = GigRun(body)
-    GIG_RUN_MAP[f'{gig_run.metadata.namespace}/{gig_run.name}'] = gig_run.inputParams
-
-    patch.metadata['annotations'] = {
-        f'{GigRun.group}/{STARTED_BY}': userinfo['username'].rpartition(':')[-1]
-    }
-
+@kopf.on.mutate(
+    GigRun.version,
+    GigRun.plural,
+    labels={GIG_CONSTS.GIG_REF_LABEL: kopf.ABSENT},
+    annotations={GIG_CONSTS.UUID_ANNOTATION: kopf.ABSENT, GIG_CONSTS.STARTED_BY_ANNOTATION: kopf.ABSENT},
+)  # type: ignore
+def onmutategcreate(userinfo, patch, spec, annotations, labels, logger, **kwargs):
     patch.metadata['labels'] = {
-        f'{Gig.group}/{Gig.singular}': spec[GIG_REF][NAME],
+        GIG_CONSTS.GIG_REF_LABEL: spec[GIG_CONSTS.GIG_REF][GIG_CONSTS.NAME],
     }
 
-    patch.spec['inputParams'] = {}
+    uuid_key = f'{uuid.uuid4()}'
+    userinfo = Box(userinfo)
+    patch.metadata['annotations'] = {
+        GIG_CONSTS.UUID_ANNOTATION: uuid_key,
+        GIG_CONSTS.STARTED_BY_ANNOTATION: userinfo.username
+    }
 
 
-@kopf.on.validate(GigRun.version, GigRun.plural) # type: ignore
+@kopf.on.mutate(
+    GigRun.version,
+    GigRun.plural,
+    annotations={GIG_CONSTS.UUID_ANNOTATION: kopf.PRESENT},
+    field='spec.parameters',
+    value=kopf.PRESENT,
+)  # type: ignore
+def onmutateparameters(userinfo, patch, spec, annotations, labels, logger, **kwargs):
+    uuid_key = annotations[GIG_CONSTS.UUID_ANNOTATION]
+    PARAMETERS_MAP[uuid_key] = Box(spec.get(GIG_CONSTS.PARAMETERS, {}))
+    patch[GIG_CONSTS.SPEC] = {GIG_CONSTS.PARAMETERS: None}
+
+
+@kopf.on.validate(GigRun.version, GigRun.plural)  # type: ignore
 def onvalidategigrun(spec, meta, **kwargs):
-    gig = Gig(spec[GIG_REF][NAME], meta.namespace)
-    if (not gig.exists()):
+    gig = Gig(spec[GIG_CONSTS.GIG_REF][GIG_CONSTS.NAME], meta.namespace)
+    if not gig.exists():
         raise AdmissionError(f'Gig NOT FOUND: {gig.namespace}:{gig.name}')
 
-@kopf.on.create(GigRun.version, GigRun.plural) # type: ignore
-def on_create_gigrun(body, meta, patch, annotations, **_):
+
+@kopf.on.create(GigRun.version, GigRun.plural)  # type: ignore
+def on_create_gigrun(body, meta, patch, annotations, logger, **_):
     gig_run = GigRun(body)
+
+    gig_run.refresh()
     gig = Gig.get(gig_run.gigRef, meta.namespace)
     cron_job = CronJob.get(gig.name, gig.namespace)
     gig_def = GigDefinition.get(gig.gigDefinitionRef)
 
-    job = create_job(cron_job, gig_run)
-    create_gigrun_configmap(job, gig_run, gig_def, meta.namespace)
+    config_map = create_gigrun_configmap(gig_run, gig_def, meta.namespace)
 
+    job = create_job(cron_job, gig_run, config_map.name)
     gig_run.set_owner(job)
-    patch[STATUS] = {
-        STARTED_BY: annotations.get(f'{GigRun.group}/{STARTED_BY}')
+
+    create_or_patch_input_params_secret(gig_run)
+
+    patch.metadata[GIG_CONSTS.LABELS] = {
+        GIG_CONSTS.JOB_NAME_SELECTOR_LABEL: job.name
     }
 
-@kopf.on.update(GigRun.plural, field='spec.formSpec')  # type: ignore
-def on_update_gigrun_form_spec(old, new, logger, **kwargs):
-    gig_run = GigRun(new)
-
-    patch_values = {
-        STATE: 'WaitingForUserInput',
+    patch[GIG_CONSTS.STATUS] = {
+        GIG_CONSTS.STARTED_BY: gig_run.metadata.annotations[GIG_CONSTS.STARTED_BY_ANNOTATION],
     }
-    gig_run.patch({STATUS: patch_values}, subresource=STATUS, type='merge')
 
-@kopf.on.update(GigRun.plural, field='spec.submissionData')  # type: ignore
-def on_update_gigrun_submission_data(old, new, patch, logger, **kwargs):
-    gig_run = GigRun(new)
-    with open('/{{ GIGRUN_WORKING_DIR }}/.env', 'a') as env_file:
-        for key, value in new['spec']['submissionData']:
-            env_file.writelines(f"{key}='{value}'")
 
-    patch['spec'] = {
-        'spec': {
-            'formSpec': None,
-            'submissionData': None
-        },
-        STATUS: {
-            STATE: 'Running',
-        }
+
+@kopf.on.update(GigRun.version, GigRun.plural, field='spec.formSpec')  # type: ignore
+def on_update_gigrun_formSpec(patch, **kwargs):
+    patch[GIG_CONSTS.STATUS] = {
+        GIG_CONSTS.STATE: GIG_CONSTS.WAITING_FOR_INPUT,
     }
+
+
+@kopf.on.update(GigRun.version, GigRun.plural, field='spec.parameters')  # type: ignore
+def on_update_gigrun_parameters(body, new, patch, **kwargs):
+    gig_run = GigRun(body)
+
+    create_or_patch_input_params_secret(gig_run)
+
+    patch[GIG_CONSTS.STATUS] = {
+        GIG_CONSTS.STATE: GIG_CONSTS.RUNNING,
+    }
+
+
+def create_or_patch_input_params_secret(gig_run: GigRun):
+    parametersSecret = Secret(gig_run.name, namespace=gig_run.metadata.namespace)
+    parametersSecret.metadata.generateName = f'{gig_run.name}-'
+    uuid_key = gig_run.annotations[GIG_CONSTS.UUID_ANNOTATION]
+    parametersSecret[STRING_DATA] = PARAMETERS_MAP.pop(uuid_key, {})
+
+    if not parametersSecret.exists():
+        parametersSecret['type'] = f'{GigRun.group}/{GigRun.singular}'
+        parametersSecret.create()
+        parametersSecret.set_owner(gig_run)
+    else:
+        parametersSecret.patch(
+            {STRING_DATA: parametersSecret[STRING_DATA]}, type='merge'
+        )

@@ -1,45 +1,34 @@
-import os
 import logging
-import yaml
+import os
 from copy import deepcopy
 
-from jinja2 import Environment, FileSystemLoader
-
 import kopf
-
-from kr8s.objects import ConfigMap, CronJob, Secret, Job
-
+import yaml
 from box import Box, BoxList
-
-from utilities.gig_types import GigRun, GigDefinition
-
-GIG_DEFINITION_ANNOTATION = 'batch.tenknetes.org/gigdefinition'
-CONTAINER_NAME_ANNOTATION = 'batch.tenknetes.org/containername'
-
-USER_INPUT_ANNOTATION = 'batch.tenknetes.org/userinput'
-
-STATUS = 'status'
-STATE = 'state'
+from jinja2 import Environment, FileSystemLoader
+from kr8s.objects import ConfigMap, CronJob, Job, Secret
+from utilities.gig_types import GIG_CONSTS, GigDefinition, GigRun
 
 GIG_RUNNER = 'gigrunner'
 GIG_RUNNER_SH = f'{GIG_RUNNER}.sh'
-
-GIG_RUNNER_WORKING_DIR = 'working-dir'
 
 RUNNER_DIR = 'runner'
 RUNNER_TEMPLATES_DIR = 'templates'
 CONFIG_MAP_JINJA_TEMPLATE = 'configMap.jinja'
 
-def create_job(cron_job: CronJob, gig_run: GigRun) -> Job:
+GIG_RUNNER_WORKING_DIR = 'working-dir'
+
+def create_job(cron_job: CronJob, gig_run: GigRun, config_map_name: str) -> Job:
     spec = deepcopy(cron_job.spec.jobTemplate)
     job = Job(spec)
-    job.name = gig_run.name
+    job.metadata.name = None
+    job.metadata.generateName = f'{gig_run.name}-'
     job.namespace = gig_run.metadata.namespace
-    job.spec.template.spec['restartPolicy'] = 'Never'
-    job.spec['backoffLimit'] = 0
+    job.spec.template.spec[GIG_CONSTS.RESTART_POLICY] = GIG_CONSTS.NEVER
+    job.spec[GIG_CONSTS.BACKOFF_LIMIT] = 0
 
-    container = get_container(job, cron_job.annotations.get(CONTAINER_NAME_ANNOTATION))
-    configure_container(gig_run, job, container)
+    container = get_container(job, cron_job.annotations.get(GIG_CONSTS.CONTAINER_NAME_ANNOTATION))
+    configure_container(job, container, config_map_name)
 
     job.create()
     job.set_owner(cron_job)
@@ -57,11 +46,11 @@ def get_container(job: Job, name = None) -> Box:
 
     return containers[0]
 
-def configure_container(gig_run: GigRun, job: Job, container: Box):
-    configmap_volume = Box(name = gig_run.name, configMap = Box(name = gig_run.name, defaultMode = 0o777))
+def configure_container(job: Job, container: Box, config_map_name: str):
+    configmap_volume = Box(name = config_map_name, configMap = Box(name = config_map_name, defaultMode = 0o777))
     job.spec.template.spec.setdefault('volumes', BoxList()).append(configmap_volume)
 
-    configmap_volume_mount = Box(name = gig_run.name, mountPath = f'/{GIG_RUNNER}')
+    configmap_volume_mount = Box(name = config_map_name, mountPath = f'/{GIG_RUNNER}')
     container.setdefault('volumeMounts', BoxList()).append(configmap_volume_mount)
 
     container['imagePullPolicy'] = 'Always'
@@ -91,7 +80,7 @@ def collect_secret_vars(gig_def: GigDefinition, namespace: str) -> list:
 
     return secrets
 
-def create_gigrun_configmap(job: Job, gig_run: GigRun, gig_def: GigDefinition, namespace: str) -> ConfigMap:
+def create_gigrun_configmap(gig_run: GigRun, gig_def: GigDefinition, namespace: str) -> ConfigMap:
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
 
     secret_vars = collect_secret_vars(gig_def, namespace)
@@ -102,6 +91,7 @@ def create_gigrun_configmap(job: Job, gig_run: GigRun, gig_def: GigDefinition, n
         'GIG_RUNNER_WORKING_DIR': GIG_RUNNER_WORKING_DIR,
         'gig_def': gig_def,
         'gig_run': gig_run,
+        'K8S_SECRET_NAME': gig_run.name,
         'SECRET_VARS': secret_vars,
         'configMapFiles': configMapFiles,
     }
@@ -114,6 +104,6 @@ def create_gigrun_configmap(job: Job, gig_run: GigRun, gig_def: GigDefinition, n
 
     config_map = ConfigMap(yaml.safe_load(output))
     config_map.create()
-    config_map.set_owner(job)
+    config_map.set_owner(gig_run)
 
     return config_map

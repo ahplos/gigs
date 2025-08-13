@@ -11,9 +11,15 @@ echo '======================='
 echo
 
 echo '======================='
-echo 'kubectl version'
+KUBE_EXEC=kubectl
+which oc >/dev/null 2>&1
+if [[ $? ]]
+then
+    KUBE_EXEC=oc
+fi
+echo "${KUBE_EXEC} version"
 echo
-kubectl version
+${KUBE_EXEC} version
 echo '======================='
 echo
 
