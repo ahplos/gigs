@@ -8,7 +8,7 @@ import {
 } from './GigDetailIcon';
 
 const GigRunState = (model) => {
-    let state = model.obj.status?.state ?? model.obj.status?.latestGigRun?.state;
+    let state = model.obj.spec?.runState;
 
     let iconType = IconType.QUESTION_CIRCLE;
     switch (state) {

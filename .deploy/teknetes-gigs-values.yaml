@@ -6,7 +6,7 @@ elCicdDefs:
   TEKNETES_GIGS_PLUGIN_IMAGE: $<IMAGE_REGISTRY>/$<PLUGIN_NAME>:latest
   TEKNETES_GIGS_OPERATOR_IMAGE: $<IMAGE_REGISTRY>/$<OPERATOR_NAME>:latest
 
-  TEKNETES_GIGS_IMAGE_PULL_SECRET: elcicd-dev-registry-credentials
+  TEKNETES_GIGS_IMAGE_PULL_SECRET: gig-demo-registry-credentials
 
   PORT: 8443
 
@@ -66,11 +66,13 @@ elCicdTemplates:
         defaultMode: 0420
 
 - templateName: configMap
+  elCicdDefs:
+    PYTHON_JINJA_COMMAND: python ${GIG_RUNNER_HOME}/jinja_stage.py %s
   objName: $<TEKNETES_GIGS_PROCESSOR_MAP>
   data:
     Go: go run %s
-    Input: python -m teknetes-gigs-jinja.py %s --user-input=true
-    Jinja: python -m teknetes-gigs-jinja.py %s
+    Input: $<PYTHON_JINJA_COMMAND>
+    Jinja: $<PYTHON_JINJA_COMMAND>
     Python: python -m trace -t %s
 
 - templateNames: [deployment, service, serviceAccount]

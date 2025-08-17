@@ -7,56 +7,62 @@ elCicdDefs:
   SCOPE: Namespaced
 
   FORM_SPEC:
-    type: array
-    description: Optional list of groups of components organized into sections of a form users will use to launch a job.
-    required:
-    - components
-    items:
-      type: object
-      properties:
-        attributes:
-          description: |-
-            A map of key/value pairs that optionally configure the form group.
+    type: object
+    properties:
+      inputvalues: $<INPUT_VALUES>
+      spec:
+        type: array
+        description: Optional list of groups of components organized into sections of a form users will use to launch a job.
+        required:
+        - components
+        items:
           type: object
-          additionalProperties:
-            type: string
-        components:
-          type: array
-          minItems: 1
-          items:
-            type: object
-            description: |-
-              arbitrary keys corresponding to JSX PatternFly Form (e.g. TextInput or Radio) controls that contain a map of zero or more
-              attributes for the control; e.g.
-                - component: Radio
-                  attributes:
-                    label: Option 1
-            properties:
-              inputType:
+          properties:
+            attributes:
+              description: |-
+                A map of key/value pairs that optionally configure the form group.
+              type: object
+              additionalProperties:
                 type: string
-                enum:
-                - TextArea
-                - TextInput
-                - Radio
-                - Checkbox
-              attributes:
-                description: |-
-                  attributes is a map of {key,value} pairs that optionally contain attributes and values for the component
+            components:
+              type: array
+              minItems: 1
+              items:
                 type: object
-                additionalProperties:
-                  type: string
-              booleans:
-                type: array
-                items:
-                  type: string
-            required:
-            - inputType
-        var:
-          description: |-
-            Variable that will be assigned from the values of components in the group. Can be overriden at
-            the component level.
-          type: string
-          pattern: '^\w+$'
+                description: |-
+                  arbitrary keys corresponding to JSX PatternFly Form (e.g. TextInput or Radio) controls that contain a map of zero or more
+                  attributes for the control; e.g.
+                    - component: Radio
+                      attributes:
+                        label: Option 1
+                properties:
+                  inputType:
+                    type: string
+                    enum:
+                    - TextArea
+                    - TextInput
+                    - Radio
+                    - Checkbox
+                  attributes:
+                    description: |-
+                      attributes is a map of {key,value} pairs that optionally contain attributes and values for the component
+                    type: object
+                    additionalProperties:
+                      type: string
+                  booleans:
+                    type: array
+                    items:
+                      type: string
+                required:
+                - inputType
+            var:
+              description: |-
+                Variable that will be assigned from the values of components in the group. Can be overriden at
+                the component level.
+              type: string
+              pattern: '^\w+$'
+      title:
+        type: string
 
   GIG_RUN_STATUS:
     type: object
@@ -66,21 +72,15 @@ elCicdDefs:
       result:
         type: string
         enum:
+        - Aborted
         - Success
         - Failure
         - Pending
         default: Pending
       runTime:
         type: integer
-      startedby:
+      startedBy:
         type: string
-      state:
-        type: string
-        enum:
-        - WaitingForInput
-        - Running
-        - Completed
-        default: Running
 
 elCicdDefs-$<GIG_DEF>:
   TITLE_CASE_NAME: GigDefinition
@@ -89,17 +89,14 @@ elCicdDefs-$<GIG_DEF>:
   - gigdefs
   SCOPE: Cluster
   SPEC_DEFINITION:
-    description: $<TITLE_CASE_NAME>Spec defines a GigDefinition, and the optional and/or required parameters to launch it.
+    description: $<TITLE_CASE_NAME>Spec defines a GigDefinition, and the optional and/or required inputvalues to launch it.
     type: object
     properties:
       name:
         type: string
       description:
         type: string
-      form:
-        type: object
-        properties:
-          spec: $<FORM_SPEC>
+      form: $<FORM_SPEC>
       secrets:
         type: array
         items:
@@ -113,7 +110,7 @@ elCicdDefs-$<GIG_DEF>:
                 name:
                   type: string
       stages:
-        description: A unit of work.  User input may potentially be required at the end of a stage.
+        description: Units of work.  User input may potentially be required at the end of a stage.
         type: array
         items:
           type: object
@@ -186,12 +183,31 @@ elCicdDefs-$<GIG>:
   STATUS_DEFINITION:
     type: object
     properties:
-      latestGigRun: $<GIG_RUN_STATUS>
+      latestGigRun:
+        type: object
+        properties:
+          creationTimestamp:
+            type: string
+          result:
+            type: string
+            enum:
+            - Aborted
+            - Success
+            - Failure
+            - Pending
+            default: Pending
+          runTime:
+            type: integer
+          startedBy:
+            type: string
 
 elCicdDefs-$<GIG_RUN>:
   TITLE_CASE_NAME: GigRun
+  INPUT_VALUES:
+      type: object
+      x-kubernetes-preserve-unknown-fields: true
   SPEC_DEFINITION:
-    description: $<TITLE_CASE_NAME>Spec defines a specific Job run produced from a GigBinding.
+    description: $<TITLE_CASE_NAME>Spec defines a specific Job run produced from the parent Gig's CronJob.
     type: object
     properties:
       gigRef:
@@ -199,17 +215,46 @@ elCicdDefs-$<GIG_RUN>:
         properties:
           name:
             type: string
+            x-kubernetes-validations:
+            - rule: "!(self != oldSelf)"
+              message: gigRef name and containerName are immutable
           containerName:
             type: string
+            x-kubernetes-validations:
+            - rule: "!(self != oldSelf)"
+              message: gigRef name and containerName are immutable
         required:
         - name
-      formSpec: $<FORM_SPEC>
-      parameters:
-        type: object
-        x-kubernetes-preserve-unknown-fields: true
+      form: $<FORM_SPEC>
+      runState:
+        type: string
+        enum:
+        - WaitingForInput
+        - InputReceived
+        - Running
+        - Completed
+        default: Running
+      startedBy:
+        type: string
+        x-kubernetes-validations:
+        - rule: "size(oldSelf) > 0 && !(self != oldSelf)"
+          message: startedBy is immutable
     required:
     - gigRef
-  STATUS_DEFINITION: $<GIG_RUN_STATUS>
+    - runState
+  STATUS_DEFINITION:
+    type: object
+    properties:
+      result:
+        type: string
+        enum:
+        - Aborted
+        - Success
+        - Failure
+        - Pending
+        default: Pending
+      runTime:
+        type: integer
 
 elCicdTemplates:
 - apiVersion: apiextensions.k8s.io/v1

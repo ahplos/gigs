@@ -1,5 +1,5 @@
 elCicdDefs:
-  GIG_DEF_NAME: test-cluster-gig-definition
+  GIG_DEF_NAME: gig-demo-gig-definition
 
   TEKNETES_GIGS_OPERATOR: teknetes-gigs-operator
 

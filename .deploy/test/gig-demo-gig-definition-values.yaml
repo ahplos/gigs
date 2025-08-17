@@ -1,5 +1,5 @@
 elCicdDefs:
-  GIG_DEF_NAME: test-cluster-gig-definition
+  GIG_DEF_NAME: gig-demo-gig-definition
 
 elCicdTemplates:
 - apiVersion: batch.teknetes.org/v1beta1
@@ -20,7 +20,7 @@ elCicdTemplates:
             - inputType: TextInput
               booleans:
               - isRequired
-          var: USER_NAME
+          var: CLUSTER_ADMIN_USER_NAME
         - attributes:
             label: Cluster Admin Password
           components:
@@ -32,45 +32,55 @@ elCicdTemplates:
           var: CLUSTER_ADMIN_PASSWORD
         - attributes:
             isInline: 'true'
-            label: Run Mode
+            label: Visual Mode
             role: radiogroup
           components:
             - attributes:
-                label: GUI Mode
+                label: Graphical
               inputType: Radio
             - attributes:
-                label: Debug Mode
+                label: Logs
               booleans:
               - isChecked
               inputType: Radio
           var: RUN_DEBUG_MODE
       stages:
-        - description: Prove the test msg is empty to start.
-          displayName: Test Stage One
-          name: test-stage-one
-          processor: Shell
+        - description: Login into cluster as cluster admin
+          displayName: Cluster Admin Authentication
+          name: cluster-admin-login-to-cluster
           script: |-
-            printTestMsg() {
-              echo "Test Msg: ${TEST_MSG:-<TEST_MSG IS BLANK>}"
-            }
-            printTestMsg
-            sleep 5
-        - description: Set a test msg with a Python script.
-          name: test-stage-two.py
-          processor: Python
+            oc login --insecure-skip-tls-verify -u ${CLUSTER_ADMIN_USER_NAME} -p ${CLUSTER_ADMIN_PASSWORD} https://kubernetes.default.svc
+            sleep 2
+        - description: Retrieve Gig Operator supported Stage languages.
+          name: retrieve-gig-operator-supported-languages
           script: |-
-            with open('.env', 'a') as env_file:
-              env_file.write("TEST_MSG='This value was set in Stage Two with Python'")
-        - description: Print the test msg from stage two.
-          displayName: Test Stage Three
-          name: test-stage-three
-          processor: Shell
-          secretVars:
-          - STAGE_SECRET_VAR
+            JSON=$(oc get configmap teknetes-gigs-stage-processors -n gigs-operator -o jsonpath='{.data}')
+            LANGS=$(echo "${JSON}" | jq -r 'keys[]' | tr '\n' ',' | sed -E -e 's/([A-Za-z]+)/"\1"\ /g')
+            echo "{%- set LANGS = [${LANGS}] %}" > tek_langs.j2
+            sleep 2
+        - description: Ask the user what Teknetes Gig language support they wish demonstrated.
+          displayName: Which languages should be demoed?
+          name: ask-user-what-languages-to-demo.j2
+          processor: Input
           script: |-
-            STAGE_SECRET_VAR='testing'
-            printTestMsg
-            sleep 5
+            {%- include 'tek_langs.j2' %}
+            {%- from 'tek_langs.j2' import LANGS %}
+            {%- for LANG in LANGS %}
+            {% filter indent(width=4) %}
+            - attributes:
+                label: {{ LANG }}
+              components:
+                - inputType: Checkbox
+              var: LANG_{{ LANG|upper }}
+            {%- endfilter %}
+            {%- endfor %}
+        - description: Print languages selected
+          name: test-stage-four.go
+          script: |-
+            for LANG_APPROVED in $(compgen -v | grep 'LANG_.*_EXECUTE')
+            do
+              echo "LANGUAGE TO EXECUTE: ${LANG_APPROVED}"
+            done
         - description: Set a test msg with a Go script.
           name: test-stage-four.go
           processor: Go
@@ -91,15 +101,15 @@ elCicdTemplates:
           name: test-stage-five
           processor: Shell
           script: |-
-            printTestMsg
+            echo ${TEST_MSG}
         - description: Prove the secrets are filtered.
           displayName: Test Stage Six
           name: test-stage-six
           processor: Shell
           script: |-
             echo 'The secrets for this Gig are:'
-            echo "    STAGE_SECRET_VAR: ${STAGE_SECRET_VAR}"
-            echo "    DEMO_PASSWORD: ${DEMO_PASSWORD}"
+            echo "    CLUSTER_ADMIN_USER_NAME: ${CLUSTER_ADMIN_PASSWORD}"
+            echo "    CLUSTER_ADMIN_PASSWORD: ${CLUSTER_ADMIN_PASSWORD}"
             echo "    ANOTHER_SECRET: ${ANOTHER_SECRET}"
             echo "    FIRST_SECRET: ${FIRST_SECRET}"
             echo "    SECOND_SECRET: ${SECOND_SECRET}"

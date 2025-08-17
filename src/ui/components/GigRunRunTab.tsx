@@ -13,16 +13,21 @@ import GigRunLogViewer from './GigRunLogViewer';
 
 import { GigRun, GigRunState } from '../utilities/objectDefs';
 
+import {
+    patchGigRunInputValues,
+    patchGigRunRunState
+} from '../utilities/createGigRun';
+
 const GigRunFormTab = (model) => {
     const gigRun: GigRun = model.obj;
     const formSpec: any = structuredClone(gigRun.spec?.form?.spec ?? []);
 
     const submissionAction = (formState: any) => {
         if (formState) {
-            alert("Should submit values and continue");
+            patchGigRunInputValues(gigRun, formState);
         }
         else {
-            alert("Approval gate; Should continue");
+            patchGigRunRunState(gigRun);
         }
     }
 
@@ -31,7 +36,8 @@ const GigRunFormTab = (model) => {
     const JOB_NAME_SELECTOR = 'batch.kubernetes.io/job-name';
     const jobNamePresent = JOB_NAME_SELECTOR in (gigRun?.metadata.labels ?? {});
     if (jobNamePresent) {
-        bodyContent = (gigRun?.status?.state == GigRunState.WaitingForInput) ?
+        let waitingForInput = GigRunState.WaitingForInput.valueOf();
+        bodyContent = (gigRun?.spec?.runState == waitingForInput) ?
             <GigDefinitionForm formSpec={formSpec} submissionAction={submissionAction} gigRun /> :
             <GigRunLogViewer gigRun={gigRun} />
     }

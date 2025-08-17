@@ -1,9 +1,10 @@
 import {
+    k8sPatch,
     k8sCreate,
     K8sModel,
 } from '@openshift-console/dynamic-plugin-sdk';
 
-import { Gig, GigRun } from './objectDefs';
+import { Gig, GigRun, GigRunState } from './objectDefs';
 
 const gigRunModel: K8sModel = {
     abbr: 'GR',
@@ -34,16 +35,46 @@ export const createGigRun = (gig: Gig, formStateObj: object): Promise<GigRun> =>
             gigRef: {
                 name: gig.metadata.name
             },
-            parameters: {
+            form: {
+                inputvalues: {
+                }
             }
         }
     };
 
     for (const [key, value] of Object.entries(formState)) {
         if (key) {
-            gigRun['spec']['parameters'][key] = value;
+            gigRun.spec.form.inputvalues[key] = value;
         }
     };
 
     return k8sCreate({model: gigRunModel, data: gigRun})
+};
+
+export const patchGigRunInputValues = (gigRun: GigRun, formStateObj: object): Promise<GigRun> => {
+    let formState: any = formStateObj instanceof Map ? Object.fromEntries(formStateObj) : formStateObj;
+
+    const patchData = [
+        {
+            op: 'replace',
+            path: '/spec/form/inputValues',
+            values: formState
+        },
+    ]
+
+    return k8sPatch({model: gigRunModel, resource: gigRun, data: patchData})
+};
+
+export const patchGigRunRunState = (gigRun: GigRun): Promise<GigRun> => {
+    const patchData = [
+        {
+            op: 'replace',
+            path: '/spec',
+            values: {
+                runState: GigRunState.Running.valueOf()
+            }
+        },
+    ]
+
+    return k8sPatch({model: gigRunModel, resource: gigRun, data: patchData})
 };

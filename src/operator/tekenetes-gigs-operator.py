@@ -52,7 +52,7 @@ def on_startup(settings: kopf.OperatorSettings, logger, **_):
     settings.peering.clusterwide = True
 
     settings.admission.server = ServiceTunnel()
-    settings.admission.managed = 'batch.tekenetes.gigs'
+    settings.admission.managed = 'batch.teknetes.gigs'
 
     # sensible number of workers so as to not overload the k8s API server
     settings.batching.worker_limit = 3

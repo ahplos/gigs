@@ -17,8 +17,10 @@ import {
 import {
     getGigDefinition,
     Gig,
+    GigRun,
     GigDefinition,
-    GIG_GVK
+    GIG_GVK,
+    GIG_RUN_GVK
 } from '../utilities/objectDefs';
 
 import {
@@ -27,11 +29,16 @@ import {
 
 const GigRunFormTab = (model) => {
     let gig: Gig;
+    let gigRun: GigRun;
     let formSpec = [];
     let gigDefRef: GigDefinition;
     let errorMessage: string;
 
-    if (model.obj.kind == GIG_GVK.kind) {
+    if (model.obj.kind == GIG_RUN_GVK.kind) {
+        gigRun = model.obj;
+        formSpec = gigRun?.spec?.form?.spec || [];
+    }
+    else if (model.obj.kind == GIG_GVK.kind) {
         gig = model.obj
         const [gd, _, gdLoadError] = getGigDefinition({name: gig.spec.gigDefinitionRef.name});
 
@@ -47,19 +54,14 @@ const GigRunFormTab = (model) => {
     const navigate = useNavigate();
 
     const submissionAction = (formState: any) => {
-        if (gig) {
-            createGigRun(gig, formState)
-                .then((gigRun) => {
-                    let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.teknetes.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-log-viewer';
-                    navigate(path);
-                })
-                .catch((e) => {
-                    console.log(e);
-                });
-        }
-        else {
-            alert("Preview ONLY");
-        }
+        createGigRun(gig, formState)
+            .then((gigRun) => {
+                let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.teknetes.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-log-viewer';
+                navigate(path);
+            })
+            .catch((e) => {
+                console.log(e);
+            });
     }
 
     let bodyContent;

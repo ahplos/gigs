@@ -7,19 +7,29 @@ from utilities.constants import GIG_CONSTS
 
 class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=False)):
 
+    GIG_DEFINITION_ANNOTATION: str = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/gigdefinition'
+
     group: str = GIG_CONSTS.BATCH_TEKNETES_ORG
+
+    @property
+    def gigRef(self) -> str:
+        return self.spec[GIG_CONSTS.GIG_REF][GIG_CONSTS.NAME]
+
+    @property
+    def form(self) -> BoxList:
+        return self.spec.setdefault(GIG_CONSTS.FORM, Box())
+
+    @property
+    def form_spec(self) -> BoxList:
+        return  self.spec.form.setdefault(GIG_CONSTS.SPEC, BoxList())
 
     @property
     def secrets(self) -> BoxList:
         return  self.spec.setdefault(GIG_CONSTS.SECRETS, [])
 
     @property
-    def formSpec(self) -> BoxList:
-        return  self.spec.setdefault(GIG_CONSTS.FORM_SPEC, {})
-
-    @property
     def stages(self) -> Box:
-        return  self.spec.setdefault(GIG_CONSTS.STAGES, {})
+        return  self.spec.setdefault(GIG_CONSTS.STAGES, Box())
 
 class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
@@ -28,6 +38,7 @@ class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS
     def __init__(self, resource: SpecType, namespace: str | None = None, api: Api | None = None) -> None:
         super().__init__(resource, namespace, api)
         self.raw.setdefault('spec', {})
+        self.raw.setdefault('status', {})
 
     @property
     def gigDefinitionRef(self) -> str:
@@ -47,34 +58,39 @@ class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS
 
 class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
+    CONTAINER_NAME_ANNOTATION = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/containername'
+    UUID_ANNOTATION = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/uuid'
+
     group: str = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}'
 
     def __init__(self, resource: SpecType, namespace: str | None = None, api: Api | None = None) -> None:
         super().__init__(resource, namespace, api)
         self.raw.setdefault('spec', {})
-        self.raw.setdefault(GIG_CONSTS.STATUS, {})
+        self.raw.setdefault('status', {})
 
     @property
     def gigRef(self) -> str:
         return self.spec[GIG_CONSTS.GIG_REF][GIG_CONSTS.NAME]
 
     @property
-    def formSpec(self) -> BoxList:
-        self.spec.setdefault(GIG_CONSTS.FORM_SPEC, BoxList())
-        return self.spec.formSpec
-
-    @formSpec.setter
-    def formSpec(self, formSpec: BoxList):
-        self.spec[GIG_CONSTS.FORM_SPEC] = formSpec
+    def form(self) -> Box:
+        return self.spec.setdefault(GIG_CONSTS.FORM, Box())
 
     @property
-    def parameters(self) -> BoxList:
-        self.spec.setdefault(GIG_CONSTS.PARAMETERS, Box())
-        return self.spec.parameters
+    def form_spec(self) -> BoxList:
+        return self.form.setdefault(GIG_CONSTS.SPEC, BoxList())
 
-    @parameters.setter
-    def parameters(self, parameters: Box):
-        self.spec[GIG_CONSTS.PARAMETERS] = parameters
+    @form_spec.setter
+    def form_spec(self, form_spec: BoxList):
+        self.form.spec = form_spec
+
+    @property
+    def inputvalues(self) -> BoxList:
+        return self.form.setdefault(GIG_CONSTS.INPUTVALUES, Box())
+
+    @inputvalues.setter
+    def inputvalues(self, inputvalues: Box):
+        self.form.inputvalues = inputvalues
 
     @property
     def creationTimestamp(self) -> str:
@@ -93,6 +109,14 @@ class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_
         self.status[GIG_CONSTS.RESULT] = result
 
     @property
+    def runState(self) -> int:
+        return self.spec[GIG_CONSTS.RUN_STATE]
+
+    @runState.setter
+    def runState(self, runState: int):
+        self.spec[GIG_CONSTS.RUN_STATE] = runState
+
+    @property
     def runTime(self) -> int:
         return self.status[GIG_CONSTS.RUN_TIME]
 
@@ -101,14 +125,6 @@ class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_
         self.status[GIG_CONSTS.RUN_TIME] = runTime
 
     @property
-    def startedby(self) -> str:
-        return self.annotations[GIG_CONSTS.STARTED_BY_ANNOTATION]
-
-    @property
-    def state(self) -> str:
-        return self.status[GIG_CONSTS.STATE]
-
-    @state.setter
-    def state(self, state: str):
-        self.status[GIG_CONSTS.STATE] = state
+    def startedBy(self) -> str:
+        return self.spec[GIG_CONSTS.STARTED_BY]
 

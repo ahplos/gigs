@@ -54,14 +54,14 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
         },
         {
             title: 'Started By',
-            id: 'startedby',
-            sort: 'status.startedby',
+            id: 'startedBy',
+            sort: 'spec.startedBy',
             transforms: [sortable],
         },
         {
             title: 'State',
             id: 'state',
-            sort: 'status.state',
+            sort: 'spec.runState',
             transforms: [sortable],
         },
         {

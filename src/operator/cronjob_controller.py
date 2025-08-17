@@ -9,29 +9,29 @@ OPERATIONS: list[Operation] = [GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE]
 @kopf.on.mutate(
     CronJob.version,
     CronJob.plural,
-    annotations={GIG_CONSTS.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigDefinition.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
     operations=OPERATIONS,
 ) # type: ignore
 def onmutatecronjob(patch, meta, annotations, logger, **_):
     jobAnnotations = (
         patch.spec.setdefault('jobTemplate', {}).setdefault('metadata', {}).setdefault('annotations', {})
     )
-    jobAnnotations[GIG_CONSTS.GIG_DEFINITION_ANNOTATION] = annotations[
-        GIG_CONSTS.GIG_DEFINITION_ANNOTATION
+    jobAnnotations[GigDefinition.GIG_DEFINITION_ANNOTATION] = annotations[
+        GigDefinition.GIG_DEFINITION_ANNOTATION
     ]
 
 
 @kopf.on.validate(
     CronJob.version,
     CronJob.plural,
-    annotations={GIG_CONSTS.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigDefinition.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
     operations=OPERATIONS,
 )   # type: ignore
 def onvalidatecronjob(annotations, meta, logger, **_):
-    gigDef = GigDefinition(annotations[GIG_CONSTS.GIG_DEFINITION_ANNOTATION])
+    gigDef = GigDefinition(annotations[GigDefinition.GIG_DEFINITION_ANNOTATION])
     if not gigDef.exists():
         raise kopf.AdmissionError(
-            f'The GigDefinition for the {GIG_CONSTS.GIG_DEFINITION_ANNOTATION} annotation in CronJob {meta.name} does not exist.',
+            f'The GigDefinition for the {GigDefinition.GIG_DEFINITION_ANNOTATION} annotation in CronJob {meta.name} does not exist.',
             code=499,
         )
 
@@ -39,12 +39,12 @@ def onvalidatecronjob(annotations, meta, logger, **_):
 @kopf.on.create(
     CronJob.version,
     CronJob.plural,
-    annotations={GIG_CONSTS.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigDefinition.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
 )  # type: ignore
 def on_create_cronjob(body, meta, logger, **_):
     gig = Gig(meta.name, namespace=meta.namespace)
     gig.cronJobRef = meta.name
-    gig.gigDefinitionRef = meta.annotations[GIG_CONSTS.GIG_DEFINITION_ANNOTATION]
+    gig.gigDefinitionRef = meta.annotations[GigDefinition.GIG_DEFINITION_ANNOTATION]
     gig.create()
     gig.set_owner(CronJob(body))
     logger.info(f'NEW Gig {gig.name} CREATED, and owner set to CronJob {meta.name}')
@@ -53,13 +53,13 @@ def on_create_cronjob(body, meta, logger, **_):
 @kopf.on.update(
     CronJob.version,
     CronJob.plural,
-    annotations={GIG_CONSTS.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigDefinition.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
 )  # type: ignore
 def on_update_cronjob(old, new, logger, **_):
     old_cron_job = CronJob(old)
     new_cron_job = CronJob(new)
-    oldGigDef = old_cron_job.metadata.annotations[GIG_CONSTS.GIG_DEFINITION_ANNOTATION]
-    newGigDef = new_cron_job.metadata.annotations[GIG_CONSTS.GIG_DEFINITION_ANNOTATION]
+    oldGigDef = old_cron_job.metadata.annotations[GigDefinition.GIG_DEFINITION_ANNOTATION]
+    newGigDef = new_cron_job.metadata.annotations[GigDefinition.GIG_DEFINITION_ANNOTATION]
     if oldGigDef != newGigDef:
         gig = Gig.get(new_cron_job.name, new_cron_job.namespace)
         gig.patch({'spec': {'gigDefinitionRef': newGigDef}})

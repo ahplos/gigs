@@ -1,12 +1,13 @@
 #!/usr/bin/bash
-STAGE_NAME=${1}
-STAGE_PROCESSOR=${2}
-STAGE_DESC="${3}"
-STAGE_SECRETS="${4}"
+STAGE_COUNTER=${1}
+STAGE_NAME=${2}
+STAGE_PROCESSOR=${3}
+STAGE_DESC="${4}"
+STAGE_SECRETS="${5}"
 
 echo '******************************************************************'
 echo '**'
-echo "**  STAGE: ${STAGE_NAME}"
+echo "**  STAGE $(printf '%02d' ${STAGE_COUNTER}): ${STAGE_NAME}"
 echo "**  Processor: ${STAGE_PROCESSOR}"
 if [[ ${STAGE_DESC} ]]
 then
@@ -16,7 +17,7 @@ fi
 if [[ ${STAGE_SECRETS} ]]
 then
     echo '**'
-    echo "** WARNING: SHELL LOGGING OUTPUT REDACTED FOR THIS STAGE"
+    echo "** WARNING: DEBUG LOGGING OUTPUT SUPPRESSED FOR THIS STAGE"
 fi
 echo '**'
 echo "******************************************************************"

@@ -11,10 +11,6 @@ class _GIG_CONSTS(type):
         return 'v1beta1'
 
     @property
-    def GIG_DEFINITION(self) -> str:
-        return 'gigdefinition'
-
-    @property
     def GIG_DEFINITIONS(self) -> str:
         return 'gigdefinitions'
 
@@ -35,32 +31,16 @@ class _GIG_CONSTS(type):
         return 'gigruns'
 
     @property
-    def GIG_DEFINITION_ANNOTATION(self) -> str:
-        return f'{self.BATCH_TEKNETES_ORG}/{self.GIG_DEFINITION}'
-
-    @property
-    def CONTAINER_NAME_ANNOTATION(self) -> str:
-        return f'{self.BATCH_TEKNETES_ORG}/containername'
-
-    @property
-    def STARTED_BY_ANNOTATION(self) -> str:
-        return f'{self.BATCH_TEKNETES_ORG}/startedby'
-
-    @property
-    def USER_INPUT_ANNOTATION(self) -> str:
-        return f'{self.BATCH_TEKNETES_ORG}/userinput'
-
-    @property
-    def UUID_ANNOTATION(self) -> str:
-        return f'{self.BATCH_TEKNETES_ORG}/uuid'
-
-    @property
     def GIG_REF_LABEL(self) -> str:
         return f'{self.BATCH_TEKNETES_ORG}/{self.GIG}'
 
     @property
     def JOB_NAME_SELECTOR_LABEL(self) -> str:
         return 'batch.kubernetes.io/job-name'
+
+    @property
+    def METADATA(self) -> str:
+        return 'metadata'
 
     @property
     def ANNOTATIONS(self) -> str:
@@ -83,12 +63,20 @@ class _GIG_CONSTS(type):
         return 'name'
 
     @property
-    def PARAMETERS(self) -> str:
-        return 'parameters'
+    def NAMESPACE(self) -> str:
+        return 'namespace'
 
     @property
-    def FORM_SPEC(self) -> str:
-        return 'formSpec'
+    def INPUTVALUES(self) -> str:
+        return 'inputvalues'
+
+    @property
+    def ENV(self) -> str:
+        return 'env'
+
+    @property
+    def FORM(self) -> str:
+        return 'form'
 
     @property
     def SECRETS(self) -> str:
@@ -119,12 +107,12 @@ class _GIG_CONSTS(type):
         return 'runTime'
 
     @property
-    def STATE(self) -> str:
-        return 'state'
+    def RUN_STATE(self) -> str:
+        return 'runState'
 
     @property
     def STARTED_BY(self) -> str:
-        return 'startedby'
+        return 'startedBy'
 
     @property
     def START_TIME(self) -> str:
@@ -159,6 +147,10 @@ class _GIG_CONSTS(type):
         return 'WaitingForInput'
 
     @property
+    def INPUT_RECEIVED(self) -> str:
+        return 'InputReceived'
+
+    @property
     def RUNNING(self) -> str:
         return 'Running'
 
@@ -177,6 +169,11 @@ class _GIG_CONSTS(type):
     @property
     def SUCCEEDED(self) -> str:
         return 'succeeded'
+
+
+    @property
+    def FAILED(self) -> str:
+        return 'failed'
 
     @property
     def GIG_REF(self) -> str:

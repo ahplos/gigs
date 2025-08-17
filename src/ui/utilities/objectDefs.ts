@@ -33,10 +33,13 @@ export const GIG_RUN_GVK: K8sGroupVersionKind = {
 export const GIG_MAP: Map<string, GigRun> = new Map();
 export const CURRENT_GIG_RUN = 'CURRENT_GIG_RUN';
 
-export type FormSpec = {
+export type FormSpec = [] & {
     var: string;
     components: {
         inputType: string;
+        attributes: object;
+        booleans: string[];
+        var: string;
     }[];
 };
 
@@ -63,21 +66,21 @@ export type Gig = K8sResourceCommon & {
             creationTimestamp: string;
             result: GigRunResult;
             runTime: number;
-            startedby: string;
+            startedBy: string;
             state: GigRunState;
         };
     };
 };
 
 export enum GigRunState {
-    WaitingForInput,
-    Running,
-    Completed,
+    WaitingForInput = 'WaitingForInput',
+    Running = 'Running',
+    Completed = 'Completed',
 }
 
 export enum GigRunResult {
-    Success,
-    Failure,
+    Success = 'Success',
+    Failure = 'Failure',
 }
 
 export type GigRun = K8sResourceCommon & {
@@ -88,16 +91,15 @@ export type GigRun = K8sResourceCommon & {
         };
         form?: {
             spec?: FormSpec;
+            inputvalues?: object;
         }
-
-        parameters?: object;
+        runState?: GigRunState
+        startedBy?: string;
     };
 
     status?: {
         result?: GigRunResult;
         runTime?: number;
-        startedby?: string;
-        state?: GigRunState;
     };
 };
 
