@@ -2,13 +2,10 @@ import * as React from 'react';
 import { Base64 } from 'js-base64';
 
 import {
-    Bullseye,
-    Banner,
     Button,
     Divider,
     Flex,
     FlexItem,
-    Spinner,
     Switch,
     Text,
     Tooltip,
@@ -35,7 +32,6 @@ import {
 } from '@openshift-console/dynamic-plugin-sdk/lib/utils/k8s/ws-factory';
 
 import {
-    getPod,
     GigRun,
     GIG_MAP,
     CURRENT_GIG_RUN
@@ -48,14 +44,14 @@ import {
     GigRunRunTime,
 } from './gigUiComponents';
 
-interface GigRunLogViewerprops {
+interface GigRunLogViewerProps {
     gigRun: GigRun,
     pod?: K8sResourceKind
 }
 
 const PERCENT_HEIGHT_100 = '100%'
 
-function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
+export default function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
     const podPhase = pod.status['phase'];
     const POD_COMPLETED = podPhase === 'Succeeded' || podPhase === 'Failed';
 
@@ -274,25 +270,3 @@ function GigRunLogViewerContent({ gigRun, pod }: GigRunLogViewerprops) {
         />
     );
 };
-
-export default function GigRunLogViewer({ gigRun }: GigRunLogViewerprops) {
-    const JOB_NAME_SELECTOR = 'batch.kubernetes.io/job-name';
-    const [pod, _, errorMessage] = getPod({
-        namespace: gigRun.metadata.namespace,
-        selector: {
-            matchLabels: {
-                [JOB_NAME_SELECTOR]: gigRun.metadata.labels[JOB_NAME_SELECTOR],
-            },
-        },
-    });
-
-    if (pod) {
-        return <GigRunLogViewerContent pod={pod} gigRun={gigRun} />;
-    }
-    else if (errorMessage?.length > 0) {
-        return <Banner variant='red'>ERROR: {errorMessage}</Banner>;
-    }
-    else {
-        return <Bullseye><Spinner size='lg' aria-label='Fetching logs...' /></Bullseye>;
-    }
-}

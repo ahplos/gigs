@@ -12,6 +12,9 @@ const GigRunResult = (model) => {
 
     let icon = <GigDetailIcon type={IconType.PENDING} label={result} status={IconStatus.custom} />;
     switch (result) {
+        case 'Aborted':
+            icon = <GigDetailIcon type={IconType.ABORTED} label={result} status={IconStatus.danger} />
+            break;
         case 'Success':
             icon = <GigDetailIcon type={IconType.CHECK_CIRCLE} label={result} status={IconStatus.success} />
             break;

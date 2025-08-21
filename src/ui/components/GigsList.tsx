@@ -25,16 +25,16 @@ import {
 import {
     CRONJOB_GVK,
     Gig,
-    getGigs,
     GIG_GVK,
     GIG_DEFINITION_GVK,
     NS_GVK
 } from '../utilities/objectDefs';
 
+import GigK8sUtils from '../utilities/gigK8sUtils';
+
 import {
     GigRunResult,
     GigRunStartedBy,
-    GigRunState,
     GigRunRunTime,
 } from './gigUiComponents';
 
@@ -105,7 +105,6 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
                     {obj?.status?.latestGigRun &&
                         <List isPlain>
                             <ListItem><GigRunStartedBy obj={obj}/></ListItem>
-                            <ListItem><GigRunState obj={obj}/></ListItem>
                             <ListItem><GigRunResult obj={obj}/></ListItem>
                         </List>
                     }
@@ -140,7 +139,7 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
 }
 
 const GigsList = () => {
-    const [gigs, loaded, loadError] = getGigs();
+    const [gigs, loaded, loadError] = GigK8sUtils.getGigs();
 
     return (
         <>

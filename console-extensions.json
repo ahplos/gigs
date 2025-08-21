@@ -185,7 +185,22 @@
     "type": "console.tab/horizontalNav",
     "properties": {
       "page": {
-        "name": "Run Logs",
+        "name": "Input",
+        "href": "gigrun-input-form"
+      },
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigRun"
+      },
+      "component": { "$codeRef": "components.GigRunInputTab" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "page": {
+        "name": "Logs",
         "href": "gigrun-log-viewer"
       },
       "model": {
@@ -193,7 +208,7 @@
         "version": "v1beta1",
         "kind": "GigRun"
       },
-      "component": { "$codeRef": "components.GigRunRunTab" }
+      "component": { "$codeRef": "components.GigRunLogsTab" }
     }
   }
 ]

@@ -18,6 +18,9 @@ const GigRunState = (model) => {
         case 'Running':
             iconType = IconType.RUNNING;
             break;
+        case 'Aborting':
+            iconType = IconType.ABORTING;
+            break;
     };
 
     return <GigDetailIcon type={iconType} label={state} status={IconStatus.success} />

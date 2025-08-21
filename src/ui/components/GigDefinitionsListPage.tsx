@@ -21,8 +21,9 @@ import {
 import {
     GigDefinition,
     GIG_DEFINITION_GVK,
-    getGigDefinitions
 } from '../utilities/objectDefs';
+
+import GigK8sUtils from '../utilities/gigK8sUtils';
 
 type GigDefinitionTableProps = {
     data: K8sResourceCommon[];
@@ -84,7 +85,7 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
 
 const GigDefinitionsListPage = () => {
 
-    const [gds, loaded, loadError] = getGigDefinitions();
+    const [gds, loaded, loadError] = GigK8sUtils.getGigDefinitions();
 
     return (
         <>

@@ -3,7 +3,7 @@ STAGE_COUNTER=${1}
 STAGE_NAME=${2}
 STAGE_PROCESSOR=${3}
 STAGE_DESC="${4}"
-STAGE_SECRETS="${5}"
+STAGE_TYPE="${5}"
 
 echo '******************************************************************'
 echo '**'
@@ -14,10 +14,14 @@ then
     echo '**'
     echo "** ${STAGE_DESC}"
 fi
-if [[ ${STAGE_SECRETS} ]]
+if [[ ${STAGE_TYPE} == 'HAS_SECRETS' ]]
 then
     echo '**'
-    echo "** WARNING: DEBUG LOGGING OUTPUT SUPPRESSED FOR THIS STAGE"
+    echo '** WARNING: SECRETS REALIZED [Debug logging output suppressed]'
+elif [[ ${STAGE_TYPE} == 'SKIPPED' ]]
+then
+    echo '**'
+    echo '** WARNING: STAGE SKIPPED [Precondition(s) for execution failed]'
 fi
 echo '**'
 echo "******************************************************************"

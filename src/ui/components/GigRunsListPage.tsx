@@ -23,13 +23,14 @@ import {
 } from '@openshift-console/dynamic-plugin-sdk';
 
 import {
-    getGigRuns,
     Gig,
     GigRun,
     GIG_RUN_GVK,
     GIG_MAP,
     CURRENT_GIG_RUN
 } from '../utilities/objectDefs';
+
+import GigK8sUtils from '../utilities/gigK8sUtils';
 
 import {
     GigRunResult,
@@ -134,7 +135,7 @@ const GigRunsListPage = (model, page, component) => {
                 [`${GIG_RUN_GVK.group.toLowerCase()}/${GIG_RUN_GVK.kind.toLowerCase()}`]: gig.metadata.name
             }
         };
-        const [gigRuns, gdLoaded, gdLoadError] = getGigRuns(gigRunsGetOption);
+        const [gigRuns, gdLoaded, gdLoadError] = GigK8sUtils.getGigRuns(gigRunsGetOption);
 
         let gigRunsTable =
             <>

@@ -11,7 +11,7 @@ USER_INPUT_PATCH_YAML = 'user_input_patch.yaml'
 
 gigrunner_home = os.environ['GIG_RUNNER_HOME']
 gigrunner_working_dir = os.environ['GIG_RUNNER_WORKING_DIR']
-environment = Environment(loader = FileSystemLoader([gigrunner_working_dir, gigrunner_home]))
+environment = Environment(loader = FileSystemLoader([gigrunner_working_dir, gigrunner_home, '/']))
 environment.filters['from_json'] = load
 environment.filters['from_yaml'] = safe_load
 environment.filters['from_yaml_all'] = safe_load_all
@@ -28,5 +28,5 @@ os.environ[USER_INPUT_PATCH] = sys.argv[1]
 output = template.render(env=os.environ)
 
 out_filename = USER_INPUT_PATCH_YAML if is_user_input else sys.argv[1]
-with open(f'{gigrunner_working_dir}/{out_filename}', 'w') as rendered_file:
+with open(f'{gigrunner_working_dir}/{os.path.basename(out_filename)}', 'w') as rendered_file:
     rendered_file.write(output)

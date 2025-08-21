@@ -1,6 +1,5 @@
-
 # TEMPLATE FOR A DEFAULT GIG RUNNER
-FROM registry.access.redhat.com/ubi9/python-312:latest
+FROM registry.access.redhat.com/ubi9-minimal:latest
 USER root
 
 ARG OC_TAR_GZ_FILE=openshift-client-linux.tar.gz
@@ -8,13 +7,15 @@ ARG OC_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/
 
 RUN <<EOF
     set -ex
-    dnf install --assumeyes jq go
-    dnf clean all
+    microdnf install --assumeyes --nodocs jq go nodejs python3.12 pip tar
+    microdnf clean all
     curl -fsSLo /tmp/${OC_TAR_GZ_FILE} ${OC_CLI_URL}
     tar -C /usr/local/bin/ -xf /tmp/${OC_TAR_GZ_FILE} 'oc' 'kubectl'
     rm /tmp/${OC_TAR_GZ_FILE}
-    pip install jinja2 pyyaml
+    python -m pip install jinja2 pyyaml
 EOF
+
+ENV HOME=/working-dir
 
 WORKDIR /working-dir
 

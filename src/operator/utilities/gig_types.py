@@ -24,6 +24,10 @@ class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNE
         return  self.spec.form.setdefault(GIG_CONSTS.SPEC, BoxList())
 
     @property
+    def secretEnvVars(self) -> BoxList:
+        return  self.spec.setdefault(GIG_CONSTS.SECRET_ENV_VARS, [])
+
+    @property
     def secrets(self) -> BoxList:
         return  self.spec.setdefault(GIG_CONSTS.SECRETS, [])
 

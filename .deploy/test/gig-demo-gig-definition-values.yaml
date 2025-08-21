@@ -8,10 +8,10 @@ elCicdTemplates:
   template:
     spec:
       name: Gig Demo
+      secretEnvVars:
+      - CLUSTER_ADMIN_PASSWORD
       secrets:
-      - envVar: CLUSTER_ADMIN_PASSWORD
-      - secretRef:
-          name: gig-demo-secrets
+      - name: gig-demo-secrets
       form:
         spec:
         - attributes:
@@ -74,16 +74,11 @@ elCicdTemplates:
               var: LANG_{{ LANG|upper }}
             {%- endfilter %}
             {%- endfor %}
-        - description: Print languages selected
-          name: test-stage-four.go
-          script: |-
-            for LANG_APPROVED in $(compgen -v | grep 'LANG_.*_EXECUTE')
-            do
-              echo "LANGUAGE TO EXECUTE: ${LANG_APPROVED}"
-            done
         - description: Set a test msg with a Go script.
-          name: test-stage-four.go
+          name: set-test-msg-with.go
           processor: Go
+          when:
+          - AND: env.LANG_GO
           script: |-
             package main
 
@@ -94,22 +89,27 @@ elCicdTemplates:
             func main() {
               var f, _ = os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
               defer f.Close()
-              f.WriteString("\nTEST_MSG='This value was set in Stage Four with Go'")
+              f.WriteString("\nTEST_MSG='This test msg was set using Go'")
             }
-        - description: Print the test msg from stage four.
-          displayName: Test Stage Five
-          name: test-stage-five
+        - displayName: Print the test msg set with Go.
+          name: print-the-go-test-msg
           processor: Shell
+          when:
+          - AND: env.LANG_GO
           script: |-
             echo ${TEST_MSG}
-        - description: Prove the secrets are filtered.
-          displayName: Test Stage Six
-          name: test-stage-six
-          processor: Shell
+        - description: Set a test msg with a Python script.
+          name: set-test-msg-with.py
+          processor: Python
+          when:
+          - AND: env.LANG_PYTHON
           script: |-
-            echo 'The secrets for this Gig are:'
-            echo "    CLUSTER_ADMIN_USER_NAME: ${CLUSTER_ADMIN_PASSWORD}"
-            echo "    CLUSTER_ADMIN_PASSWORD: ${CLUSTER_ADMIN_PASSWORD}"
-            echo "    ANOTHER_SECRET: ${ANOTHER_SECRET}"
-            echo "    FIRST_SECRET: ${FIRST_SECRET}"
-            echo "    SECOND_SECRET: ${SECOND_SECRET}"
+            with open('.env', 'a') as env_file:
+              env_file.write("\nTEST_MSG='This test msg was set using Python'")
+        - displayName: Print the test msg set with Python.
+          name: print-the-python-test-msg
+          processor: Shell
+          when:
+          - AND: env.LANG_PYTHON
+          script: |-
+            echo ${TEST_MSG}

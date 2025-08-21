@@ -79,6 +79,10 @@ class _GIG_CONSTS(type):
         return 'form'
 
     @property
+    def SECRET_ENV_VARS(self) -> str:
+        return 'secretEnvVars'
+
+    @property
     def SECRETS(self) -> str:
         return 'secrets'
 
@@ -159,17 +163,24 @@ class _GIG_CONSTS(type):
         return 'Completed'
 
     @property
-    def SUCCESS(self) -> str:
-        return 'Success'
+    def ABORTING(self) -> str:
+        return 'Aborting'
+
+    @property
+    def ABORTED(self) -> str:
+        return 'Aborted'
 
     @property
     def FAILURE(self) -> str:
         return 'Failure'
 
     @property
+    def SUCCESS(self) -> str:
+        return 'Success'
+
+    @property
     def SUCCEEDED(self) -> str:
         return 'succeeded'
-
 
     @property
     def FAILED(self) -> str:

@@ -61,6 +61,7 @@ def configure_container(job: Job, container: Box, gig_run_name: str, config_map_
     env.append(Box(name = 'GIG_RUNNER_WORKING_DIR', value = GIG_RUNNER_WORKING_DIR))
     env.append(Box(name = 'GIG_RUN_NAME', value = gig_run_name))
     env.append(Box(name = 'POD_NAME', valueFrom = Box(fieldRef = Box(fieldPath = f'{GIG_CONSTS.METADATA}.{GIG_CONSTS.NAME}'))))
+    env.append(Box(name = 'GIG_RUN_NAMESPACE', valueFrom = Box(fieldRef = Box(fieldPath = f'{GIG_CONSTS.METADATA}.{GIG_CONSTS.NAMESPACE}'))))
     env.append(Box(name = 'POD_NAMESPACE', valueFrom = Box(fieldRef = Box(fieldPath = f'{GIG_CONSTS.METADATA}.{GIG_CONSTS.NAMESPACE}'))))
     container.setdefault(GIG_CONSTS.ENV, env)
 
@@ -80,13 +81,11 @@ def set_job_working_dir(container: Box, job: Job):
 def collect_secret_vars(gig_def: GigDefinition, namespace: str) -> list:
     secrets = []
     for secret in gig_def.secrets:
-        secret_ref = secret.get('secretRef')
-        if (secret_ref):
-            k8s_secret = Secret.get(secret_ref['name'], namespace)
-            if (k8s_secret):
-                secrets += k8s_secret.data.keys()
-        else:
-            secrets.append(secret.envVar)
+        k8s_secret = Secret.get(secret[GIG_CONSTS.NAME], namespace)
+        secrets += k8s_secret.data.keys()
+
+    for secretEnvVar in gig_def.secretEnvVars:
+        secrets.append(secretEnvVar)
 
     return secrets
 

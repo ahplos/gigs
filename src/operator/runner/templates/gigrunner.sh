@@ -10,7 +10,7 @@ function __loadStageEnv() {
     set +o allexport
 }
 
-function convertJsonDictToEnv() {
+function __convertJsonDictToEnv() {
     JSON="${1}"
     KEY_PREFIX=${2}
     BASE64=${3:+|@base64d}
@@ -22,7 +22,7 @@ function __saveInputParamsToEnv() {
     INPUT_PARAMS=$(kubectl get secret -n {{ gig_run.namespace }} {{ K8S_SECRET_NAME }} -o jsonpath='{.data}')
     if [[ ! -z ${INPUT_PARAMS} ]]
     then
-        INPUT_PARAMS=$(convertJsonDictToEnv ${INPUT_PARAMS} '' TRUE)
+        INPUT_PARAMS=$(__convertJsonDictToEnv ${INPUT_PARAMS} '' TRUE | tr ' ' '\n')
         echo "${INPUT_PARAMS}" > .env
         echo '======================='
         echo 'INPUT PARAMS RECEIVED:'
@@ -62,7 +62,7 @@ function __filterLogOutput() {
     done
 }
 
-function __end_stage() {
+function __endStage() {
     STAGE_NAME="${1}"
     STAGE_TYPE="${2}"
 
@@ -82,12 +82,12 @@ function __waitForUserInput() {
     kubectl patch gigrun ${GIG_RUN_NAME} -n ${POD_NAMESPACE} --patch-file user_input_patch.yaml --type='merge'
 
     kubectl wait gigrun/{{ gig_run.name }} \
-        --timeout=600s --for=jsonpath='{.status.state}'='WaitingForInput' -n {{ gig_run.namespace }} &> /dev/null
+        --timeout=600s --for=jsonpath='{.spec.runState}'='WaitingForInput' -n {{ gig_run.namespace }} &> /dev/null
 
     echo
     echo 'Waiting for user input...'
 
-    kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.status.state}'='Running' -n {{ gig_run.namespace }} &> /dev/null
+    kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} &> /dev/null
 
     __saveInputParamsToEnv
 
@@ -97,7 +97,18 @@ function __waitForUserInput() {
 
 set +o allexport
 
+function __checkForAbortSignal() {
+    PID=${1}
+    kubectl wait gigrun/{{ gig_run.name }} -n {{ gig_run.namespace }} \
+        --timeout=3600s --for=jsonpath='{.spec.runState}'='Aborting'
+
+    echo "ABORT RUN..." > gig.log
+    kill --timeout 30000 KILL -s TERM -- ${PID}
+}
+
 ${GIG_RUNNER_HOME}/stagerunner.sh &
-tail -q --pid $! -f gig.log -n +1
+PID=$!
+__checkForAbortSignal ${PID} &
+tail -q --pid ${PID} -f gig.log -n +1
 exit $([ -f .stagerunner_exit_status ] && cat .stagerunner_exit_status)
 

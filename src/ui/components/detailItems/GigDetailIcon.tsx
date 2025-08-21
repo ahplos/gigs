@@ -14,6 +14,7 @@ import ErrorCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/error-ci
 import PendingIcon from '@patternfly/react-icons/dist/dynamic/icons/pending-icon';
 import QuestionCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/question-circle-icon';
 import RunningIcon from '@patternfly/react-icons/dist/dynamic/icons/running-icon';
+import StopIcon from '@patternfly/react-icons/dist/dynamic/icons/stop-icon';
 import StopwatchIcon from '@patternfly/react-icons/dist/dynamic/icons/stopwatch-icon';
 
 import{
@@ -28,15 +29,19 @@ interface GigDetailIconProps {
     gvk?: K8sGroupVersionKind
 }
 
-export enum IconType {
-    CHECK_CIRCLE = 'CheckCircle',
-    ERROR_CIRCLE = 'ErrorCircle',
-    PENDING = 'Pending',
-    QUESTION_CIRCLE = 'QuestionCircle',
-    RESOURCE = 'Resource',
-    RUNNING = 'Running',
-    STOP_WATCH = 'Stopwatch',
+export const IconType = {
+    CHECK_CIRCLE: 'CheckCircle',
+    ERROR_CIRCLE: 'ErrorCircle',
+    PENDING: 'Pending',
+    ABORTING: 'Aborting',
+    ABORTED: 'Aborted',
+    QUESTION_CIRCLE: 'QuestionCircle',
+    RESOURCE: 'Resource',
+    RUNNING: 'Running',
+    STOP_WATCH: 'Stopwatch',
 }
+
+export type IconType = typeof IconType[keyof typeof IconType];
 
 export const GigDetailIcon: React.FC<GigDetailIconProps> = ({type, status, label, gvk}) => {
     let PicIcon;
@@ -51,6 +56,12 @@ export const GigDetailIcon: React.FC<GigDetailIconProps> = ({type, status, label
         case IconType.PENDING:
             PicIcon = PendingIcon;
             isInProgress = true;
+            break;
+        case IconType.ABORTING:
+            PicIcon = StopIcon;
+            break;
+        case IconType.ABORTED:
+            PicIcon = StopIcon;
             break;
         case IconType.RESOURCE:
             PicIcon = ResourceIcon

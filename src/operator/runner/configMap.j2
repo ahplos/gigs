@@ -18,6 +18,21 @@ data:
     {{- stage.script }}
     {%- endfilter %}
   {% endif %}
+  {%- if stage.when %}
+  {%- set WHEN_FILE_NAME = 'when-{}.js'.format(stage.name) %}
+  {{ WHEN_FILE_NAME}}: |-
+    const env = {...process.env}
+    {%- set INIT_RESULT = 'true' if 'AND' in stage.when[0] else 'false' %}
+    result = {{ INIT_RESULT }}
+    {%- for when_stmt in stage.when %}
+    {%- if (when_stmt.AND) %}
+    result &&= (Boolean({{ when_stmt.AND }}))
+    {%- else %}
+    result ||= (Boolean({{ when_stmt.OR }}))
+    {% endif %}
+    {% endfor %}
+    console.log(result)
+  {% endif %}
 {%- endfor %}
 
   .secrets: |-

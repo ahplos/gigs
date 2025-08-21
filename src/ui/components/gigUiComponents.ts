@@ -1,8 +1,10 @@
-export { default as GigDefinitionForm } from './GigDefinitionForm';
+export { GigDefinitionForm } from './GigDefinitionForm';
+export { GigFormType } from './GigDefinitionForm';
 export { default as GigDefinitionsListPage } from './GigDefinitionsListPage';
 export { default as GigRunFormTab } from './GigRunFormTab';
 export { default as GigRunLogViewer } from './GigRunLogViewer';
-export { default as GigRunRunTab } from './GigRunRunTab';
+export { default as GigRunLogsTab } from './GigRunLogsTab';
+export { default as GigRunInputTab } from './GigRunInputTab';
 export { default as GigRunsListPage } from './GigRunsListPage';
 export { default as GigsList } from './GigsList';
 export { default as GigsListPage } from './GigsListPage';

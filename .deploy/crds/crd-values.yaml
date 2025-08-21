@@ -12,11 +12,15 @@ elCicdDefs:
       inputvalues: $<INPUT_VALUES>
       spec:
         type: array
+        x-kubernetes-list-type: map
+        x-kubernetes-list-map-keys:
+        - var
         description: Optional list of groups of components organized into sections of a form users will use to launch a job.
-        required:
-        - components
         items:
           type: object
+          required:
+          - components
+          - var
           properties:
             attributes:
               description: |-
@@ -26,7 +30,6 @@ elCicdDefs:
                 type: string
             components:
               type: array
-              minItems: 1
               items:
                 type: object
                 description: |-
@@ -53,6 +56,7 @@ elCicdDefs:
                     type: array
                     items:
                       type: string
+                    x-kubernetes-list-type: set
                 required:
                 - inputType
             var:
@@ -62,24 +66,6 @@ elCicdDefs:
               type: string
               pattern: '^\w+$'
       title:
-        type: string
-
-  GIG_RUN_STATUS:
-    type: object
-    properties:
-      creationTimestamp:
-        type: string
-      result:
-        type: string
-        enum:
-        - Aborted
-        - Success
-        - Failure
-        - Pending
-        default: Pending
-      runTime:
-        type: integer
-      startedBy:
         type: string
 
 elCicdDefs-$<GIG_DEF>:
@@ -97,51 +83,60 @@ elCicdDefs-$<GIG_DEF>:
       description:
         type: string
       form: $<FORM_SPEC>
+      secretEnvVars:
+        type: array
+        x-kubernetes-list-type: set
+        items:
+          type: string
       secrets:
         type: array
+        x-kubernetes-list-type: map
+        x-kubernetes-list-map-keys:
+        - name
         items:
           type: object
+          required:
+          - name
           properties:
-            envVar:
+            name:
               type: string
-            secretRef:
-              type: object
-              properties:
-                name:
-                  type: string
       stages:
         description: Units of work.  User input may potentially be required at the end of a stage.
         type: array
+        x-kubernetes-list-type: map
+        x-kubernetes-list-map-keys:
+        - name
         items:
           type: object
+          required:
+          - name
+          - script
           properties:
             command:
               type: string
               descriptions: |
                 Express a custom command to run this stage's script. The command should have the form
-                <command> <args...> %s <args...>. %s will be used by Teknetes Gigs to inject the filename
-                where the script is stored.
-            displayName:
-              type: string
-              description: Human readable title of stage
+                <command> <args...> %s <args...>. %s will be used by Teknetes Gigs to inject the
+                filename (i.e. the name of the stage) where the script will be stored. Leave blank
+                if the script is a shell script, in which case the script will be executed directly.
             description:
               type: string
-              description: Description of stage
+              description: Description of stage's purpose.
+            displayName:
+              type: string
+              description: Human readable title of stage for logging purposes.
             name:
               type: string
               description: |
                 Name of stage. Must start and end with an alphanumeric character, and '-' and '.' may be used.
                 The name will reflect the name of the file used to store the script, so name appropiately;
-                e.g. <some-name>.py if writing a Python script for the stage.
+                e.g. <some-name>.py if the stage is a Python script.
               pattern: '(?:^\w(?:[-\w.]{0,251}[\w])?)$'
-            script:
-              type: string
-            secretVars:
-              type: array
-              items:
-                type: string
             processor:
               type: string
+              description: |
+                The processor for the stage, either a template type or language. For Shell, script are executed directly.
+                For all other processors, scripts are mounted as files in a Pod, and executed by the stage's command.
               enum:
               - Custom
               - Go
@@ -150,9 +145,40 @@ elCicdDefs-$<GIG_DEF>:
               - Python
               - Shell
               default: Shell
-          required:
-          - name
-          - script
+            script:
+              type: string
+              description: |
+                The script to execute. Can be writting in any language or template type supported by Teknetes Gigs,
+                or as a script for a custom command to run.
+            secretEnvVars:
+              type: array
+              description: |
+                A list of environment variables that should be obfuscated in the logs. Because these variables may
+                be assigned before the log filtering component is aware of the variable, debug logging will be turned
+                off for this stage if secretEnvVars are defined.  Once declared, the value assigned in this stage
+                will be filtered for the rest of the Gig. If the value needs to be updated in a subsequent stage,
+                if will need to be redeclared in that stage.
+              items:
+                type: string
+              x-kubernetes-list-type: set
+            when:
+              type: array
+              description: |
+                List of statements using Javascript syntax that must evaluate to `true` for the stage to execute. For ease of
+                writing expressions, environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in
+                shell can be refered to as `env.FOO` in the statements.
+              items:
+                type: object
+                description: |
+                  Logical AND(&&) or OR(||) statements in Javascript notation.
+                properties:
+                  AND:
+                    type: string
+                  OR:
+                    type: string
+                anyOne:
+                - required: ['AND']
+                - required: ['OR']
 
 elCicdDefs-$<GIG>:
   TITLE_CASE_NAME: Gig
@@ -229,6 +255,7 @@ elCicdDefs-$<GIG_RUN>:
       runState:
         type: string
         enum:
+        - Aborting
         - WaitingForInput
         - InputReceived
         - Running

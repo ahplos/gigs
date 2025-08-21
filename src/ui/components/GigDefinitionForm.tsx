@@ -47,14 +47,21 @@ const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormS
     );
 };
 
+export const GigFormType = {
+    WAITING_FOR_INPUT: 'WAITING_FOR_INPUT',
+    START: 'START',
+    PREVIEW: 'PREVIEW',
+}
+
+export type GigFormType = typeof GigFormType[keyof typeof GigFormType];
+
 interface GigDefinitionFormProps {
     formSpec: Array<object>;
     submissionAction(formState: Object): any;
-    gigRun?: boolean;
-    preview?: boolean;
+    formType: GigFormType;
 }
 
-const GigDefinitionForm = ({formSpec, submissionAction, gigRun, preview}: GigDefinitionFormProps) => {
+export const GigDefinitionForm = ({formSpec, submissionAction, formType}: GigDefinitionFormProps) => {
     const [gigDefFormState, setGigDefFormState] = React.useState({});
 
     let formName = 'generic-form';
@@ -63,12 +70,15 @@ const GigDefinitionForm = ({formSpec, submissionAction, gigRun, preview}: GigDef
         return createFormGroup(formGroup, formGroupId, gigDefFormState, setGigDefFormState);
     }) ?? [];
 
-    if (formSpec || gigRun) {
+    const showForm = (formType == GigFormType.WAITING_FOR_INPUT) ||
+        (formType == GigFormType.START) ||
+        (formType == GigFormType.PREVIEW && formSpec)
+    if (showForm) {
         return (
             <Form id={formName} name={formName}>
                 {formSpecGroups.length ? <>{formSpecGroups}<Divider/></> : <></> }
                 <ActionGroup>
-                    {!preview &&
+                    {!(formType == GigFormType.PREVIEW) &&
                         <Button
                             type={ButtonType.submit}
                             variant='primary'
@@ -77,15 +87,16 @@ const GigDefinitionForm = ({formSpec, submissionAction, gigRun, preview}: GigDef
                                 submissionAction(gigDefFormState);
                             }}
                         >
-                            {!gigRun ? 'Run': (formSpec ? 'Submit' : 'Approve')}
+                            {(formType == GigFormType.WAITING_FOR_INPUT) ? (formSpec ? 'Submit' : 'Approve') : 'Start'}
                         </Button>
                     }
-                    {gigRun &&
+                    {(formType == GigFormType.WAITING_FOR_INPUT) &&
                         <Button
                             type={ButtonType.submit}
                             variant='primary'
                             onClick={(e) => {
                                 e.preventDefault();
+                                gigDefFormState['__ABORT_ABORT_ABORT'] = '__ABORT_ABORT_ABORT'
                                 submissionAction(gigDefFormState);
                             }}
                         >
@@ -97,15 +108,15 @@ const GigDefinitionForm = ({formSpec, submissionAction, gigRun, preview}: GigDef
         );
     }
     else {
+        const titleText = (formType == GigFormType.PREVIEW) ? 'No Preview' : 'Running';
+        const subText = (formType == GigFormType.PREVIEW) ? 'No Form Spec was defined.' : 'No input is required at this time.'
         return (
             <EmptyState>
-                <EmptyStateHeader titleText='No Preview' headingLevel='h4' icon={<EmptyStateIcon icon={CubesIcon} />} />
+                <EmptyStateHeader titleText={titleText} headingLevel='h4' icon={<EmptyStateIcon icon={CubesIcon} />} />
                 <EmptyStateBody>
-                    No Form Spec was defined.
+                    {subText}
                 </EmptyStateBody>
             </EmptyState>
         );
     }
 };
-
-export default GigDefinitionForm;
