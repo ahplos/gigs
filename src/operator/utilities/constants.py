@@ -2,6 +2,7 @@ from kopf import Operation
 
 
 class _GIG_CONSTS(type):
+
     @property
     def BATCH_TEKNETES_ORG(self) -> str:
         return 'batch.teknetes.org'
@@ -59,6 +60,10 @@ class _GIG_CONSTS(type):
         return 'status'
 
     @property
+    def ACTIVE_DEADLINE_SECONDS(self) -> str:
+        return 'activeDeadlineSeconds'
+
+    @property
     def NAME(self) -> str:
         return 'name'
 
@@ -93,6 +98,11 @@ class _GIG_CONSTS(type):
     @property
     def VOLUMES(self) -> str:
         return 'volumes'
+
+
+    @property
+    def VOLUME_MOUNTS(self) -> str:
+        return 'volumeMounts'
 
     @property
     def LATEST_GIG_RUN(self) -> str:

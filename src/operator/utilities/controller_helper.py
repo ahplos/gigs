@@ -11,15 +11,15 @@ from utilities.gig_types import GIG_CONSTS, GigDefinition, GigRun
 GIG_RUNNER = 'gigrunner'
 GIG_RUNNER_HOME = f'/{GIG_RUNNER}'
 GIG_RUNNER_SH = f'{GIG_RUNNER}.sh'
-WORKING_DIR = 'working-dir'
-GIG_RUNNER_WORKING_DIR = f'/{WORKING_DIR}'
+WORK_DIR = 'workDir'
+GIG_RUNNER_WORKING_DIR = f'/{WORK_DIR}'
 
 
 RUNNER_DIR = 'runner'
 RUNNER_TEMPLATES_DIR = 'templates'
 CONFIG_MAP_JINJA_TEMPLATE = 'configMap.j2'
 
-def create_job(cron_job: CronJob, gig_run: GigRun, config_map_name: str) -> Job:
+def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigDefinition, config_map_name: str) -> Job:
     spec = deepcopy(cron_job.spec.jobTemplate)
     job = Job(spec)
     job.metadata.name = None
@@ -29,7 +29,7 @@ def create_job(cron_job: CronJob, gig_run: GigRun, config_map_name: str) -> Job:
     job.spec[GIG_CONSTS.BACKOFF_LIMIT] = 0
 
     container = get_container(job, cron_job.annotations.get(GigRun.CONTAINER_NAME_ANNOTATION))
-    configure_container(job, container, gig_run.name, config_map_name)
+    configure_container(job, container, gig_run.name, config_map_name, gig_def.workDirSizeLimit)
 
     job.create()
     job.set_owner(cron_job)
@@ -47,12 +47,12 @@ def get_container(job: Job, name = None) -> Box:
 
     return containers[0]
 
-def configure_container(job: Job, container: Box, gig_run_name: str, config_map_name: str):
+def configure_container(job: Job, container: Box, gig_run_name: str, config_map_name: str, working_dir_size_limit):
     configmap_volume = Box(name = config_map_name, configMap = Box(name = config_map_name, defaultMode = 0o777))
-    job.spec.template.spec.setdefault('volumes', BoxList()).append(configmap_volume)
+    job.spec.template.spec.setdefault(GIG_CONSTS.VOLUMES, BoxList()).append(configmap_volume)
 
     configmap_volume_mount = Box(name = config_map_name, mountPath = f'/{GIG_RUNNER}')
-    container.setdefault('volumeMounts', BoxList()).append(configmap_volume_mount)
+    container.setdefault(GIG_CONSTS.VOLUME_MOUNTS, BoxList()).append(configmap_volume_mount)
 
     container['imagePullPolicy'] = 'Always'
 
@@ -65,18 +65,20 @@ def configure_container(job: Job, container: Box, gig_run_name: str, config_map_
     env.append(Box(name = 'POD_NAMESPACE', valueFrom = Box(fieldRef = Box(fieldPath = f'{GIG_CONSTS.METADATA}.{GIG_CONSTS.NAMESPACE}'))))
     container.setdefault(GIG_CONSTS.ENV, env)
 
-    set_job_working_dir(container, job)
+    set_job_working_dir(container, job, working_dir_size_limit)
 
     container.command = BoxList(['bash', '-ce'])
     container.args = BoxList([f'{GIG_RUNNER_HOME}/{GIG_RUNNER_SH}'])
 
-def set_job_working_dir(container: Box, job: Job):
-    working_dir_volume = Box(name = WORKING_DIR, emptyDir = Box(sizeLimit = '10Mi'))
-    job.spec.template.spec.volumes.append(working_dir_volume)
+def set_job_working_dir(container: Box, job: Job, working_dir_size_limit):
+    volumes = job.spec.template.spec.setdefault(GIG_CONSTS.VOLUMES, BoxList())
+    if (not list(filter(lambda vol: vol[GIG_CONSTS.NAME] == WORK_DIR, volumes))):
+        working_dir_volume = Box(name = WORK_DIR.lower(), emptyDir = Box(sizeLimit = working_dir_size_limit))
+        volumes.append(working_dir_volume)
 
-    working_dir_volumemount = Box(name = WORKING_DIR, mountPath = GIG_RUNNER_WORKING_DIR)
-    container.volumeMounts.append(working_dir_volumemount)
-    container.workingDir = GIG_RUNNER_WORKING_DIR
+        working_dir_volumemount = Box(name = WORK_DIR.lower(), mountPath = GIG_RUNNER_WORKING_DIR)
+        container.volumeMounts.append(working_dir_volumemount)
+        container.workDir = GIG_RUNNER_WORKING_DIR
 
 def collect_secret_vars(gig_def: GigDefinition, namespace: str) -> list:
     secrets = []
@@ -100,6 +102,7 @@ def create_gigrun_configmap(gig_run: GigRun, gig_def: GigDefinition, namespace: 
         'gig_run': gig_run,
         'K8S_SECRET_NAME': gig_run.name,
         'SECRET_VARS': secret_vars,
+        'GIG_TIMEOUT': gig_def.activeDeadlineSeconds,
         'configMapFiles': configMapFiles,
     }
 

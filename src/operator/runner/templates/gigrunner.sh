@@ -100,10 +100,10 @@ set +o allexport
 function __checkForAbortSignal() {
     PID=${1}
     kubectl wait gigrun/{{ gig_run.name }} -n {{ gig_run.namespace }} \
-        --timeout=3600s --for=jsonpath='{.spec.runState}'='Aborting'
+        --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.spec.runState}'='Aborting'
 
     echo "ABORT RUN..." > gig.log
-    kill --timeout 30000 KILL -s TERM -- ${PID}
+    timeout 30s kill ${PID} || kill -s KILL ${PID}
 }
 
 ${GIG_RUNNER_HOME}/stagerunner.sh &

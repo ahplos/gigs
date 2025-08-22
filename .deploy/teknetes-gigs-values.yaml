@@ -37,7 +37,7 @@ elCicdTemplates:
   - name: $<TEKNETES_GIGS_IMAGE_PULL_SECRET>
   imagePullPolicy: $<IMAGE_PULL_POLICY>
   serviceAccountName: $<OBJ_NAME>
-  workingDir: /teknetes-gigs-controller
+  workDir: /teknetes-gigs-controller
   command:
   - bash
   - -c

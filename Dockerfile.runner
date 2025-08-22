@@ -15,8 +15,8 @@ RUN <<EOF
     python -m pip install jinja2 pyyaml
 EOF
 
-ENV HOME=/working-dir
+ENV HOME=/workDir
 
-WORKDIR /working-dir
+WORKDIR /workDir
 
 USER 1001

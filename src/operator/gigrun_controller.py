@@ -1,18 +1,17 @@
 import os
 import uuid
-import logging
 
 from box import Box
 
 import kopf
 from kopf import AdmissionError
+
+import kr8s
 from kr8s.objects import ConfigMap, CronJob, Secret
 
 from utilities.controller_helper import create_gigrun_configmap, create_job
-from utilities.gig_types import Gig, GigDefinition, GigRun
+from utilities.gig_types import Gig, GigDefinition, GigRun, GigRunState
 from utilities.constants import GIG_CONSTS
-
-WORKING_DIR = os.path.join(os.path.curdir, 'WORKING_DIR')
 
 DATA = 'data'
 
@@ -26,13 +25,13 @@ GIGRUN_INPUTVALUES_MAP = Box()
     operations=['CREATE'],
 )  # type: ignore
 def onmutatecreate(userinfo, patch, body, meta, **kwargs):
-    logging.error('===================== onmutatecreate')
     patch.metadata[GIG_CONSTS.LABELS] = {
         GIG_CONSTS.GIG_REF_LABEL: body.spec[GIG_CONSTS.GIG_REF][GIG_CONSTS.NAME],
     }
 
     patch[GIG_CONSTS.SPEC] = {
-        GIG_CONSTS.STARTED_BY: userinfo['username']
+        GIG_CONSTS.STARTED_BY: userinfo['username'],
+        GIG_CONSTS.RUN_STATE: GigRunState.RUNNING
     }
 
 
@@ -44,7 +43,6 @@ def onmutatecreate(userinfo, patch, body, meta, **kwargs):
 def onmutategigrun(userinfo, patch, body, meta, **kwargs):
     gig_run = GigRun(body)
     if (gig_run.inputvalues):
-        logging.error(f'===================== onmutategigrun: {gig_run.inputvalues}')
         uuid_key = meta.get('uid', str(uuid.uuid4()))
         GIGRUN_INPUTVALUES_MAP[uuid_key] = gig_run.inputvalues
         patch[GIG_CONSTS.METADATA] = {
@@ -53,26 +51,33 @@ def onmutategigrun(userinfo, patch, body, meta, **kwargs):
             }
         }
 
+        runState = GigRunState.INPUT_RECEIVED if (gig_run.runState == GigRunState.WAITING_FOR_INPUT) else GigRunState.RUNNING
         patch[GIG_CONSTS.SPEC] = {
             GIG_CONSTS.FORM: {
                 GIG_CONSTS.INPUTVALUES: None,
             },
-            GIG_CONSTS.RUN_STATE: GIG_CONSTS.INPUT_RECEIVED if (gig_run.runState == GIG_CONSTS.WAITING_FOR_INPUT) else GIG_CONSTS.RUNNING
+            GIG_CONSTS.RUN_STATE: runState
         }
 
 @kopf.on.validate(GigRun.version, GigRun.plural)  # type: ignore
 def onvalidategigrun(body, spec, meta, logger, **kwargs):
     gig_run = GigRun(body)
-    logger.error(f'===================== onvalidategigrun foo: {gig_run.to_dict()}')
     gig = Gig(gig_run.gigRef, meta.namespace)
-    if not gig.exists():
-        raise AdmissionError(f'Gig NOT FOUND: {gig.namespace}:{gig.name}')
+    if (not gig.exists()):
+        raise AdmissionError(f'Gig NOT FOUND for GigRun: {gig.namespace}:{gig.name}')
+    else:
+        gig.refresh()
+        gig_def = GigDefinition.get(gig.gigDefinitionRef)
+
+        secrets = [s.name for s in gig_def.secrets if not s.get('optional', False)]
+        if (len(list(kr8s.get('secret', *secrets, namespace=meta.namespace))) != len(secrets)):
+            raise AdmissionError(f'One or more missing REQUIRED Secrets when creating GigRun: {gig.namespace}:{secrets}')
 
     if (gig_run.inputvalues):
-        raise AdmissionError(f'Gig should not be admitted with inputvalues: {gig.namespace}:{gig.name}')
+        raise AdmissionError(f'GigRun should not be admitted with inputvalues: {gig.namespace}:{gig.name}')
 
 @kopf.on.create(GigRun.version, GigRun.plural)  # type: ignore
-def on_create_gigrun(body, meta, patch, annotations, **_):
+def on_create_gigrun(body, meta, patch, logger, **_):
     gig_run = GigRun(body)
 
     gig_run.refresh()
@@ -84,7 +89,7 @@ def on_create_gigrun(body, meta, patch, annotations, **_):
 
     config_map = create_gigrun_configmap(gig_run, gig_def, meta.namespace)
 
-    job = create_job(cron_job, gig_run, config_map.name)
+    job = create_job(cron_job, gig_run, gig_def, config_map.name)
     gig_run.set_owner(job)
 
     create_or_patch_inputvalues_secret(gig_run)

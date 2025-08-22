@@ -23,7 +23,7 @@ const GigRunState = (model) => {
             break;
     };
 
-    return <GigDetailIcon type={iconType} label={state} status={IconStatus.success} />
+    return <GigDetailIcon type={iconType} label={state} status={IconStatus.info} />
 }
 
 

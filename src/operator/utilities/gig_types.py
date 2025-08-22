@@ -1,7 +1,11 @@
+from enum import StrEnum
+
 from box import Box, BoxList
+
 from kr8s._api import Api
 from kr8s._types import SpecType
 from kr8s.objects import new_class
+
 from utilities.constants import GIG_CONSTS
 
 
@@ -10,6 +14,10 @@ class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNE
     GIG_DEFINITION_ANNOTATION: str = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/gigdefinition'
 
     group: str = GIG_CONSTS.BATCH_TEKNETES_ORG
+
+    @property
+    def activeDeadlineSeconds(self) -> str:
+        return self.spec[GIG_CONSTS.ACTIVE_DEADLINE_SECONDS]
 
     @property
     def gigRef(self) -> str:
@@ -35,6 +43,10 @@ class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNE
     def stages(self) -> Box:
         return  self.spec.setdefault(GIG_CONSTS.STAGES, Box())
 
+    @property
+    def workDirSizeLimit(self) -> Box:
+        return  self.spec['workDirSizeLimit']
+
 class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
     group: str = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}'
@@ -59,6 +71,14 @@ class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS
     @cronJobRef.setter
     def cronJobRef(self, value):
         self.spec.setdefault('cronJobRef', Box())['name'] = value
+
+
+class GigRunState(StrEnum):
+    ABORTING = GIG_CONSTS.ABORTING
+    COMPLETED = GIG_CONSTS.COMPLETED
+    INPUT_RECEIVED = GIG_CONSTS.INPUT_RECEIVED
+    RUNNING = GIG_CONSTS.RUNNING
+    WAITING_FOR_INPUT = GIG_CONSTS.WAITING_FOR_INPUT
 
 class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
@@ -113,11 +133,11 @@ class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_
         self.status[GIG_CONSTS.RESULT] = result
 
     @property
-    def runState(self) -> int:
+    def runState(self) -> GigRunState:
         return self.spec[GIG_CONSTS.RUN_STATE]
 
     @runState.setter
-    def runState(self, runState: int):
+    def runState(self, runState: GigRunState):
         self.spec[GIG_CONSTS.RUN_STATE] = runState
 
     @property

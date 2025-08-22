@@ -14,7 +14,6 @@ import ErrorCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/error-ci
 import PendingIcon from '@patternfly/react-icons/dist/dynamic/icons/pending-icon';
 import QuestionCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/question-circle-icon';
 import RunningIcon from '@patternfly/react-icons/dist/dynamic/icons/running-icon';
-import StopIcon from '@patternfly/react-icons/dist/dynamic/icons/stop-icon';
 import StopwatchIcon from '@patternfly/react-icons/dist/dynamic/icons/stopwatch-icon';
 
 import{
@@ -58,10 +57,10 @@ export const GigDetailIcon: React.FC<GigDetailIconProps> = ({type, status, label
             isInProgress = true;
             break;
         case IconType.ABORTING:
-            PicIcon = StopIcon;
+            PicIcon = ErrorCircleIcon;
             break;
         case IconType.ABORTED:
-            PicIcon = StopIcon;
+            PicIcon = ErrorCircleIcon;
             break;
         case IconType.RESOURCE:
             PicIcon = ResourceIcon

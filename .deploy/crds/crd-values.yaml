@@ -77,19 +77,34 @@ elCicdDefs-$<GIG_DEF>:
   SPEC_DEFINITION:
     description: $<TITLE_CASE_NAME>Spec defines a GigDefinition, and the optional and/or required inputvalues to launch it.
     type: object
+    required:
+    - name
+    - activeDeadlineSeconds
+    - stages
     properties:
-      name:
-        type: string
+      activeDeadlineSeconds:
+        type: integer
+        description: |
+          Time in seconds before a GigRun will be terminated. This value will override any value set in an associated CronJob.
+        default: 3600
       description:
         type: string
       form: $<FORM_SPEC>
+      name:
+        type: string
       secretEnvVars:
         type: array
+        description: |
+          List of identifying environment variables in a GigRun that are secrets and should be obfuscated in the logs.
         x-kubernetes-list-type: set
         items:
           type: string
       secrets:
         type: array
+        description: |
+          List of Secrets that will be included in a GigRun and whose values should be obfuscated in GigRun logs.  A GigRun will fail
+          to start if the Secret does not exist unless it's marked optional.  Referencing a Secret here will NOT mount the Secret
+          in a Pod.  That needs to be defined separately in any associated CronJob.
         x-kubernetes-list-type: map
         x-kubernetes-list-map-keys:
         - name
@@ -100,6 +115,19 @@ elCicdDefs-$<GIG_DEF>:
           properties:
             name:
               type: string
+              description: |
+                Name of a Kubernetes Secret that is expected to exist in a the same namespace as a GigRun.
+            optional:
+              type: boolean
+              description: If true, ignore if the Secret is missing.
+      workDirSizeLimit:
+        type: string
+        anyOf:
+        - type: integer
+        - type: string
+        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+        x-kubernetes-int-or-string: true
+        default: 10Mi
       stages:
         description: Units of work.  User input may potentially be required at the end of a stage.
         type: array
@@ -213,6 +241,8 @@ elCicdDefs-$<GIG>:
         type: object
         properties:
           creationTimestamp:
+            type: string
+          name:
             type: string
           result:
             type: string
