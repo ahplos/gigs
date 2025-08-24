@@ -9,20 +9,19 @@ import {
     PageSection
 } from '@patternfly/react-core';
 
-import GigRunLogViewer from './GigRunLogViewer';
+import GigRunLogViewer from '../components/GigRunLogViewer';
 
 import { GigRun, GigRunState } from '../utilities/objectDefs';
 
 import GigK8sUtils from '../utilities/gigK8sUtils';
 
-const GigRunLogsTab = (model) => {
+export const GigRunLogsTab = (model) => {
     const gigRun: GigRun = model.obj;
     const [gigRunState, setGigRunState] = React.useState<GigRunState>();
     const navigate = useNavigate();
 
     let runState = gigRun?.spec?.runState;
     if (runState) {
-        console.log(/==================== WE'RE OVERDOING IT/);
         const currentState = GigRunState[runState]
         if (!gigRunState) {
             setGigRunState(currentState);

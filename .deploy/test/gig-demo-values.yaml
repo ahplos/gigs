@@ -40,6 +40,15 @@ elCicdTemplates:
     kind: ClusterRole
     name: edit
 
+- templateName: roleBinding
+  objName: developer
+  subjects:
+  - kind: User
+    name: $<OBJ_NAME>
+  roleRef:
+    kind: ClusterRole
+    name: basic-user
+
 - templateName: secret
   objName: $<SECRET_NAME>
   stringData:

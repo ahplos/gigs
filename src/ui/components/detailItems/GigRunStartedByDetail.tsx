@@ -10,7 +10,7 @@ import {
 const USER_GVK = { group: 'rbac.authorization.k8s.io', version: 'v1', kind: 'User' }
 const SA_GVK = { version: 'v1', kind: 'ServiceAccount' }
 
-const GigRunStartedBy = (model) => {
+export const GigRunStartedByDetail = (model) => {
     let startedBy = model.obj.spec?.startedBy ?? model.obj.status?.latestGigRun?.startedBy;
 
     const gvk = (startedBy && (startedBy.indexOf(':') > 0)) ? SA_GVK : USER_GVK;
@@ -18,4 +18,4 @@ const GigRunStartedBy = (model) => {
     return <GigDetailIcon type={IconType.RESOURCE} label={startedBy} status={IconStatus.custom} gvk={gvk}/>;
 }
 
-export default GigRunStartedBy;
+export default GigRunStartedByDetail;

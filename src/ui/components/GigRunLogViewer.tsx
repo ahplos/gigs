@@ -38,11 +38,11 @@ import {
 } from '../utilities/objectDefs';
 
 import {
-    GigRunResult,
-    GigRunStartedBy,
-    GigRunState,
-    GigRunRunTime,
-} from './gigUiComponents';
+    GigRunResultDetail,
+    GigRunRunStateDetail,
+    GigRunStartedByDetail,
+    GigRunRunTimeDetail,
+} from '../gigUiComponents';
 
 interface GigRunLogViewerProps {
     gigRun: GigRun,
@@ -51,7 +51,7 @@ interface GigRunLogViewerProps {
 
 const PERCENT_HEIGHT_100 = '100%'
 
-export default function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
+export function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
     const podPhase = pod.status['phase'];
     const POD_COMPLETED = podPhase === 'Succeeded' || podPhase === 'Failed';
 
@@ -143,16 +143,16 @@ export default function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
                 </Flex>
                 <Flex align={{ default: 'alignRight' }} spacer={{ default: 'spacerXs' }}>
                     <FlexItem >
-                        <GigRunStartedBy obj={gigRun} />
+                        <GigRunStartedByDetail obj={gigRun} />
                     </FlexItem>
                     <FlexItem >
-                        <GigRunState obj={gigRun} />
+                        <GigRunRunStateDetail obj={gigRun} />
                     </FlexItem>
                     <FlexItem >
-                        <GigRunResult obj={gigRun} />
+                        <GigRunResultDetail obj={gigRun} />
                     </FlexItem>
                     <FlexItem >
-                        <GigRunRunTime obj={gigRun} />
+                        <GigRunRunTimeDetail obj={gigRun} />
                     </FlexItem>
                 </Flex>
             </Flex>
@@ -270,3 +270,5 @@ export default function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
         />
     );
 };
+
+export default GigRunLogViewer;

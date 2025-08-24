@@ -7,7 +7,7 @@ import kopf
 from kopf import AdmissionError
 
 import kr8s
-from kr8s.objects import ConfigMap, CronJob, Secret
+from kr8s.objects import ConfigMap, CronJob, Job, Secret
 
 from utilities.controller_helper import create_gigrun_configmap, create_job
 from utilities.gig_types import Gig, GigDefinition, GigRun, GigRunState
@@ -99,7 +99,7 @@ def on_create_gigrun(body, meta, patch, logger, **_):
     }
 
 @kopf.on.update(GigRun.version, GigRun.plural, field='spec.runState', value=GIG_CONSTS.INPUT_RECEIVED)  # type: ignore
-def on_update_gigrun_inputvalues(body, annotations, patch, **kwargs):
+def on_update_gigrun_inputvalues(body, patch, **kwargs):
     gig_run = GigRun(body)
 
     create_or_patch_inputvalues_secret(gig_run)
@@ -107,6 +107,12 @@ def on_update_gigrun_inputvalues(body, annotations, patch, **kwargs):
     patch[GIG_CONSTS.SPEC] = {
         GIG_CONSTS.RUN_STATE: GIG_CONSTS.RUNNING,
     }
+
+@kopf.on.delete(GigRun.version, GigRun.plural)  # type: ignore
+def on_delete_gigrun(body, logger, **kwargs):
+    gig_run = GigRun(body)
+    job = Job.get(gig_run.job_name, gig_run.namespace)
+    job.delete('Background')
 
 def update_gig_def_commands(gig_def: GigDefinition):
     stage_processors = ConfigMap.get(os.environ['TEKNETES_GIGS_PROCESSOR_MAP'],

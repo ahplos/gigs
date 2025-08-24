@@ -7,7 +7,7 @@ import {
     IconType,
 } from './GigDetailIcon';
 
-const GigRunRunTime = (model) => {
+export const GigRunRunTimeDetail = (model) => {
     let runTime = model.obj.status?.runTime ?? model.obj.status?.latestGigRun?.runTime;
     let gigRunRunTime = runTime ? new Date(runTime * 1000).toISOString().slice(11, 19) : null;
 
@@ -16,4 +16,4 @@ const GigRunRunTime = (model) => {
     );
 }
 
-export default GigRunRunTime;
+export default GigRunRunTimeDetail;

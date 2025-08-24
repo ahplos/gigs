@@ -109,6 +109,10 @@ class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_
         self.form.spec = form_spec
 
     @property
+    def job_name(self) -> str:
+        return self.metadata.setdefault(GIG_CONSTS.LABELS, Box()).get(GIG_CONSTS.JOB_NAME_SELECTOR_LABEL, '')
+
+    @property
     def inputvalues(self) -> BoxList:
         return self.form.setdefault(GIG_CONSTS.INPUTVALUES, Box())
 

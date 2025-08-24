@@ -1,5 +1,6 @@
 import {
     k8sCreate,
+    k8sDelete,
     K8sModel,
     k8sUpdate,
     K8sResourceKind,
@@ -15,6 +16,7 @@ import {
     GigDefinition,
     GigRun,
     GigRunState,
+    JOB_GVK,
     POD_GVK
 } from './objectDefs'
 
@@ -40,6 +42,7 @@ export default class GigK8sUtils {
         labelPluralKey: 'teknetes-gigs-plugin~GigRuns',
         namespaced: true,
         plural: 'gigruns',
+        propagationPolicy: 'Background',
     };
 
     private static getK8sResources<T extends K8sResourceKind> (
@@ -80,6 +83,21 @@ export default class GigK8sUtils {
 
         return k8sCreate({model: GigK8sUtils.gigRunModel, data: gigRun})
     };
+
+    public static deleteGigRun (obj) {
+        const options = {
+            model: this.gigRunModel,
+            resource: obj,
+        }
+        return k8sDelete(options);
+    }
+
+    public static getJob (
+        options: WatchK8sResource = {}
+    ) {
+        options.groupVersionKind = JOB_GVK;
+        return GigK8sUtils.getK8sResources(options, false);
+    }
 
     public static getPod (
         options: WatchK8sResource = {}

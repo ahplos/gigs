@@ -7,7 +7,7 @@ import {
     IconType,
 } from './GigDetailIcon';
 
-const GigRunState = (model) => {
+export const GigRunRunStateDetail = (model) => {
     let state = model.obj.spec?.runState;
 
     let iconType = IconType.QUESTION_CIRCLE;
@@ -27,4 +27,4 @@ const GigRunState = (model) => {
 }
 
 
-export default GigRunState;
+export default GigRunRunStateDetail;

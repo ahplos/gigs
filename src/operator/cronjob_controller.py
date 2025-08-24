@@ -35,20 +35,20 @@ def onvalidatecronjob(annotations, meta, logger, **_):
             code=499,
         )
 
-
 @kopf.on.create(
     CronJob.version,
     CronJob.plural,
     annotations={GigDefinition.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
 )  # type: ignore
 def on_create_cronjob(body, meta, logger, **_):
+    cron_job = CronJob(body)
     gig = Gig(meta.name, namespace=meta.namespace)
     gig.cronJobRef = meta.name
     gig.gigDefinitionRef = meta.annotations[GigDefinition.GIG_DEFINITION_ANNOTATION]
     gig.create()
-    gig.set_owner(CronJob(body))
+    gig.set_owner(cron_job)
+    cron_job.set_owner(gig)
     logger.info(f'NEW Gig {gig.name} CREATED, and owner set to CronJob {meta.name}')
-
 
 @kopf.on.update(
     CronJob.version,

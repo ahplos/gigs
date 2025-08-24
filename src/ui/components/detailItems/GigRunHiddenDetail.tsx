@@ -8,7 +8,7 @@ import {
     CURRENT_GIG_RUN
 } from '../../utilities/objectDefs';
 
-const GigRunHidden = (model) => {
+export const GigRunHiddenDetail = (model) => {
     let gigRun: GigRun = model.obj;
     GIG_MAP.set(CURRENT_GIG_RUN, gigRun);
 
@@ -17,4 +17,4 @@ const GigRunHidden = (model) => {
     );
 }
 
-export default GigRunHidden;
+export default GigRunHiddenDetail;

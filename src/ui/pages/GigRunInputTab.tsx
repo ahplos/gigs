@@ -9,7 +9,7 @@ import {
 import {
     GigDefinitionForm,
     GigFormType
-} from './gigUiComponents';
+} from '../gigUiComponents';
 
 import {
     GigRun,
@@ -18,7 +18,7 @@ import {
 
 import GigK8sUtils from '../utilities/gigK8sUtils';
 
-const GigRunInputTab = (model) => {
+export const GigRunInputTab = (model) => {
     const gigRun: GigRun = model.obj;
     const formSpec: any = structuredClone(gigRun.spec?.form?.spec ?? []);
     const navigate = useNavigate();

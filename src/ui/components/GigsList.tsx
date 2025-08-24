@@ -12,7 +12,6 @@ import {
 import {
     K8sResourceCommon,
     ListPageBody,
-    ListPageCreate,
     ListPageHeader,
     RowProps,
     ResourceLink,
@@ -33,10 +32,10 @@ import {
 import GigK8sUtils from '../utilities/gigK8sUtils';
 
 import {
-    GigRunResult,
-    GigRunStartedBy,
-    GigRunRunTime,
-} from './gigUiComponents';
+    GigRunResultDetail,
+    GigRunStartedByDetail,
+    GigRunRunTimeDetail,
+} from '../gigUiComponents';
 
 type GigTableProps = {
     data: K8sResourceCommon[];
@@ -104,8 +103,8 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
                 <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
                     {obj?.status?.latestGigRun &&
                         <List isPlain>
-                            <ListItem><GigRunStartedBy obj={obj}/></ListItem>
-                            <ListItem><GigRunResult obj={obj}/></ListItem>
+                            <ListItem><GigRunStartedByDetail obj={obj}/></ListItem>
+                            <ListItem><GigRunResultDetail obj={obj}/></ListItem>
                         </List>
                     }
                 </TableData>
@@ -113,7 +112,7 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
                     {obj?.status?.latestGigRun &&
                         <List isPlain>
                             <ListItem><Timestamp timestamp={obj.status.latestGigRun.creationTimestamp}/></ListItem>
-                            <ListItem><GigRunRunTime obj={obj}/></ListItem>
+                            <ListItem><GigRunRunTimeDetail obj={obj}/></ListItem>
                         </List>
                     }
                 </TableData>
@@ -138,14 +137,12 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
     );
 }
 
-const GigsList = () => {
+export const GigsList = () => {
     const [gigs, loaded, loadError] = GigK8sUtils.getGigs();
 
     return (
         <>
-            <ListPageHeader title={'Teknetes Gigs'}>
-                <ListPageCreate groupVersionKind={GIG_GVK}>{'Create Gig'}</ListPageCreate>
-            </ListPageHeader>
+            <ListPageHeader title={'Teknetes Gigs'} />
             <ListPageBody>
                 <GigsTable
                     data={gigs}

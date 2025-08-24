@@ -5,6 +5,7 @@ import {
 
 export const NS_GVK: K8sGroupVersionKind = { kind: 'Namespace', version: 'v1' };
 export const CRONJOB_GVK: K8sGroupVersionKind = { group: 'batch', version: 'v1', kind: 'CronJob' };
+export const JOB_GVK: K8sGroupVersionKind = { group: 'batch', version: 'v1', kind: 'Job' };
 export const POD_GVK: K8sGroupVersionKind = { group: '', version: 'v1', kind: 'Pod' };
 
 export const BATCH_TEKNETES_ORG = 'batch.teknetes.org';
@@ -62,7 +63,7 @@ export type Gig = K8sResourceCommon & {
     status?: {
         latestGigRun?: {
             creationTimestamp: string;
-            result: GigRunResult;
+            result: GigRunResultDetail;
             runTime: number;
             startedBy: string;
             state: GigRunState;
@@ -79,12 +80,12 @@ export const GigRunState = {
 
 export type GigRunState = typeof GigRunState[keyof typeof GigRunState];
 
-export const GigRunResult = {
+export const GigRunResultDetail = {
     Success: 'Success',
     Failure: 'Failure',
 }
 
-export type GigRunResult = typeof GigRunResult[keyof typeof GigRunResult];
+export type GigRunResultDetail = typeof GigRunResultDetail[keyof typeof GigRunResultDetail];
 
 export type GigRun = K8sResourceCommon & {
     spec: {
@@ -101,7 +102,7 @@ export type GigRun = K8sResourceCommon & {
     };
 
     status?: {
-        result?: GigRunResult;
+        result?: GigRunResultDetail;
         runTime?: number;
     };
 };

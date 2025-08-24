@@ -251,6 +251,8 @@ elCicdTemplates:
   objName: gigruns-runner
   annotations:
     rbac.authorization.kubernetes.io/autoupdate: 'true'
+  labels:
+    authorization.openshift.io/aggregate-to-basic-user: 'true'
   rules:
   - verbs:
     - '*'
@@ -267,6 +269,14 @@ elCicdTemplates:
     - batch.teknetes.org
     resources:
     - gigs
+  - verbs:
+    - get
+    - list
+    - watch
+    apiGroups:
+    - project.openshift.io
+    resources:
+    - projects
 
 - templateName: clusterRoleBinding
   objName: $<GIGS_OCP_CONSOLE_ROLE>

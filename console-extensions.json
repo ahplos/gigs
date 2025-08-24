@@ -3,7 +3,14 @@
     "type": "console.navigation/section",
     "properties": {
       "id": "teknetes-gigs-section",
-      "perspective": "admin",
+      "perspective": "dev",
+      "name": "Teknetes Gigs",
+      "insertBefore": "compute"
+    }
+  },{
+    "type": "console.navigation/section",
+    "properties": {
+      "id": "teknetes-gigs-section",
       "name": "Teknetes Gigs",
       "insertBefore": "compute"
     }
@@ -23,13 +30,24 @@
     "properties": {
       "exact": true,
       "path": "/k8s/cluster/batch.teknetes.org~v1beta1~GigDefinition",
-      "component": { "$codeRef": "components.GigDefinitionsListPage" }
+      "component": { "$codeRef": "gigUiComponents.GigDefinitionsListPage" }
     }
   },
   {
     "type": "console.navigation/href",
     "properties": {
       "id": "teknetes-gigs",
+      "section": "teknetes-gigs-section",
+      "name": "Gigs",
+      "href": "/gigs",
+      "namespaced": true
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "teknetes-gigs",
+      "perspective": "dev",
       "section": "teknetes-gigs-section",
       "name": "Gigs",
       "href": "/gigs",
@@ -44,7 +62,7 @@
         "/k8s/all-namespaces/batch.teknetes.org~v1beta1~Gig",
         "/k8s/ns/:ns/batch.teknetes.org~v1beta1~Gig"
       ],
-      "component": { "$codeRef": "components.GigsList" }
+      "component": { "$codeRef": "gigUiComponents.GigsList" }
     }
   },
   {
@@ -55,7 +73,7 @@
         "/gigs/all-namespaces",
         "/gigs/ns/:ns"
       ],
-      "component": { "$codeRef": "components.GigsListPage" }
+      "component": { "$codeRef": "gigUiComponents.GigsListPage" }
     }
   },
   {
@@ -63,7 +81,7 @@
     "properties": {
       "exact": true,
       "path": "/k8s/ns/:ns/batch.teknetes.org~v1beta1~GigRun",
-      "component": { "$codeRef": "components.GigRunsListPage" }
+      "component": { "$codeRef": "gigUiComponents.GigRunsListPage" }
     }
   },
   {
@@ -78,7 +96,7 @@
         "version": "v1beta1",
         "kind": "GigDefinition"
       },
-      "component": { "$codeRef": "components.GigRunFormTab" }
+      "component": { "$codeRef": "gigUiComponents.GigRunFormTab" }
     }
   },
   {
@@ -93,7 +111,7 @@
         "version": "v1beta1",
         "kind": "Gig"
       },
-      "component": { "$codeRef": "components.GigRunFormTab" }
+      "component": { "$codeRef": "gigUiComponents.GigRunFormTab" }
     }
   },
   {
@@ -108,7 +126,7 @@
         "name": "GigRuns",
         "href": "gigruns"
       },
-      "component": { "$codeRef": "components.GigRunsListPage" }
+      "component": { "$codeRef": "gigUiComponents.GigRunsListPage" }
     }
   },
   {
@@ -122,7 +140,7 @@
         "version": "v1beta1",
         "kind": "GigRun"
       },
-      "component": { "$codeRef": "components.GigRunStartedBy" }
+      "component": { "$codeRef": "gigUiComponents.GigRunStartedByDetail" }
     }
   },
   {
@@ -136,7 +154,7 @@
         "version": "v1beta1",
         "kind": "GigRun"
       },
-      "component": { "$codeRef": "components.GigRunState" }
+      "component": { "$codeRef": "gigUiComponents.GigRunRunStateDetail" }
     }
   },
   {
@@ -150,7 +168,7 @@
         "version": "v1beta1",
         "kind": "GigRun"
       },
-      "component": { "$codeRef": "components.GigRunRunTime" }
+      "component": { "$codeRef": "gigUiComponents.GigRunRunTimeDetail" }
     }
   },
   {
@@ -164,7 +182,7 @@
         "version": "v1beta1",
         "kind": "GigRun"
       },
-      "component": { "$codeRef": "components.GigRunResult" }
+      "component": { "$codeRef": "gigUiComponents.GigRunResultDetail" }
     }
   },
   {
@@ -178,7 +196,7 @@
         "version": "v1beta1",
         "kind": "GigRun"
       },
-      "component": { "$codeRef": "components.GigRunHidden" }
+      "component": { "$codeRef": "gigUiComponents.GigRunHiddenDetail" }
     }
   },
   {
@@ -193,7 +211,7 @@
         "version": "v1beta1",
         "kind": "GigRun"
       },
-      "component": { "$codeRef": "components.GigRunInputTab" }
+      "component": { "$codeRef": "gigUiComponents.GigRunInputTab" }
     }
   },
   {
@@ -208,7 +226,7 @@
         "version": "v1beta1",
         "kind": "GigRun"
       },
-      "component": { "$codeRef": "components.GigRunLogsTab" }
+      "component": { "$codeRef": "gigUiComponents.GigRunLogsTab" }
     }
   }
 ]

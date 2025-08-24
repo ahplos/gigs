@@ -5,9 +5,9 @@ import {
 } from '@openshift-console/dynamic-plugin-sdk';
 
 
-import GigsList from './GigsList'
+import GigsList from '../components/GigsList'
 
-const GigsListPage = () => {
+export const GigsListPage = () => {
   return (
     <>
       <NamespaceBar />

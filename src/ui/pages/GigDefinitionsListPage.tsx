@@ -83,7 +83,7 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
     );
 }
 
-const GigDefinitionsListPage = () => {
+export const GigDefinitionsListPage = () => {
 
     const [gds, loaded, loadError] = GigK8sUtils.getGigDefinitions();
 

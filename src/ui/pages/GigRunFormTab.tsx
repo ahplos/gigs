@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     GigDefinitionForm,
     GigFormType
-} from './gigUiComponents';
+} from '../gigUiComponents';
 
 import {
     Gig,
@@ -23,7 +23,7 @@ import {
 
 import GigK8sUtils from '../utilities/gigK8sUtils';
 
-const GigRunFormTab = (model) => {
+export const GigRunFormTab = (model) => {
     let gig: Gig;
     let formSpec = [];
     let gigDefRef: GigDefinition;
