@@ -3,115 +3,253 @@
     "type": "console.navigation/section",
     "properties": {
       "id": "teknetes-gigs-section",
-      "perspective": "dev",
       "name": "Teknetes Gigs",
-      "insertBefore": "compute"
-    }
-  },{
-    "type": "console.navigation/section",
-    "properties": {
-      "id": "teknetes-gigs-section",
-      "name": "Teknetes Gigs",
-      "insertBefore": "compute"
+      "insertAfter": "storage"
     }
   },
   {
-    "type": "console.navigation/href",
+    "type": "console.navigation/resource-ns",
     "properties": {
       "id": "teknetes-gigs-definitions",
-      "perspective": "admin",
       "section": "teknetes-gigs-section",
       "name": "GigDefinitions",
-      "href": "/k8s/cluster/batch.teknetes.org~v1beta1~GigDefinition"
+      "model": {
+          "group": "batch.teknetes.org",
+          "version": "v1beta1",
+          "kind": "GigDefinition"
+      }
     }
   },
   {
-    "type": "console.page/route",
+    "type": "console.page/resource/list",
     "properties": {
-      "exact": true,
-      "path": "/k8s/cluster/batch.teknetes.org~v1beta1~GigDefinition",
+      "model": {
+          "group": "batch.teknetes.org",
+          "version": "v1beta1",
+          "kind": "GigDefinition"
+      },
       "component": { "$codeRef": "gigUiComponents.GigDefinitionsListPage" }
     }
   },
   {
-    "type": "console.navigation/href",
+    "type": "console.resource/details-item",
     "properties": {
-      "id": "teknetes-gigs",
-      "section": "teknetes-gigs-section",
-      "name": "Gigs",
-      "href": "/gigs",
-      "namespaced": true
-    }
-  },
-  {
-    "type": "console.navigation/href",
-    "properties": {
-      "id": "teknetes-gigs",
-      "perspective": "dev",
-      "section": "teknetes-gigs-section",
-      "name": "Gigs",
-      "href": "/gigs",
-      "namespaced": true
-    }
-  },
-  {
-    "type": "console.page/route",
-    "properties": {
-      "exact": true,
-      "path": [
-        "/k8s/all-namespaces/batch.teknetes.org~v1beta1~Gig",
-        "/k8s/ns/:ns/batch.teknetes.org~v1beta1~Gig"
-      ],
-      "component": { "$codeRef": "gigUiComponents.GigsList" }
-    }
-  },
-  {
-    "type": "console.page/route",
-    "properties": {
-      "exact": true,
-      "path": [
-        "/gigs/all-namespaces",
-        "/gigs/ns/:ns"
-      ],
-      "component": { "$codeRef": "gigUiComponents.GigsListPage" }
-    }
-  },
-  {
-    "type": "console.page/route",
-    "properties": {
-      "exact": true,
-      "path": "/k8s/ns/:ns/batch.teknetes.org~v1beta1~GigRun",
-      "component": { "$codeRef": "gigUiComponents.GigRunsListPage" }
-    }
-  },
-  {
-    "type": "console.tab/horizontalNav",
-    "properties": {
-      "page": {
-        "name": "Preview Form",
-        "href": "gigrun-preview"
-      },
+      "id": "gigdefinition-activedeadlineseconds-item",
+      "column": "left",
+      "title": "Active Deadline",
       "model": {
         "group": "batch.teknetes.org",
         "version": "v1beta1",
         "kind": "GigDefinition"
       },
-      "component": { "$codeRef": "gigUiComponents.GigRunFormTab" }
+      "component": { "$codeRef": "gigUiComponents.GigDefActiveDeadlineSecondsDetail" }
     }
   },
   {
-    "type": "console.tab/horizontalNav",
+    "type": "console.resource/details-item",
     "properties": {
-      "page": {
-        "name": "Run Gig",
-        "href": "gigrun"
+      "id": "gigdefinition-workdirsizelimit-item",
+      "column": "left",
+      "title": "Working Directory Size Limit",
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigDefinition"
       },
+      "component": { "$codeRef": "gigUiComponents.GigDefWorkDirectorySizeLimitDetail" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "gigdefinition-giglaunchformdetails-item",
+      "column": "right",
+      "title": "Default Launch Form",
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigDefinition"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigLaunchFormDetail" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "gigdefinition-required-inputvars-item",
+      "column": "right",
+      "title": "Required Input Variables",
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigDefinition"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigDefRequiredInputVarsDetail" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "gigdefinition-stages-item",
+      "column": "right",
+      "title": "Stages Summary",
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigDefinition"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigDefStagesDetail" }
+    }
+  },
+
+
+
+  {
+    "type": "console.navigation/resource-ns",
+    "properties": {
+      "id": "teknetes-gig-launchforms",
+      "section": "teknetes-gigs-section",
+      "name": "GigLaunchForms",
+      "model": {
+          "group": "batch.teknetes.org",
+          "version": "v1beta1",
+          "kind": "GigLaunchForm"
+      }
+    }
+  },
+  {
+    "type": "console.page/resource/list",
+    "properties": {
+      "model": {
+          "group": "batch.teknetes.org",
+          "version": "v1beta1",
+          "kind": "GigLaunchForm"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigLaunchFormsListPage" }
+    }
+  },
+  {
+    "type": "console.navigation/resource-ns",
+    "properties": {
+      "id": "teknetes-gigs",
+      "section": "teknetes-gigs-section",
+      "name": "Gigs",
+      "model": {
+          "group": "batch.teknetes.org",
+          "version": "v1beta1",
+          "kind": "Gig"
+      }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "giglaunchform-components-summary-item",
+      "column": "right",
+      "title": "Form Parameters Summary",
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigLaunchForm"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigFormSummaryDetail" }
+    }
+  },
+
+
+
+  {
+    "type": "console.page/resource/list",
+    "properties": {
+      "model": {
+          "group": "batch.teknetes.org",
+          "version": "v1beta1",
+          "kind": "Gig"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigsListPage" }
+    }
+  },
+  {
+    "type": "console.navigation/resource-ns",
+    "properties": {
+      "id": "teknetes-gigruns",
+      "section": "teknetes-gigs-section",
+      "name": "GigRuns",
+      "model": {
+          "group": "batch.teknetes.org",
+          "version": "v1beta1",
+          "kind": "GigRun"
+      }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "giglaunchform-components-summary-item",
+      "column": "right",
+      "title": "Latest GigRun Summary",
       "model": {
         "group": "batch.teknetes.org",
         "version": "v1beta1",
         "kind": "Gig"
       },
-      "component": { "$codeRef": "gigUiComponents.GigRunFormTab" }
+      "component": { "$codeRef": "gigUiComponents.LatestGigRunDetail" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "giglaunchform-components-summary-item",
+      "column": "right",
+      "title": "GigLaunchForm",
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "Gig"
+      },
+      "component": { "$codeRef": "gigUiComponents.CronJobDetail" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "giglaunchform-components-summary-item",
+      "column": "right",
+      "title": "GigDefinition",
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "Gig"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigDefinitionDetail" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "giglaunchform-components-summary-item",
+      "column": "right",
+      "title": "GigLaunchForm",
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "Gig"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigLaunchFormDetail" }
+    }
+  },
+
+
+
+  {
+    "type": "console.page/resource/list",
+    "properties": {
+      "model": {
+          "group": "batch.teknetes.org",
+          "version": "v1beta1",
+          "kind": "GigRun"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigRunsListPage" }
     }
   },
   {
@@ -126,7 +264,67 @@
         "name": "GigRuns",
         "href": "gigruns"
       },
-      "component": { "$codeRef": "gigUiComponents.GigRunsListPage" }
+      "component": { "$codeRef": "gigUiComponents.GigRunsListTab" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "page": {
+        "name": "Preview Form",
+        "href": "gigrun-preview"
+      },
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigLaunchForm"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigRunFormTab" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "page": {
+        "name": "Launch",
+        "href": "gigrun"
+      },
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "Gig"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigRunFormTab" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "page": {
+        "name": "Input",
+        "href": "gigrun-input-form"
+      },
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigRun"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigRunInputTab" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "page": {
+        "name": "Logs",
+        "href": "gigrun-log-viewer"
+      },
+      "model": {
+        "group": "batch.teknetes.org",
+        "version": "v1beta1",
+        "kind": "GigRun"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigRunLogsTab" }
     }
   },
   {
@@ -169,64 +367,6 @@
         "kind": "GigRun"
       },
       "component": { "$codeRef": "gigUiComponents.GigRunRunTimeDetail" }
-    }
-  },
-  {
-    "type": "console.resource/details-item",
-    "properties": {
-      "id": "gigrun-details-list",
-      "column": "right",
-      "title": "Result",
-      "model": {
-        "group": "batch.teknetes.org",
-        "version": "v1beta1",
-        "kind": "GigRun"
-      },
-      "component": { "$codeRef": "gigUiComponents.GigRunResultDetail" }
-    }
-  },
-  {
-    "type": "console.resource/details-item",
-    "properties": {
-      "id": "gigrun-details-list",
-      "column": "right",
-      "title": "",
-      "model": {
-        "group": "batch.teknetes.org",
-        "version": "v1beta1",
-        "kind": "GigRun"
-      },
-      "component": { "$codeRef": "gigUiComponents.GigRunHiddenDetail" }
-    }
-  },
-  {
-    "type": "console.tab/horizontalNav",
-    "properties": {
-      "page": {
-        "name": "Input",
-        "href": "gigrun-input-form"
-      },
-      "model": {
-        "group": "batch.teknetes.org",
-        "version": "v1beta1",
-        "kind": "GigRun"
-      },
-      "component": { "$codeRef": "gigUiComponents.GigRunInputTab" }
-    }
-  },
-  {
-    "type": "console.tab/horizontalNav",
-    "properties": {
-      "page": {
-        "name": "Logs",
-        "href": "gigrun-log-viewer"
-      },
-      "model": {
-        "group": "batch.teknetes.org",
-        "version": "v1beta1",
-        "kind": "GigRun"
-      },
-      "component": { "$codeRef": "gigUiComponents.GigRunLogsTab" }
     }
   }
 ]

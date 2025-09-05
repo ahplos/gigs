@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import {
     List,
     ListItem,
@@ -21,6 +22,8 @@ import {
 import {
     GigDefinition,
     GIG_DEFINITION_GVK,
+    GIG_LAUNCHFORM_GVK,
+    NS_GVK,
 } from '../utilities/objectDefs';
 
 import GigK8sUtils from '../utilities/gigK8sUtils';
@@ -40,8 +43,20 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
             id: 'name',
         },
         {
-            title: 'Params',
-            id: 'params',
+            title: 'Namespace',
+            id: 'namespace',
+        },
+        {
+            title: 'Default Launch Form',
+            id: 'default-launch-form',
+        },
+        {
+            title: 'Required Input Variables',
+            id: 'required-input-vars',
+        },
+        {
+            title: 'Processors',
+            id: 'processors',
         },
         {
             title: 'Created',
@@ -49,19 +64,47 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
         },
     ];
 
-    let listItems = (gigDef: GigDefinition) => {
-        return gigDef.spec.form?.spec?.map((widget) => <ListItem><b>{widget.var}</b> [{widget.components[0].inputType}]</ListItem>)
-    };
-
     const GigDefinitionsRow: React.FC<RowProps<GigDefinition>> = ({ obj, activeColumnIDs }) => {
+        const gigDef: GigDefinition = obj;
+
+        const stageProcCounts = {};
+        for (let stage of gigDef.spec.stages) {
+            stageProcCounts[stage.processor] = stageProcCounts[stage.processor] ?? 0;
+            stageProcCounts[stage.processor]++;
+        }
+
+        let stageProcs = []
+        Object.keys(stageProcCounts).forEach(proc => {
+            stageProcs.push(<ListItem><b>{proc}</b> ({stageProcCounts[proc]})</ListItem>);
+        });
+
         return (
             <>
                 <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={GIG_DEFINITION_GVK} name={obj.metadata.name} namespace={obj.metadata.namespace} />
+                    <ResourceLink groupVersionKind={GIG_DEFINITION_GVK}
+                                  name={gigDef.metadata.name}
+                                  namespace={gigDef.metadata.namespace}>
+                        <span>&nbsp;{gigDef.spec.isLibrary ? '[Library]' : ''}</span>
+                    </ResourceLink>
+                </TableData>
+                <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
+                    <ResourceLink groupVersionKind={NS_GVK} name={gigDef.metadata.namespace} />
+                </TableData>
+                <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
+                    { gigDef.spec.gigLaunchFormRef &&
+                        <ResourceLink groupVersionKind={GIG_LAUNCHFORM_GVK}
+                                      name={gigDef.spec.gigLaunchFormRef.name}
+                                      namespace={gigDef.spec.gigLaunchFormRef.namespace ?? gigDef.metadata.namespace}/>
+                    }
                 </TableData>
                 <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
                     <List isPlain>
-                        {listItems(obj)}
+                        {gigDef.spec.requiredInputParams?.map((param) => <ListItem><b>{param}</b></ListItem>)}
+                    </List>
+                </TableData>
+                <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
+                    <List isPlain>
+                        {...stageProcs}
                     </List>
                 </TableData>
                 <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
@@ -83,9 +126,9 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
     );
 }
 
-export const GigDefinitionsListPage = () => {
+export const GigDefinitionsListPage = (model) => {
 
-    const [gds, loaded, loadError] = GigK8sUtils.getGigDefinitions();
+    const [gds, loaded, loadError] = GigK8sUtils.getGigDefinitions({namespace: model.namespace});
 
     return (
         <>

@@ -3,13 +3,17 @@ import logging
 import random
 from typing import AsyncIterator
 
+from box import Box
+
 import kopf
 
-class ServiceTunnel:
+class TeknetesGigsOperator:
     URL = 'url'
     SERVICE = 'service'
 
     SVC = 'svc'
+
+    GLOBAL_REGISTRY = Box()
 
     def __init__(self):
         self.logger = logging.getLogger()
@@ -17,7 +21,7 @@ class ServiceTunnel:
 
         self.namespace = os.environ['TEKNETES_GIGS_OPERATOR_NAMESPACE']
         self.name = os.environ['TEKNETES_GIGS_OPERATOR_NAME']
-        self.host = f'{self.name}.{self.namespace}.{ServiceTunnel.SVC}'
+        self.host = f'{self.name}.{self.namespace}.{TeknetesGigsOperator.SVC}'
 
         self.service_port = int(os.environ['TEKNETES_GIGS_OPERATOR_PORT'])
         self.container_port = int(os.environ['TEKNETES_GIGS_OPERATOR_PORT'])
@@ -35,8 +39,8 @@ class ServiceTunnel:
         server = kopf.WebhookServer(certfile=self.cert_path, port=self.container_port, host=self.host)
 
         async for client_config in server(fn):
-            client_config[ServiceTunnel.URL] = None
-            client_config[ServiceTunnel.SERVICE] = \
+            client_config[TeknetesGigsOperator.URL] = None
+            client_config[TeknetesGigsOperator.SERVICE] = \
                 kopf.WebhookClientConfigService(name=self.name,
                                                 namespace=self.namespace,
                                                 port=self.service_port)
@@ -51,7 +55,7 @@ def on_startup(settings: kopf.OperatorSettings, logger, **_):
     settings.peering.stealth = True
     settings.peering.clusterwide = True
 
-    settings.admission.server = ServiceTunnel()
+    settings.admission.server = TeknetesGigsOperator()
     settings.admission.managed = 'batch.teknetes.gigs'
 
     # sensible number of workers so as to not overload the k8s API server

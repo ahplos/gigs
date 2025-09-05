@@ -1,49 +1,63 @@
 elCicdDefs:
-  GIG_DEF_NAME: gig-demo-gig-definition
+  GIG_DEF_NAME: gig-demo-definition
+
+  GIG_FORM_NAME: gig-demo-launchform
 
 elCicdTemplates:
+- apiVersion: batch.teknetes.org/v1beta1
+  kind: GigLaunchForm
+  objNames: [$<GIG_FORM_NAME>, $<GIG_FORM_NAME>]
+  objName: $<GIG_FORM_NAME>-$<#>
+  template:
+    spec:
+      inputForm:
+      - attributes:
+          label: Cluster Admin User Name
+        components:
+          - inputType: TextInput
+            booleans:
+            - isRequired
+        var: CLUSTER_ADMIN_USER_NAME
+      - attributes:
+          label: Cluster Admin Password
+        components:
+          - attributes:
+              type: password
+            booleans:
+            - isRequired
+            inputType: TextInput
+        var: CLUSTER_ADMIN_PASSWORD
+      - attributes:
+          isInline: 'true'
+          label: Visual Mode
+          role: radiogroup
+        components:
+          - attributes:
+              label: Graphical
+            inputType: Radio
+          - attributes:
+              label: Logs
+            booleans:
+            - isChecked
+            inputType: Radio
+        var: RUN_DEBUG_MODE
+
 - apiVersion: batch.teknetes.org/v1beta1
   kind: GigDefinition
   objName: $<GIG_DEF_NAME>
   template:
     spec:
       name: Gig Demo
+      gigLaunchFormRef:
+        name: $<GIG_FORM_NAME>-1
+      launchFormTitle: Sign in as a cluster-admin for Gig Demonstration
+      requiredInputParams:
+      - CLUSTER_ADMIN_USER_NAME
+      - CLUSTER_ADMIN_PASSWORD
       secretEnvVars:
       - CLUSTER_ADMIN_PASSWORD
       secrets:
       - name: gig-demo-secrets
-      form:
-        spec:
-        - attributes:
-            label: Cluster Admin User Name
-          components:
-            - inputType: TextInput
-              booleans:
-              - isRequired
-          var: CLUSTER_ADMIN_USER_NAME
-        - attributes:
-            label: Cluster Admin Password
-          components:
-            - attributes:
-                type: password
-              booleans:
-              - isRequired
-              inputType: TextInput
-          var: CLUSTER_ADMIN_PASSWORD
-        - attributes:
-            isInline: 'true'
-            label: Visual Mode
-            role: radiogroup
-          components:
-            - attributes:
-                label: Graphical
-              inputType: Radio
-            - attributes:
-                label: Logs
-              booleans:
-              - isChecked
-              inputType: Radio
-          var: RUN_DEBUG_MODE
       stages:
         - description: Login into cluster as cluster admin
           displayName: Cluster Admin Authentication

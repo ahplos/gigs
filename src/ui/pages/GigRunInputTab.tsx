@@ -7,7 +7,7 @@ import {
 } from '@patternfly/react-core';
 
 import {
-    GigDefinitionForm,
+    GigInputForm,
     GigFormType
 } from '../gigUiComponents';
 
@@ -20,7 +20,7 @@ import GigK8sUtils from '../utilities/gigK8sUtils';
 
 export const GigRunInputTab = (model) => {
     const gigRun: GigRun = model.obj;
-    const formSpec: any = structuredClone(gigRun.spec?.form?.spec ?? []);
+    const formSpec: any = structuredClone(gigRun.spec?.inputForm ?? []);
     const navigate = useNavigate();
 
     const submissionAction = (formState: any) => {
@@ -29,18 +29,18 @@ export const GigRunInputTab = (model) => {
             GigK8sUtils.patchGigRunInputValues(gigRun, formState);
         }
         else {
-            GigK8sUtils.patchGigRunRunState(gigRun, aborting);
+            GigK8sUtils.patchGigRunRunState(gigRun, aborting ? GigRunState.Aborting : GigRunState.Running);
         }
 
         let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.teknetes.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-log-viewer';
         navigate(path);
     }
 
-    let formType = (gigRun?.spec?.runState == GigRunState.WaitingForInput) ? GigFormType.WAITING_FOR_INPUT : null;
+    let formType = (gigRun?.status?.runState == GigRunState.WaitingForInput) ? GigFormType.WAITING_FOR_INPUT : null;
 
     return (
         <PageSection isFilled style={{ background: 'rgba(200, 54, 54, 0)' }}>
-            <GigDefinitionForm formSpec={formSpec} submissionAction={submissionAction} formType={formType} />
+            <GigInputForm formSpec={formSpec} submissionAction={submissionAction} formType={formType} />
         </PageSection>
     );
 };

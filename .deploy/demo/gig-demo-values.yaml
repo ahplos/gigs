@@ -1,5 +1,7 @@
 elCicdDefs:
-  GIG_DEF_NAME: gig-demo-gig-definition
+  GIG_DEF_NAME: gig-demo-definition
+  GIG_FORM_NAME: gig-demo-launchform-2
+  GIG_ORG_NAMEPACE: gig-demo-org
 
   TEKNETES_GIGS_OPERATOR: teknetes-gigs-operator
 
@@ -15,11 +17,17 @@ elCicdDefs:
 
   SECRET_NAME: $<OBJ_NAME_PREFIX>-secrets
 
+  HISTORY_LIMIT: 15
+
 elCicdTemplates:
 - templateName: cronjob
-  objNames: [$<OBJ_NAME_PREFIX>-1, $<OBJ_NAME_PREFIX>-2]
+  objNames: [$<OBJ_NAME_PREFIX>, $<OBJ_NAME_PREFIX>]
+  objName: $<OBJ_NAME_PREFIX>-$<#>
   annotations:
-    batch.teknetes.org/gigdefinition: $<GIG_DEF_NAME>
+    batch.teknetes.org/gigdefinition: $<GIG_ORG_NAMEPACE>/$<GIG_DEF_NAME>
+    batch.teknetes.org/giglaunchform: $<GIG_ORG_NAMEPACE>/$<GIG_FORM_NAME>
+  failedJobsHistoryLimit: $<HISTORY_LIMIT>
+  successfulJobsHistoryLimit: $<HISTORY_LIMIT>
   image: $<IMAGE>
   imagePullSecrets:
   - name: $<TEKNETES_GIGS_IMAGE_PULL_SECRET>
@@ -41,17 +49,25 @@ elCicdTemplates:
     name: edit
 
 - templateName: roleBinding
-  objName: developer
+  objName: developer-gigruns-runner
   subjects:
   - kind: User
-    name: $<OBJ_NAME>
+    name: developer
   roleRef:
     kind: ClusterRole
-    name: basic-user
+    name: gigruns-runner
+
+- templateName: roleBinding
+  objName: developer-gigruns-runner
+  namespace: $<GIG_ORG_NAMEPACE>
+  subjects:
+  - kind: User
+    name: developer
+  roleRef:
+    kind: ClusterRole
+    name: gigruns-runner
 
 - templateName: secret
   objName: $<SECRET_NAME>
   stringData:
-    FIRST_SECRET: first-secret
-    SECOND_SECRET: second-secret
-    ANOTHER_SECRET: third-secret
+    A_SECRET: the demo secret

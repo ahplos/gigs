@@ -91,9 +91,9 @@ elCicdTemplates:
   - -c
   - |-
     if echo "$POD_IP" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
-      LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="$<toString|PORT>"
+        LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="$<toString|PORT>"
     else
-      LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="[::]:$<toString|PORT>"
+        LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="[::]:$<toString|PORT>"
     fi
     sed "s/LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/$LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/g" /etc/nginx/$<NGINX_CONF> > /tmp/$<NGINX_CONF>
 
@@ -148,6 +148,17 @@ elCicdTemplates:
         }
       }
 
+- templateName: clusterRoleBinding
+  objName: $<GIGS_OCP_CONSOLE_ROLE>
+  subjects:
+  - kind: ServiceAccount
+    name: $<OPERATOR_NAME>
+    namespace: $<HELM_RELEASE_NAMESPACE>
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: $<OBJ_NAME>
+
 - apiVersion: console.openshift.io/v1
   objName: $<PLUGIN_NAME>
   kind: ConsolePlugin
@@ -198,96 +209,88 @@ elCicdTemplates:
 
 - templateName: clusterRole
   objName: $<GIGS_ADMIN_ROLE>
-  rules:
-  - verbs:
-    - '*'
-    apiGroups:
-    - batch.teknetes.org
-    - batch
-    resources:
-    - gigdefinitions
-    - gigs
-    - gigruns
-    - gigdefinitions/status
-    - gigs/status
-    - gigruns/status
-    - gigdefinitions/finalizers
-    - gigs/finalizers
-    - gigruns/finalizers
-    - cronjobs/finalizers
-    - jobs/finalizers
-
-- templateName: clusterRole
-  objName: gigs-aggregate-to-edit
   labels:
-    rbac.authorization.k8s.io/aggregate-to-admin: 'true'
     rbac.authorization.k8s.io/aggregate-to-edit: 'true'
   rules:
   - verbs:
     - '*'
     apiGroups:
-    - batch.teknetes.org
+    - ""
     resources:
-    - gigs
-    - gigruns
-    - gigruns/status
-
-- templateName: clusterRole
-  objName: gigs-aggregate-to-view
-  labels:
-    rbac.authorization.k8s.io/aggregate-to-view: 'true'
-  rules:
+    - pods
+    - pods/status
+    - pods/finalizers
   - verbs:
-    - get
-    - list
-    - watch
+    - '*'
+    apiGroups:
+    - batch
+    resources:
+    - jobs
+    - jobs/status
+    - jobs/finalizers
+    - cronjobs
+    - cronjobs/status
+    - cronjobs/finalizers
+  - verbs:
+    - '*'
     apiGroups:
     - batch.teknetes.org
     resources:
+    - gigdefinitions
+    - giglaunchforms
     - gigs
     - gigruns
+    - gigdefinitions/status
+    - giglaunchforms/status
+    - gigs/status
+    - gigruns/status
+    - gigdefinitions/finalizers
+    - giglaunchforms/finalizers
+    - gigs/finalizers
+    - gigruns/finalizers
 
 - templateName: clusterRole
   objName: gigruns-runner
   annotations:
     rbac.authorization.kubernetes.io/autoupdate: 'true'
   labels:
-    authorization.openshift.io/aggregate-to-basic-user: 'true'
+    rbac.authorization.k8s.io/aggregate-to-view: 'true'
   rules:
-  - verbs:
-    - '*'
-    apiGroups:
+  - apiGroups:
     - batch.teknetes.org
     resources:
     - gigruns
-    - gigruns/status
-  - verbs:
-    - get
-    - list
-    - watch
-    apiGroups:
+    verbs:
+    - '*'
+  - apiGroups:
     - batch.teknetes.org
     resources:
     - gigs
-  - verbs:
+    - gigs/status
+    - gigruns/status
+    - giglaunchforms
+    verbs:
     - get
     - list
     - watch
-    apiGroups:
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    - pods/log
+    - namespaces
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
     - project.openshift.io
     resources:
     - projects
-
-- templateName: clusterRoleBinding
-  objName: $<GIGS_OCP_CONSOLE_ROLE>
-  subjects:
-  - kind: ServiceAccount
-    name: $<OPERATOR_NAME>
-    namespace: $<HELM_RELEASE_NAMESPACE>
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: $<OBJ_NAME>
+    verbs:
+    - get
+    - list
+    - watch
 
 - templateName: clusterRoleBinding
   objName: $<OPERATOR_NAME>-namespace-admin

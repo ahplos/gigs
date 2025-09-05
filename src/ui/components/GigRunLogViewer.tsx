@@ -38,7 +38,6 @@ import {
 } from '../utilities/objectDefs';
 
 import {
-    GigRunResultDetail,
     GigRunRunStateDetail,
     GigRunStartedByDetail,
     GigRunRunTimeDetail,
@@ -147,9 +146,6 @@ export function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
                     </FlexItem>
                     <FlexItem >
                         <GigRunRunStateDetail obj={gigRun} />
-                    </FlexItem>
-                    <FlexItem >
-                        <GigRunResultDetail obj={gigRun} />
                     </FlexItem>
                     <FlexItem >
                         <GigRunRunTimeDetail obj={gigRun} />

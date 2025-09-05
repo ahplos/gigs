@@ -9,7 +9,7 @@ from kr8s.objects import new_class
 from utilities.constants import GIG_CONSTS
 
 
-class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=False)):
+class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
     GIG_DEFINITION_ANNOTATION: str = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/gigdefinition'
 
@@ -24,28 +24,46 @@ class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNE
         return self.spec[GIG_CONSTS.GIG_REF][GIG_CONSTS.NAME]
 
     @property
-    def form(self) -> BoxList:
-        return self.spec.setdefault(GIG_CONSTS.FORM, Box())
+    def gigLaunchFormRef(self) -> str:
+        return self.spec['gigLaunchFormRef'][GIG_CONSTS.NAME]
+
+    @gigLaunchFormRef.setter
+    def gigLaunchFormRef(self, value):
+        self.spec.setdefault('gigLaunchFormRef', Box())[GIG_CONSTS.NAME] = value
 
     @property
-    def form_spec(self) -> BoxList:
-        return  self.spec.form.setdefault(GIG_CONSTS.SPEC, BoxList())
+    def gigLaunchFormRefNamespace(self) -> str:
+        return self.spec['gigLaunchFormRef'][GIG_CONSTS.NAMESPACE]
+
+    @gigLaunchFormRefNamespace.setter
+    def gigLaunchFormRefNamespace(self, value):
+        self.spec.setdefault('gigLaunchFormRef', Box())[GIG_CONSTS.NAMESPACE] = value
 
     @property
     def secretEnvVars(self) -> BoxList:
-        return  self.spec.setdefault(GIG_CONSTS.SECRET_ENV_VARS, [])
+        return  self.spec.setdefault(GIG_CONSTS.SECRET_ENV_VARS, BoxList())
 
     @property
     def secrets(self) -> BoxList:
-        return  self.spec.setdefault(GIG_CONSTS.SECRETS, [])
+        return  self.spec.setdefault(GIG_CONSTS.SECRETS, BoxList())
 
     @property
     def stages(self) -> Box:
-        return  self.spec.setdefault(GIG_CONSTS.STAGES, Box())
+        return self.spec.setdefault(GIG_CONSTS.STAGES, Box())
 
     @property
     def workDirSizeLimit(self) -> Box:
         return  self.spec['workDirSizeLimit']
+
+class GigLaunchForm(new_class('GigLaunchForm', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
+
+    GIG_LAUNCHFORM_ANNOTATION: str = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/giglaunchform'
+
+    group: str = GIG_CONSTS.BATCH_TEKNETES_ORG
+
+    @property
+    def inputForm(self) -> BoxList:
+        return self.spec.setdefault(GIG_CONSTS.INPUT_FORM, Box())
 
 class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
@@ -53,32 +71,50 @@ class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS
 
     def __init__(self, resource: SpecType, namespace: str | None = None, api: Api | None = None) -> None:
         super().__init__(resource, namespace, api)
-        self.raw.setdefault('spec', {})
-        self.raw.setdefault('status', {})
+        self.raw.setdefault('spec', Box())
+        self.raw.setdefault('status', Box())
 
     @property
-    def gigDefinitionRef(self) -> str:
-        return self.spec['gigDefinitionRef']['name']
+    def gigDefinitionRef(self) -> Box:
+        return self.spec.setdefault('gigDefinitionRef', {})
 
     @gigDefinitionRef.setter
-    def gigDefinitionRef(self, value):
-        self.spec.setdefault('gigDefinitionRef', Box())['name'] = value
+    def gigDefinitionRef(self, value: Box):
+        self.spec['gigDefinitionRef'] = value
+
+    @property
+    def gigLaunchFormRef(self) -> str:
+        return self.spec['gigLaunchFormRef'][GIG_CONSTS.NAME]
+
+    @gigLaunchFormRef.setter
+    def gigLaunchFormRef(self, value):
+        self.spec.setdefault('gigLaunchFormRef', Box())[GIG_CONSTS.NAME] = value
+
+    @property
+    def gigLaunchFormRefNamespace(self) -> str:
+        return self.spec['gigLaunchFormRef'][GIG_CONSTS.NAMESPACE]
+
+    @gigLaunchFormRefNamespace.setter
+    def gigLaunchFormRefNamespace(self, value):
+        self.spec.setdefault('gigLaunchFormRef', Box())[GIG_CONSTS.NAMESPACE] = value
 
     @property
     def cronJobRef(self) -> str:
-        return self.spec['cronJobRef']['name']
+        return self.spec['cronJobRef'][GIG_CONSTS.NAME]
 
     @cronJobRef.setter
     def cronJobRef(self, value):
-        self.spec.setdefault('cronJobRef', Box())['name'] = value
+        self.spec.setdefault('cronJobRef', Box())[GIG_CONSTS.NAME] = value
 
 
 class GigRunState(StrEnum):
-    ABORTING = GIG_CONSTS.ABORTING
-    COMPLETED = GIG_CONSTS.COMPLETED
-    INPUT_RECEIVED = GIG_CONSTS.INPUT_RECEIVED
-    RUNNING = GIG_CONSTS.RUNNING
-    WAITING_FOR_INPUT = GIG_CONSTS.WAITING_FOR_INPUT
+    ABORTED = 'Aborted'
+    ABORTING = 'Aborting'
+    FAILED = 'Failed'
+    INPUT_RECEIVED = 'InputReceived'
+    RUNNING = 'Running'
+    SUCCEEDED = 'Succeeded'
+    WAITING_FOR_INPUT = 'WaitingForInput'
 
 class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
@@ -89,36 +125,40 @@ class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_
 
     def __init__(self, resource: SpecType, namespace: str | None = None, api: Api | None = None) -> None:
         super().__init__(resource, namespace, api)
-        self.raw.setdefault('spec', {})
-        self.raw.setdefault('status', {})
+        self.raw.setdefault('spec', Box())
+        self.raw.setdefault('status', Box())
 
     @property
     def gigRef(self) -> str:
         return self.spec[GIG_CONSTS.GIG_REF][GIG_CONSTS.NAME]
 
     @property
-    def form(self) -> Box:
-        return self.spec.setdefault(GIG_CONSTS.FORM, Box())
+    def inputForm(self) -> Box:
+        return self.spec.setdefault(GIG_CONSTS.INPUT_FORM, BoxList())
 
-    @property
-    def form_spec(self) -> BoxList:
-        return self.form.setdefault(GIG_CONSTS.SPEC, BoxList())
-
-    @form_spec.setter
-    def form_spec(self, form_spec: BoxList):
-        self.form.spec = form_spec
+    @inputForm.setter
+    def inputForm(self, input_form: BoxList):
+        self.spec.inputForm = input_form
 
     @property
     def job_name(self) -> str:
         return self.metadata.setdefault(GIG_CONSTS.LABELS, Box()).get(GIG_CONSTS.JOB_NAME_SELECTOR_LABEL, '')
 
     @property
-    def inputvalues(self) -> BoxList:
-        return self.form.setdefault(GIG_CONSTS.INPUTVALUES, Box())
+    def inputValues(self) -> Box:
+        return self.spec.setdefault(GIG_CONSTS.INPUT_VALUES, Box())
 
-    @inputvalues.setter
-    def inputvalues(self, inputvalues: Box):
-        self.form.inputvalues = inputvalues
+    @inputValues.setter
+    def inputValues(self, inputValues: Box):
+        self.spec.inputValues = inputValues
+
+    @property
+    def inputReceived(self) -> bool:
+        return self.spec.setdefault(GIG_CONSTS.INPUT_RECEIVED, False)
+
+    @inputReceived.setter
+    def inputReceived(self, inputValues: bool):
+        self.spec.inputReceived = True
 
     @property
     def creationTimestamp(self) -> str:
@@ -138,11 +178,11 @@ class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_
 
     @property
     def runState(self) -> GigRunState:
-        return self.spec[GIG_CONSTS.RUN_STATE]
+        return self.status[GIG_CONSTS.RUN_STATE]
 
     @runState.setter
     def runState(self, runState: GigRunState):
-        self.spec[GIG_CONSTS.RUN_STATE] = runState
+        self.status[GIG_CONSTS.RUN_STATE] = runState
 
     @property
     def runTime(self) -> int:

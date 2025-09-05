@@ -72,16 +72,20 @@ class _GIG_CONSTS(type):
         return 'namespace'
 
     @property
-    def INPUTVALUES(self) -> str:
-        return 'inputvalues'
+    def INPUT_RECEIVED(self) -> str:
+        return 'inputReceived'
+
+    @property
+    def INPUT_VALUES(self) -> str:
+        return 'inputValues'
 
     @property
     def ENV(self) -> str:
         return 'env'
 
     @property
-    def FORM(self) -> str:
-        return 'form'
+    def INPUT_FORM(self) -> str:
+        return 'inputForm'
 
     @property
     def SECRET_ENV_VARS(self) -> str:
@@ -155,38 +159,6 @@ class _GIG_CONSTS(type):
     @property
     def NEVER(self) -> str:
         return 'Never'
-
-    @property
-    def WAITING_FOR_INPUT(self) -> str:
-        return 'WaitingForInput'
-
-    @property
-    def INPUT_RECEIVED(self) -> str:
-        return 'InputReceived'
-
-    @property
-    def RUNNING(self) -> str:
-        return 'Running'
-
-    @property
-    def COMPLETED(self) -> str:
-        return 'Completed'
-
-    @property
-    def ABORTING(self) -> str:
-        return 'Aborting'
-
-    @property
-    def ABORTED(self) -> str:
-        return 'Aborted'
-
-    @property
-    def FAILURE(self) -> str:
-        return 'Failure'
-
-    @property
-    def SUCCESS(self) -> str:
-        return 'Success'
 
     @property
     def SUCCEEDED(self) -> str:

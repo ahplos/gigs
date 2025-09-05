@@ -38,7 +38,6 @@ __stageRunner() {
         {%- endfor %}
         {%- endif %}
 
-
         __endStage {{ stage.name }} {{ stage.processor }}
     else
         ${GIG_RUNNER_HOME}/stage_header.sh $((++COUNTER)) '{{ stage.name }}' '{{ stage.processor }}' '{{ stage.description }}' 'SKIPPED'

@@ -3,12 +3,14 @@ import * as React from 'react';
 import { IconStatus } from '@patternfly/react-component-groups/dist/dynamic/Status';
 
 import {
+    SA_GVK,
+    USER_GVK,
+} from '../../utilities/objectDefs';
+
+import {
     GigDetailIcon,
     IconType,
 } from './GigDetailIcon';
-
-const USER_GVK = { group: 'rbac.authorization.k8s.io', version: 'v1', kind: 'User' }
-const SA_GVK = { version: 'v1', kind: 'ServiceAccount' }
 
 export const GigRunStartedByDetail = (model) => {
     let startedBy = model.obj.spec?.startedBy ?? model.obj.status?.latestGigRun?.startedBy;

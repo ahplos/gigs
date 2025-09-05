@@ -80,14 +80,12 @@ function __waitForUserInput() {
     python ${GIG_RUNNER_HOME}/jinja_stage.py ${1}
 
     kubectl patch gigrun ${GIG_RUN_NAME} -n ${POD_NAMESPACE} --patch-file user_input_patch.yaml --type='merge'
-
-    kubectl wait gigrun/{{ gig_run.name }} \
-        --timeout=600s --for=jsonpath='{.spec.runState}'='WaitingForInput' -n {{ gig_run.namespace }} &> /dev/null
+    kubectl patch gigrun ${GIG_RUN_NAME} -n ${POD_NAMESPACE} --subresource=status --patch-file user_input_patch.yaml --type='merge'
 
     echo
     echo 'Waiting for user input...'
 
-    kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} &> /dev/null
+    kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.status.runState}'='Running' -n {{ gig_run.namespace }} &> /dev/null
 
     __saveInputParamsToEnv
 
@@ -100,7 +98,7 @@ set +o allexport
 function __checkForAbortSignal() {
     PID=${1}
     kubectl wait gigrun/{{ gig_run.name }} -n {{ gig_run.namespace }} \
-        --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.spec.runState}'='Aborting'
+        --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.status.runState}'='Aborting'
 
     echo "ABORT RUN..." > gig.log
     timeout 30s kill ${PID} || kill -s KILL ${PID}

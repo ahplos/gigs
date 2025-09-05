@@ -1,9 +1,9 @@
 {%- raw %}
 spec:
-  form:
-    spec:
-      {% filter indent(width=6) %}
-      {%- include env['USER_INPUT_PATCH'] %}
-      {%- endfilter %}
+  inputForm:
+    {% filter indent(width=6) %}
+    {%- include env['USER_INPUT_PATCH'] %}
+    {%- endfilter %}
+status:
   runState: WaitingForInput
 {%- endraw %}

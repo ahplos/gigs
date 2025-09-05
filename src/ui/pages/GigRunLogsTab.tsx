@@ -17,23 +17,24 @@ import GigK8sUtils from '../utilities/gigK8sUtils';
 
 export const GigRunLogsTab = (model) => {
     const gigRun: GigRun = model.obj;
-    const [gigRunState, setGigRunState] = React.useState<GigRunState>();
+    const [gigRunState, setGigRunState] = React.useState<GigRunState>(gigRun?.status?.runState);
     const navigate = useNavigate();
 
-    let runState = gigRun?.spec?.runState;
+    let runState = gigRun?.status?.runState;
     if (runState) {
         const currentState = GigRunState[runState]
-        if (!gigRunState) {
+
+        if (currentState != gigRunState) {
             setGigRunState(currentState);
-        }
-        else if (currentState != gigRunState) {
-            let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.teknetes.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-input-form';
-            navigate(path);
+            if (currentState == GigRunState.WaitingForInput) {
+                let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.teknetes.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-input-form';
+                navigate(path);
+            }
         }
     }
 
     const JOB_NAME_SELECTOR = 'batch.kubernetes.io/job-name';
-    const [pod, _, errorMessage] = GigK8sUtils.getPod({
+    const [pods, _, errorMessage] = GigK8sUtils.getPods({
         namespace: gigRun.metadata.namespace,
         selector: {
             matchLabels: {
@@ -43,8 +44,8 @@ export const GigRunLogsTab = (model) => {
     });
 
     let bodyContent = <Bullseye><Spinner size='lg' aria-label='Fetching logs...' /></Bullseye>;
-    if (pod) {
-        bodyContent = <GigRunLogViewer gigRun={gigRun} pod={pod} />;
+    if ((pods?.length ?? 0) > 0) {
+        bodyContent = <GigRunLogViewer gigRun={gigRun} pod={pods[0]} />;
     }
     else if (errorMessage?.length > 0) {
         bodyContent = <Banner variant='red'>ERROR: {errorMessage}</Banner>;

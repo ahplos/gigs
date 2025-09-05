@@ -1,53 +1,107 @@
 import {
     K8sGroupVersionKind,
     K8sResourceCommon,
-} from '@openshift-console/dynamic-plugin-sdk';
+} from "@openshift-console/dynamic-plugin-sdk";
 
-export const NS_GVK: K8sGroupVersionKind = { kind: 'Namespace', version: 'v1' };
-export const CRONJOB_GVK: K8sGroupVersionKind = { group: 'batch', version: 'v1', kind: 'CronJob' };
-export const JOB_GVK: K8sGroupVersionKind = { group: 'batch', version: 'v1', kind: 'Job' };
-export const POD_GVK: K8sGroupVersionKind = { group: '', version: 'v1', kind: 'Pod' };
+export const BATCH_TEKNETES_ORG = "batch.teknetes.org";
+export const API_VERSION = "v1beta1";
 
-export const BATCH_TEKNETES_ORG = 'batch.teknetes.org';
-const API_VERSION = 'v1beta1';
+export const CRONJOB_GVK: K8sGroupVersionKind = {
+    group: "batch",
+    version: "v1",
+    kind: "CronJob",
+};
+
+export const JOB_GVK: K8sGroupVersionKind = {
+    group: "batch",
+    version: "v1",
+    kind: "Job",
+};
+
+export const NS_GVK: K8sGroupVersionKind = {
+    kind: "Namespace",
+    version: "v1"
+};
+
+export const POD_GVK: K8sGroupVersionKind = {
+    group: "",
+    version: "v1",
+    kind: "Pod",
+};
+
+export const SA_GVK: K8sGroupVersionKind = {
+    version: "v1",
+    kind: "ServiceAccount",
+};
+
+export const USER_GVK: K8sGroupVersionKind = {
+    group: "rbac.authorization.k8s.io",
+    version: "v1",
+    kind: "User",
+};
 
 export const GIG_GVK: K8sGroupVersionKind = {
     group: BATCH_TEKNETES_ORG,
     version: API_VERSION,
-    kind: 'Gig',
+    kind: "Gig",
 };
 
 export const GIG_DEFINITION_GVK: K8sGroupVersionKind = {
     group: BATCH_TEKNETES_ORG,
     version: API_VERSION,
-    kind: 'GigDefinition',
+    kind: "GigDefinition",
+};
+
+export const GIG_LAUNCHFORM_GVK: K8sGroupVersionKind = {
+    group: BATCH_TEKNETES_ORG,
+    version: API_VERSION,
+    kind: "GigLaunchForm",
 };
 
 export const GIG_RUN_GVK: K8sGroupVersionKind = {
     group: BATCH_TEKNETES_ORG,
     version: API_VERSION,
-    kind: 'GigRun',
+    kind: "GigRun",
 };
 
 export const GIG_MAP: Map<string, GigRun> = new Map();
-export const CURRENT_GIG_RUN = 'CURRENT_GIG_RUN';
+export const CURRENT_GIG_RUN = "CURRENT_GIG_RUN";
 
-export type FormSpec = [] & {
+export type InputCompGroupSpec = {
     var: string;
     components: {
         inputType: string;
         attributes: object;
         booleans: string[];
-        var: string;
+        tooltip: string;
     }[];
+};
+
+export type GigLaunchForm = K8sResourceCommon & {
+    spec: {
+        inputForm: InputCompGroupSpec[];
+    };
+};
+
+export type StageSpec = {
+    name: string;
+    description?: string;
+    displayName: string;
+    processor: string;
 };
 
 export type GigDefinition = K8sResourceCommon & {
     spec: {
+        activeDeadlineSeconds: number;
+        gigLaunchFormRef: {
+            name: string;
+            namespace: string;
+        };
+        isLibrary: boolean;
         name: string;
-        form?: {
-            spec?: FormSpec[];
-        }
+        requiredInputParams: string[];
+        stages: StageSpec[];
+        workDirSizeLimit: string;
     };
 };
 
@@ -58,12 +112,18 @@ export type Gig = K8sResourceCommon & {
         };
         gigDefinitionRef: {
             name: string;
+            namespace: string;
+        };
+        gigLaunchFormRef: {
+            name: string;
+            namespace: string;
         };
     };
+
     status?: {
         latestGigRun?: {
             creationTimestamp: string;
-            result: GigRunResultDetail;
+            runState: GigRunState;
             runTime: number;
             startedBy: string;
             state: GigRunState;
@@ -72,20 +132,16 @@ export type Gig = K8sResourceCommon & {
 };
 
 export const GigRunState = {
-    Aborting: 'Aborting',
-    WaitingForInput: 'WaitingForInput',
-    Running: 'Running',
-    Completed: 'Completed',
-}
+    Aborted: "Aborted",
+    Aborting: "Aborting",
+    Failed: "Failed",
+    InputReceived: "InputReceived",
+    Running: "Running",
+    Succeeded: "Succeeded",
+    WaitingForInput: "WaitingForInput",
+};
 
-export type GigRunState = typeof GigRunState[keyof typeof GigRunState];
-
-export const GigRunResultDetail = {
-    Success: 'Success',
-    Failure: 'Failure',
-}
-
-export type GigRunResultDetail = typeof GigRunResultDetail[keyof typeof GigRunResultDetail];
+export type GigRunState = (typeof GigRunState)[keyof typeof GigRunState];
 
 export type GigRun = K8sResourceCommon & {
     spec: {
@@ -93,16 +149,14 @@ export type GigRun = K8sResourceCommon & {
             name: string;
             containerName?: string;
         };
-        form?: {
-            spec?: FormSpec;
-            inputvalues?: object;
-        }
-        runState?: GigRunState
+        inputForm?: InputCompGroupSpec[];
+        inputReceived?: boolean;
+        inputValues?: object;
         startedBy?: string;
     };
 
     status?: {
-        result?: GigRunResultDetail;
+        runState?: GigRunState;
         runTime?: number;
     };
 };

@@ -1,11 +1,14 @@
 import os
 from copy import deepcopy
+import yaml
+
+from box import Box, BoxList
+
+from jinja2 import Environment, FileSystemLoader
 
 import kopf
-import yaml
-from box import Box, BoxList
-from jinja2 import Environment, FileSystemLoader
-from kr8s.objects import ConfigMap, CronJob, Job, Secret
+from kr8s.objects import CronJob, Job, Secret
+
 from utilities.gig_types import GIG_CONSTS, GigDefinition, GigRun
 
 GIG_RUNNER = 'gigrunner'
@@ -17,9 +20,9 @@ GIG_RUNNER_WORKING_DIR = f'/{WORK_DIR}'
 
 RUNNER_DIR = 'runner'
 RUNNER_TEMPLATES_DIR = 'templates'
-CONFIG_MAP_JINJA_TEMPLATE = 'configMap.j2'
+SECRET_JINJA_TEMPLATE = 'gigrunner-secret.j2'
 
-def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigDefinition, config_map_name: str) -> Job:
+def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigDefinition, secret_name: str) -> Job:
     spec = deepcopy(cron_job.spec.jobTemplate)
     job = Job(spec)
     job.metadata.name = None
@@ -29,7 +32,7 @@ def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigDefinition, confi
     job.spec[GIG_CONSTS.BACKOFF_LIMIT] = 0
 
     container = get_container(job, cron_job.annotations.get(GigRun.CONTAINER_NAME_ANNOTATION))
-    configure_container(job, container, gig_run.name, config_map_name, gig_def.workDirSizeLimit)
+    configure_container(job, container, gig_run.name, secret_name, gig_def.workDirSizeLimit)
 
     job.create()
     job.set_owner(cron_job)
@@ -47,12 +50,12 @@ def get_container(job: Job, name = None) -> Box:
 
     return containers[0]
 
-def configure_container(job: Job, container: Box, gig_run_name: str, config_map_name: str, working_dir_size_limit):
-    configmap_volume = Box(name = config_map_name, configMap = Box(name = config_map_name, defaultMode = 0o777))
-    job.spec.template.spec.setdefault(GIG_CONSTS.VOLUMES, BoxList()).append(configmap_volume)
+def configure_container(job: Job, container: Box, gig_run_name: str, secret_name: str, working_dir_size_limit):
+    secret_volume = Box(name = secret_name, secret = Box(secretName = secret_name, defaultMode = 0o777))
+    job.spec.template.spec.setdefault(GIG_CONSTS.VOLUMES, BoxList()).append(secret_volume)
 
-    configmap_volume_mount = Box(name = config_map_name, mountPath = f'/{GIG_RUNNER}')
-    container.setdefault(GIG_CONSTS.VOLUME_MOUNTS, BoxList()).append(configmap_volume_mount)
+    secret_volume_mount = Box(name = secret_name, mountPath = f'/{GIG_RUNNER}')
+    container.setdefault(GIG_CONSTS.VOLUME_MOUNTS, BoxList()).append(secret_volume_mount)
 
     container['imagePullPolicy'] = 'Always'
 
@@ -91,30 +94,36 @@ def collect_secret_vars(gig_def: GigDefinition, namespace: str) -> list:
 
     return secrets
 
-def create_gigrun_configmap(gig_run: GigRun, gig_def: GigDefinition, namespace: str) -> ConfigMap:
+def create_gigrunner_secret(gig_run: GigRun, gig_def: GigDefinition, namespace: str) -> Secret:
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
 
     secret_vars = collect_secret_vars(gig_def, namespace)
     secret_vars = '\n'.join([f'{key_var}' for key_var in secret_vars])
-    configMapFiles = [file for file in os.listdir(f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}')]
+    secret_files = [file for file in os.listdir(f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}')]
     template_data = {
         'gig_def': gig_def,
         'gig_run': gig_run,
         'K8S_SECRET_NAME': gig_run.name,
         'SECRET_VARS': secret_vars,
         'GIG_TIMEOUT': gig_def.activeDeadlineSeconds,
-        'configMapFiles': configMapFiles,
+        'SECRET_FILES': secret_files,
     }
 
-    for file in configMapFiles:
+    for file in secret_files:
         template = env.get_template(file)
         output = template.render(template_data)
 
-    template = env.get_template(CONFIG_MAP_JINJA_TEMPLATE)
+    template = env.get_template(SECRET_JINJA_TEMPLATE)
     output = template.render(template_data)
 
-    config_map = ConfigMap(yaml.safe_load(output))
-    config_map.create()
-    config_map.set_owner(gig_run)
+    secret = Secret(yaml.safe_load(output))
+    secret.create()
+    secret.set_owner(gig_run)
 
-    return config_map
+    return secret
+
+def get_name_namespace_from_anno(annotation_val):
+    ref = annotation_val.split('/')
+    name = ref[0] if len(ref) == 1 else ref[1]
+    namespace = '' if len(ref) == 1 else ref[0]
+    return Box(name = name, namespace = namespace)

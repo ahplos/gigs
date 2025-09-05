@@ -11,13 +11,13 @@ import {
 import { useNavigate } from 'react-router-dom-v5-compat';
 
 import {
-    GigDefinitionForm,
+    GigInputForm,
     GigFormType
 } from '../gigUiComponents';
 
 import {
     Gig,
-    GigDefinition,
+    GigLaunchForm,
     GIG_GVK,
 } from '../utilities/objectDefs';
 
@@ -25,21 +25,24 @@ import GigK8sUtils from '../utilities/gigK8sUtils';
 
 export const GigRunFormTab = (model) => {
     let gig: Gig;
+    let gigLaunchForm: GigLaunchForm;
     let formSpec = [];
-    let gigDefRef: GigDefinition;
     let errorMessage: string;
 
     if (model.obj.kind == GIG_GVK.kind) {
         gig = model.obj
-        const [gd, _, gdLoadError] = GigK8sUtils.getGigDefinition({name: gig.spec.gigDefinitionRef.name});
+        const [glf, _, glfLoadError] = GigK8sUtils.getGigLaunchForm({
+            name: gig.spec.gigLaunchFormRef.name,
+            namespace: gig.spec.gigLaunchFormRef.namespace
+        });
 
-        gigDefRef = gd;
-        formSpec = gigDefRef?.spec?.form?.spec ?? [];
-        errorMessage = gdLoadError;
+        gigLaunchForm = glf;
+        formSpec = gigLaunchForm?.spec?.inputForm ?? [];
+        errorMessage = glfLoadError;
     }
     else {
-        formSpec = structuredClone(model.obj.spec.form?.spec ?? []);
-        gigDefRef = model.obj;
+        gigLaunchForm = model.obj
+        formSpec = structuredClone(gigLaunchForm.spec.inputForm ?? []);
     }
 
     const navigate = useNavigate();
@@ -56,9 +59,9 @@ export const GigRunFormTab = (model) => {
     }
 
     let bodyContent;
-    if (gigDefRef) {
-        const gigFormType = gig? GigFormType.START : GigFormType.PREVIEW;
-        bodyContent = <GigDefinitionForm formSpec={formSpec} submissionAction={submissionAction} formType={gigFormType} />;
+    if (gigLaunchForm) {
+        const gigFormType = gig ? GigFormType.START : GigFormType.PREVIEW;
+        bodyContent = <GigInputForm formSpec={formSpec} submissionAction={submissionAction} formType={gigFormType} />;
     }
     else if (errorMessage) {
         bodyContent = <Banner color="red">ERROR: {errorMessage}</Banner>;

@@ -61,7 +61,7 @@ interface GigDefinitionFormProps {
     formType: GigFormType;
 }
 
-export const GigDefinitionForm = ({formSpec, submissionAction, formType}: GigDefinitionFormProps) => {
+export const GigInputForm = ({formSpec, submissionAction, formType}: GigDefinitionFormProps) => {
     const [gigDefFormState, setGigDefFormState] = React.useState({});
 
     let formName = 'generic-form';
@@ -108,7 +108,7 @@ export const GigDefinitionForm = ({formSpec, submissionAction, formType}: GigDef
         );
     }
     else {
-        const titleText = (formType == GigFormType.PREVIEW) ? 'No Preview' : 'Running';
+        const titleText = 'Nothing to Show';
         const subText = (formType == GigFormType.PREVIEW) ? 'No Form Spec was defined.' : 'No input is required at this time.'
         return (
             <EmptyState>

@@ -1,86 +1,121 @@
 elCicdDefs:
   GIG: gig
+  GIG_LAUNCHFORM: $<GIG>launchform
   GIG_DEF: $<GIG>definition
   GIG_RUN: $<GIG>run
-  GIG_TYPES: [$<GIG_DEF>, $<GIG>, $<GIG_RUN>]
+  GIG_TYPES: [$<GIG_DEF>, $<GIG_LAUNCHFORM>, $<GIG>, $<GIG_RUN>]
 
-  SCOPE: Namespaced
+  RUN_STATE:
+    type: string
+    enum:
+    - Aborted
+    - Aborting
+    - Failed
+    - InputReceived
+    - Running
+    - Succeeded
+    - WaitingForInput
+
+  NAME_NAMESPACE_PROPS:
+    name:
+      type: string
+    namespace:
+      type: string
 
   FORM_SPEC:
-    type: object
-    properties:
-      inputvalues: $<INPUT_VALUES>
-      spec:
-        type: array
-        x-kubernetes-list-type: map
-        x-kubernetes-list-map-keys:
-        - var
-        description: Optional list of groups of components organized into sections of a form users will use to launch a job.
-        items:
+    type: array
+    description: |
+      Optional list of groups of components organized into sections of a form users will use to launch a job.
+    x-kubernetes-list-type: map
+    x-kubernetes-list-map-keys:
+    - var
+    items:
+      type: object
+      required:
+      - components
+      - var
+      properties:
+        attributes:
+          description: |-
+            A map of key/value pairs that optionally configure a group of components.
           type: object
-          required:
-          - components
-          - var
-          properties:
-            attributes:
-              description: |-
-                A map of key/value pairs that optionally configure the form group.
-              type: object
-              additionalProperties:
+          additionalProperties:
+            type: string
+        components:
+          type: array
+          items:
+            type: object
+            description: |-
+              Arbitrary keys corresponding to JSX PatternFly Form (e.g. TextInput or Radio) controls that contain a map of zero or more
+              attributes for the control; e.g.
+                - component: Radio
+                  attributes:
+                    label: Option 1
+            properties:
+              booleans:
+                type: array
+                description: |-
+                  String only attributes for configuring a component; isVisible (vs isVisible="true").
+                items:
+                  type: string
+                x-kubernetes-list-type: set
+              inputType:
                 type: string
-            components:
-              type: array
-              items:
+                enum:
+                - Checkbox
+                - Dropdown
+                - NumberInput
+                - Radio
+                - TextArea
+                - TextInput
+              attributes:
                 type: object
                 description: |-
-                  arbitrary keys corresponding to JSX PatternFly Form (e.g. TextInput or Radio) controls that contain a map of zero or more
-                  attributes for the control; e.g.
-                    - component: Radio
-                      attributes:
-                        label: Option 1
-                properties:
-                  inputType:
-                    type: string
-                    enum:
-                    - TextArea
-                    - TextInput
-                    - Radio
-                    - Checkbox
-                  attributes:
-                    description: |-
-                      attributes is a map of {key,value} pairs that optionally contain attributes and values for the component
-                    type: object
-                    additionalProperties:
-                      type: string
-                  booleans:
-                    type: array
-                    items:
-                      type: string
-                    x-kubernetes-list-type: set
-                required:
-                - inputType
-            var:
-              description: |-
-                Variable that will be assigned from the values of components in the group. Can be overriden at
-                the component level.
-              type: string
-              pattern: '^\w+$'
-      title:
-        type: string
+                  Attributes are a map of {key,value} pairs for configuring a component.
+                additionalProperties:
+                  type: string
+              tooltip:
+                type: string
+                description: |-
+                  Tooltip for the component.
+            required:
+            - inputType
+        var:
+          description: |-
+            Variable that will be assigned from the value of component(s) in the group.
+          type: string
+          pattern: '^\w+$'
+
+elCicdDefs-$<GIG_LAUNCHFORM>:
+  TITLE_CASE_NAME: GigLaunchForm
+  SHORT_NAMES:
+  - glf
+  - glfs
+  - gigform
+  - gigforms
+  SPEC_DEFINITION:
+    type: object
+    description: |
+      $<TITLE_CASE_NAME>Spec defines a GigLaunchForm, and the optional and/or required inputValues to launch it.
+    required:
+    - inputForm
+    properties:
+      inputForm: $<FORM_SPEC>
 
 elCicdDefs-$<GIG_DEF>:
   TITLE_CASE_NAME: GigDefinition
   SHORT_NAMES:
   - gigdef
   - gigdefs
-  SCOPE: Cluster
   SPEC_DEFINITION:
-    description: $<TITLE_CASE_NAME>Spec defines a GigDefinition, and the optional and/or required inputvalues to launch it.
     type: object
+    description: |
+      $<TITLE_CASE_NAME>Spec defines a GigDefinition, and the optional and/or required inputValues to launch it.
     required:
     - name
     - activeDeadlineSeconds
     - stages
+    - workDirSizeLimit
     properties:
       activeDeadlineSeconds:
         type: integer
@@ -89,22 +124,48 @@ elCicdDefs-$<GIG_DEF>:
         default: 3600
       description:
         type: string
-      form: $<FORM_SPEC>
+      gigLaunchFormRef:
+        type: object
+        description: |
+          Optional default GigLaunchForm to use with GigDefinition. Can be overridden in a Gig.
+        properties: $<NAME_NAMESPACE_PROPS>
+        required:
+        - name
+      inputParams:
+        type: array
+        description: |
+          List of input params used by the definition.  This list has no functional value and is not verified. Use it for
+          documentation purposes only.
+        items:
+          type: string
+        x-kubernetes-list-type: set
+      isLibrary:
+        type: boolean
+        description: |
+          If true, the GigDefinition can only be included in another GigDefinition and referenced by a Gig directly.
       name:
         type: string
+      requiredInputParams:
+        type: array
+        description: |
+          List of required input parameters that are required to launch to definition.  A Secret with the same name as the GigRun
+          will be checked for existence and that the required params are defined before launching.
+        items:
+          type: string
+        x-kubernetes-list-type: set
       secretEnvVars:
         type: array
         description: |
-          List of identifying environment variables in a GigRun that are secrets and should be obfuscated in the logs.
-        x-kubernetes-list-type: set
+          List of environment variables that are secrets and should be obfuscated in GigRun logs.
         items:
           type: string
+        x-kubernetes-list-type: set
       secrets:
         type: array
         description: |
           List of Secrets that will be included in a GigRun and whose values should be obfuscated in GigRun logs.  A GigRun will fail
           to start if the Secret does not exist unless it's marked optional.  Referencing a Secret here will NOT mount the Secret
-          in a Pod.  That needs to be defined separately in any associated CronJob.
+          in a Pod.  It is the CronJob's/developer's responsibility to import the values.
         x-kubernetes-list-type: map
         x-kubernetes-list-map-keys:
         - name
@@ -120,14 +181,6 @@ elCicdDefs-$<GIG_DEF>:
             optional:
               type: boolean
               description: If true, ignore if the Secret is missing.
-      workDirSizeLimit:
-        type: string
-        anyOf:
-        - type: integer
-        - type: string
-        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-        x-kubernetes-int-or-string: true
-        default: 10Mi
       stages:
         description: Units of work.  User input may potentially be required at the end of a stage.
         type: array
@@ -163,7 +216,7 @@ elCicdDefs-$<GIG_DEF>:
             processor:
               type: string
               description: |
-                The processor for the stage, either a template type or language. For Shell, script are executed directly.
+                The processor for the stage, either a definition type or language. For Shell, script are executed directly.
                 For all other processors, scripts are mounted as files in a Pod, and executed by the stage's command.
               enum:
               - Custom
@@ -176,7 +229,7 @@ elCicdDefs-$<GIG_DEF>:
             script:
               type: string
               description: |
-                The script to execute. Can be writting in any language or template type supported by Teknetes Gigs,
+                The script to execute. Can be writting in any language or definition type supported by Teknetes Gigs,
                 or as a script for a custom command to run.
             secretEnvVars:
               type: array
@@ -207,6 +260,14 @@ elCicdDefs-$<GIG_DEF>:
                 anyOne:
                 - required: ['AND']
                 - required: ['OR']
+      workDirSizeLimit:
+        type: string
+        anyOf:
+        - type: integer
+        - type: string
+        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+        x-kubernetes-int-or-string: true
+        default: 10Mi
 
 elCicdDefs-$<GIG>:
   TITLE_CASE_NAME: Gig
@@ -226,9 +287,13 @@ elCicdDefs-$<GIG>:
       gigDefinitionRef:
         description: Reference to a GigDefinition.
         type: object
-        properties:
-          name:
-            type: string
+        properties: $<NAME_NAMESPACE_PROPS>
+        required:
+        - name
+      gigLaunchFormRef:
+        description: Reference to a GigLaunchForm.
+        type: object
+        properties: $<NAME_NAMESPACE_PROPS>
         required:
         - name
     required:
@@ -244,14 +309,7 @@ elCicdDefs-$<GIG>:
             type: string
           name:
             type: string
-          result:
-            type: string
-            enum:
-            - Aborted
-            - Success
-            - Failure
-            - Pending
-            default: Pending
+          runState: $<RUN_STATE>
           runTime:
             type: integer
           startedBy:
@@ -259,12 +317,10 @@ elCicdDefs-$<GIG>:
 
 elCicdDefs-$<GIG_RUN>:
   TITLE_CASE_NAME: GigRun
-  INPUT_VALUES:
-      type: object
-      x-kubernetes-preserve-unknown-fields: true
   SPEC_DEFINITION:
-    description: $<TITLE_CASE_NAME>Spec defines a specific Job run produced from the parent Gig's CronJob.
     type: object
+    description: |
+      $<TITLE_CASE_NAME>Spec defines a specific Job run produced from the parent Gig's CronJob.
     properties:
       gigRef:
         type: object
@@ -281,16 +337,20 @@ elCicdDefs-$<GIG_RUN>:
               message: gigRef name and containerName are immutable
         required:
         - name
-      form: $<FORM_SPEC>
-      runState:
-        type: string
-        enum:
-        - Aborting
-        - WaitingForInput
-        - InputReceived
-        - Running
-        - Completed
-        default: Running
+      inputForm: $<FORM_SPEC>
+      inputReceived:
+        type: boolean
+        default: false
+      inputValues:
+        type: object
+        description: |
+          Dictionary of input values to pass to a Pod when starting a GigRun, or to resume execution when paused for further input.
+          InputValues are never preserved in a deployed GigRun, but rather used by the Gig Operator to create an associated Secret for
+          the Pod to read and use.
+        x-kubernetes-preserve-unknown-fields: true
+        properties:
+          additionalProperties:
+            type: string
       startedBy:
         type: string
         x-kubernetes-validations:
@@ -298,18 +358,10 @@ elCicdDefs-$<GIG_RUN>:
           message: startedBy is immutable
     required:
     - gigRef
-    - runState
   STATUS_DEFINITION:
     type: object
     properties:
-      result:
-        type: string
-        enum:
-        - Aborted
-        - Success
-        - Failure
-        - Pending
-        default: Pending
+      runState: $<RUN_STATE>
       runTime:
         type: integer
 
@@ -330,7 +382,7 @@ elCicdTemplates:
         plural: $<BASE_OBJ_NAME>s
         singular: $<BASE_OBJ_NAME>
         shortNames: $<SHORT_NAMES>
-      scope: $<SCOPE>
+      scope: Namespaced
       preserveUnknownFields: false
       versions:
       - name: v1beta1
@@ -340,13 +392,11 @@ elCicdTemplates:
           status: {}
         schema:
           openAPIV3Schema:
-            description: |-
-              A Gig represents an impromptu Job with arbitrary scripts, and implies user input is required, potentially in mutliple stages.
             type: object
             properties:
               apiVersion:
                 description: |-
-                  APIVersion defines the versioned schema of this representation of an object.
+                  APIVersion defines the versioned definition of this representation of an object.
                   Servers should convert recognized schemas to the latest internal value, and
                   may reject unrecognized values.
                   More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources

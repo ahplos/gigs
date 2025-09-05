@@ -10,10 +10,12 @@ import {
 
 import {
     GIG_DEFINITION_GVK,
+    GIG_LAUNCHFORM_GVK,
     GIG_GVK,
     GIG_RUN_GVK,
     Gig,
     GigDefinition,
+    GigLaunchForm,
     GigRun,
     GigRunState,
     JOB_GVK,
@@ -45,22 +47,20 @@ export default class GigK8sUtils {
         propagationPolicy: 'Background',
     };
 
-    private static getK8sResources<T extends K8sResourceKind> (
+    private static getK8sResource<T extends K8sResourceKind> (
         options: WatchK8sResource = {},
-        isList: boolean = true
     ) {
-        options.isList = true;
-        let [results, loaded, errorMsg] = useK8sWatchResource<T[]>(options);
+        let [results, loaded, errorMsg] = useK8sWatchResource<T>(options);
 
-        if (!isList) {
-            if (results?.length > 1) {
-                throw new InvalidK8sSingleResourceQueryError('Invalid query for a single resource');
-            }
-            return [results?.length > 0 ? results[0] : null, loaded, errorMsg];
-        }
+        return [results as T, loaded, errorMsg];
+    }
 
-        errorMsg = (loaded || errorMsg?.length) ? errorMsg : 'Unknown Error';
-        return [results, loaded, errorMsg];
+    private static getK8sResources<T extends K8sResourceKind[]> (
+        options: WatchK8sResource = {},
+    ) {
+        let [results, loaded, errorMsg] = useK8sWatchResource<T>(options);
+
+        return [results as T, loaded, errorMsg];
     }
 
     public static createGigRun(gig: Gig, inputValues: object): Promise<GigRun> {
@@ -75,9 +75,8 @@ export default class GigK8sUtils {
                 gigRef: {
                     name: gig.metadata.name
                 },
-                form: {
-                    inputvalues: {...inputValues}
-                }
+                inputReceived: false,
+                inputValues: {...inputValues}
             }
         };
 
@@ -96,20 +95,21 @@ export default class GigK8sUtils {
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = JOB_GVK;
-        return GigK8sUtils.getK8sResources(options, false);
+        return GigK8sUtils.getK8sResource(options);
     }
 
     public static getPod (
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = POD_GVK;
-        return GigK8sUtils.getK8sResources(options, false);
+        return GigK8sUtils.getK8sResource(options);
     }
 
     public static getPods (
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = POD_GVK;
+        options.isList = true;
         return GigK8sUtils.getK8sResources(options);
     }
 
@@ -117,53 +117,72 @@ export default class GigK8sUtils {
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = GIG_DEFINITION_GVK;
-        return GigK8sUtils.getK8sResources<GigDefinition>(options, false);
+        return GigK8sUtils.getK8sResource<GigDefinition>(options);
     }
 
     public static getGigDefinitions (
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = GIG_DEFINITION_GVK;
-        return GigK8sUtils.getK8sResources<GigDefinition>(options);
+        options.isList = true;
+        return GigK8sUtils.getK8sResources<GigDefinition[]>(options);
+    }
+
+    public static getGigLaunchForm (
+        options: WatchK8sResource = {}
+    ) {
+        options.groupVersionKind = GIG_LAUNCHFORM_GVK;
+        return GigK8sUtils.getK8sResource<GigLaunchForm>(options);
+    }
+
+    public static getGigLaunchForms (
+        options: WatchK8sResource = {}
+    ) {
+        options.groupVersionKind = GIG_LAUNCHFORM_GVK;
+        options.isList = true;
+        return GigK8sUtils.getK8sResources<GigLaunchForm[]>(options);
     }
 
     public static getGig (
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = GIG_GVK;
-        return GigK8sUtils.getK8sResources<Gig>(options, false);
+        return GigK8sUtils.getK8sResource<Gig>(options);
     }
 
     public static getGigs (
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = GIG_GVK;
-        return GigK8sUtils.getK8sResources<Gig>(options);
+        options.isList = true;
+        return GigK8sUtils.getK8sResources<Gig[]>(options);
     }
 
     public static getGigRun(
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = GIG_RUN_GVK;
-        return GigK8sUtils.getK8sResources<GigRun>(options, false);
+        return GigK8sUtils.getK8sResource<GigRun>(options);
     }
 
     public static getGigRuns(
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = GIG_RUN_GVK;
-        return GigK8sUtils.getK8sResources<GigRun>(options);
+        options.isList = true;
+        return GigK8sUtils.getK8sResources<GigRun[]>(options);
     }
 
     public static patchGigRunInputValues = (gigRun: GigRun, inputValues: object): Promise<GigRun> => {
-        gigRun.spec.form.inputvalues = {...inputValues}
+        gigRun.spec.inputValues = {...inputValues}
+        gigRun.spec.inputReceived = true
 
         return k8sUpdate({model: GigK8sUtils.gigRunModel, data: gigRun})
     };
 
-    public static patchGigRunRunState = (gigRun: GigRun, aborting: boolean): Promise<GigRun> => {
-        gigRun.spec.runState = aborting ? GigRunState.Aborting : GigRunState.Running
+    public static patchGigRunRunState = (gigRun: GigRun, state: GigRunState): Promise<GigRun> => {
+        gigRun.status.runState = state
 
-        return k8sUpdate({model: GigK8sUtils.gigRunModel, data: gigRun})
+        return k8sUpdate({model: GigK8sUtils.gigRunModel, data: gigRun, path: 'status'})
     };
 }

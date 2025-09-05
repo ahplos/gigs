@@ -22,15 +22,15 @@ WATCH_FIELDS=[f'{GIG_CONSTS.STATUS}.{GIG_CONSTS.SUCCEEDED}', f'{GIG_CONSTS.STATU
     field=f'{GIG_CONSTS.STATUS}.{GIG_CONSTS.FAILED}',
     value=kopf.PRESENT,
 )  # type: ignore
-def on_job_completed(meta, status, logger, **kwargs):
+def on_job_completed(meta, status, logger, **_):
     gig_run = GigRun.get(
         namespace=meta.namespace,
         label_selector={GIG_CONSTS.JOB_NAME_SELECTOR_LABEL: meta.name},
     )
     gig = Gig(gig_run.gigRef, namespace=gig_run.namespace)
 
-    result = GIG_CONSTS.SUCCESS if status.get(GIG_CONSTS.SUCCEEDED) else GIG_CONSTS.FAILURE
-    result = GIG_CONSTS.ABORTED if (gig_run.runState == GIG_CONSTS.ABORTING) else result
+    runState = GigRunState.SUCCEEDED if status.get(GIG_CONSTS.SUCCEEDED) else GigRunState.FAILED
+    runState = GigRunState.ABORTED if (gig_run.runState == GigRunState.ABORTING) else runState
 
     time = status.get(GIG_CONSTS.COMPLETION_TIME, datetime.now().strftime('%Y-%m-%dT%H:%M:%S' + status[GIG_CONSTS.START_TIME][-1]))
     delta = timeparser.parse(time) - timeparser.parse(status[GIG_CONSTS.START_TIME])
@@ -39,15 +39,15 @@ def on_job_completed(meta, status, logger, **kwargs):
         GIG_CONSTS.NAME: gig_run.name,
         GIG_CONSTS.STARTED_BY: gig_run.spec[GIG_CONSTS.STARTED_BY],
         GIG_CONSTS.CREATION_TIME_STAMP: gig_run.metadata.creationTimestamp,
-        GIG_CONSTS.RESULT: result,
+        GIG_CONSTS.RUN_STATE: runState,
         GIG_CONSTS.RUN_TIME: int(delta.total_seconds()),
     }
 
     gig_run.patch({GIG_CONSTS.STATUS: status_patch_values}, subresource=GIG_CONSTS.STATUS, type='merge')
 
     gig_run.patch({
-            GIG_CONSTS.SPEC: {
-                GIG_CONSTS.RUN_STATE: GigRunState.COMPLETED
+            GIG_CONSTS.STATUS: {
+                GIG_CONSTS.RUN_STATE: runState
             }
         },
         type='merge'

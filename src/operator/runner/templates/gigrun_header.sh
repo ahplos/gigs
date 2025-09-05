@@ -12,7 +12,7 @@ echo
 
 echo '======================='
 KUBE_EXEC=kubectl
-which oc >/dev/null 2>&1
+type oc >/dev/null 2>&1
 if [[ $? ]]
 then
     KUBE_EXEC=oc
