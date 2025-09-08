@@ -12,10 +12,8 @@ export { GigFormType } from './components/GigInputForm';
 export { GigRunsList } from './components/GigRunsList';
 export { GigRunLogViewer } from './components/GigRunLogViewer';
 
-export { GigDefActiveDeadlineSecondsDetail } from './components/detailItems/GigDefActiveDeadlineSecondsDetail';
 export { GigDefRequiredInputVarsDetail } from './components/detailItems/GigDefRequiredInputVarsDetail';
 export { GigDefStagesDetail } from './components/detailItems/GigDefStagesDetail';
-export { GigDefWorkDirectorySizeLimitDetail } from './components/detailItems/GigDefWorkDirectorySizeLimitDetail';
 
 export { GigFormSummaryDetail } from './components/detailItems/GigFormSummaryDetail';
 
