@@ -1,5 +1,7 @@
 #!/usr/bin/bash -e
 
+STAGE_RUNNER_SCRIPT=${1}
+
 touch .env gig.log
 
 set -o allexport
@@ -15,7 +17,7 @@ function __convertJsonDictToEnv() {
     KEY_PREFIX=${2}
     BASE64=${3:+|@base64d}
 
-    echo $(echo "${1}" | jq -r 'to_entries[]|"'${KEY_PREFIX}'\(.key)=\"\(.value'${BASE64}')\""' | tr '"' "'")
+    echo $(echo "${JSON}" | jq -r 'to_entries[]|"'${KEY_PREFIX}'\(.key)=\"\(.value'${BASE64}')\""' | tr '"' "'")
 }
 
 function __saveInputParamsToEnv() {
@@ -101,12 +103,19 @@ function __checkForAbortSignal() {
         --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.status.runState}'='Aborting'
 
     echo "ABORT RUN..." > gig.log
-    timeout 30s kill ${PID} || kill -s KILL ${PID}
+    set -x
+    timeout 30s pkill -P ${PID} || pkill --signal KILL ${PID}
+    set +x
 }
 
-${GIG_RUNNER_HOME}/stagerunner.sh &
+${GIG_RUNNER_HOME}/${STAGE_RUNNER_SCRIPT}.sh &
 PID=$!
 __checkForAbortSignal ${PID} &
 tail -q --pid ${PID} -f gig.log -n +1
+echo
+echo '******************************************************************'
+echo '** GIG COMPLETE'
+echo '******************************************************************'
+echo
 exit $([ -f .stagerunner_exit_status ] && cat .stagerunner_exit_status)
 

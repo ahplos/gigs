@@ -7,7 +7,7 @@ ARG OC_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/
 
 RUN <<EOF
     set -ex
-    microdnf install --assumeyes --nodocs jq go nodejs python3.12 pip tar
+    microdnf install --assumeyes --nodocs jq go nodejs python3.12 pip tar procps-ng
     microdnf clean all
     curl -fsSLo /tmp/${OC_TAR_GZ_FILE} ${OC_CLI_URL}
     tar -C /usr/local/bin/ -xf /tmp/${OC_TAR_GZ_FILE} 'oc' 'kubectl'

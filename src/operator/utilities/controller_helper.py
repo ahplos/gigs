@@ -17,12 +17,11 @@ GIG_RUNNER_SH = f'{GIG_RUNNER}.sh'
 WORK_DIR = 'workDir'
 GIG_RUNNER_WORKING_DIR = f'/{WORK_DIR}'
 
-
 RUNNER_DIR = 'runner'
 RUNNER_TEMPLATES_DIR = 'templates'
 SECRET_JINJA_TEMPLATE = 'gigrunner-secret.j2'
 
-def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigDefinition, secret_name: str) -> Job:
+def create_job(cron_job: CronJob, gig_run: GigRun, gig_def_secrets_map: dict) -> Job:
     spec = deepcopy(cron_job.spec.jobTemplate)
     job = Job(spec)
     job.metadata.name = None
@@ -34,8 +33,8 @@ def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigDefinition, secre
     container = get_container(job, cron_job.annotations.get(GigRun.CONTAINER_NAME_ANNOTATION))
     configure_container(job, container, gig_run.name, secret_name, gig_def.workDirSizeLimit)
 
+    cron_job.adopt(job)
     job.create()
-    job.set_owner(cron_job)
 
     return job
 
@@ -83,28 +82,14 @@ def set_job_working_dir(container: Box, job: Job, working_dir_size_limit):
         container.volumeMounts.append(working_dir_volumemount)
         container.workDir = GIG_RUNNER_WORKING_DIR
 
-def collect_secret_vars(gig_def: GigDefinition, namespace: str) -> list:
-    secrets = []
-    for secret in gig_def.secrets:
-        k8s_secret = Secret.get(secret[GIG_CONSTS.NAME], namespace)
-        secrets += k8s_secret.data.keys()
-
-    for secretEnvVar in gig_def.secretEnvVars:
-        secrets.append(secretEnvVar)
-
-    return secrets
-
 def create_gigrunner_secret(gig_run: GigRun, gig_def: GigDefinition, namespace: str) -> Secret:
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
 
-    secret_vars = collect_secret_vars(gig_def, namespace)
-    secret_vars = '\n'.join([f'{key_var}' for key_var in secret_vars])
     secret_files = [file for file in os.listdir(f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}')]
     template_data = {
         'gig_def': gig_def,
         'gig_run': gig_run,
         'K8S_SECRET_NAME': gig_run.name,
-        'SECRET_VARS': secret_vars,
         'GIG_TIMEOUT': gig_def.activeDeadlineSeconds,
         'SECRET_FILES': secret_files,
     }

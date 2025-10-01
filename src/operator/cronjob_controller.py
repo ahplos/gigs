@@ -7,29 +7,26 @@ from utilities.gig_types import GIG_CONSTS, Gig, GigDefinition, GigLaunchForm
 
 from utilities.controller_helper import get_name_namespace_from_anno
 
-OPERATIONS: list[Operation] = [GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE]
-
-
 @kopf.on.mutate(
     CronJob.version,
     CronJob.plural,
     annotations={GigDefinition.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
-    operations=OPERATIONS,
+    operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE],
 ) # type: ignore
 def onmutatecronjob(patch, meta, annotations, logger, **_):
     jobAnnotations = (
         patch.spec.setdefault('jobTemplate', {}).setdefault('metadata', {}).setdefault('annotations', {})
     )
+
     jobAnnotations[GigDefinition.GIG_DEFINITION_ANNOTATION] = annotations[
         GigDefinition.GIG_DEFINITION_ANNOTATION
     ]
-
 
 @kopf.on.validate(
     CronJob.version,
     CronJob.plural,
     annotations={GigDefinition.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
-    operations=OPERATIONS,
+    operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE]
 )   # type: ignore
 def onvalidatecronjob(annotations, meta, logger, **_):
     gig_def_ref = get_name_namespace_from_anno(annotations[GigDefinition.GIG_DEFINITION_ANNOTATION])

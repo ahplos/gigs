@@ -69,8 +69,8 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
 
         const stageProcCounts = {};
         for (let stage of gigDef.spec.stages) {
-            stageProcCounts[stage.processor] = stageProcCounts[stage.processor] ?? 0;
-            stageProcCounts[stage.processor]++;
+            stageProcCounts[stage.scriptType] = stageProcCounts[stage.scriptType] ?? 0;
+            stageProcCounts[stage.scriptType]++;
         }
 
         let stageProcs = []

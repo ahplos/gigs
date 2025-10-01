@@ -143,7 +143,7 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
             loadError={loadError}
             columns={columns}
             Row={GigRunsRow}
-            sortColumnIndex={7}
+            sortColumnIndex={6}
             sortDirection={SortByDirection.desc}
        />
     );

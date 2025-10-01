@@ -10,6 +10,7 @@ elCicdTemplates:
   objName: $<GIG_FORM_NAME>-$<#>
   template:
     spec:
+      title: Sign in as a cluster-admin for Gig Demonstration
       inputForm:
       - attributes:
           label: Cluster Admin User Name
@@ -50,7 +51,6 @@ elCicdTemplates:
       name: Gig Demo
       gigLaunchFormRef:
         name: $<GIG_FORM_NAME>-1
-      launchFormTitle: Sign in as a cluster-admin for Gig Demonstration
       requiredInputParams:
       - CLUSTER_ADMIN_USER_NAME
       - CLUSTER_ADMIN_PASSWORD
@@ -75,7 +75,7 @@ elCicdTemplates:
         - description: Ask the user what Teknetes Gig language support they wish demonstrated.
           displayName: Which languages should be demoed?
           name: ask-user-what-languages-to-demo.j2
-          processor: Input
+          scriptType: input
           script: |-
             {%- include 'tek_langs.j2' %}
             {%- from 'tek_langs.j2' import LANGS %}
@@ -90,7 +90,7 @@ elCicdTemplates:
             {%- endfor %}
         - description: Set a test msg with a Go script.
           name: set-test-msg-with.go
-          processor: Go
+          scriptType: go
           when:
           - AND: env.LANG_GO
           script: |-
@@ -107,23 +107,21 @@ elCicdTemplates:
             }
         - displayName: Print the test msg set with Go.
           name: print-the-go-test-msg
-          processor: Shell
           when:
           - AND: env.LANG_GO
           script: |-
             echo ${TEST_MSG}
         - description: Set a test msg with a Python script.
           name: set-test-msg-with.py
-          processor: Python
-          when:
-          - AND: env.LANG_PYTHON
+          scriptType: python
+          when: |-
+            env.LANG_PYTHON
           script: |-
             with open('.env', 'a') as env_file:
               env_file.write("\nTEST_MSG='This test msg was set using Python'")
         - displayName: Print the test msg set with Python.
           name: print-the-python-test-msg
-          processor: Shell
-          when:
-          - AND: env.LANG_PYTHON
+          when: |-
+            env.LANG_PYTHON
           script: |-
             echo ${TEST_MSG}

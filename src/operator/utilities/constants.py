@@ -103,7 +103,6 @@ class _GIG_CONSTS(type):
     def VOLUMES(self) -> str:
         return 'volumes'
 
-
     @property
     def VOLUME_MOUNTS(self) -> str:
         return 'volumeMounts'
@@ -180,6 +179,9 @@ class _GIG_CONSTS(type):
     def UPDATE(self) -> Operation:
         return 'UPDATE'
 
+    @property
+    def SHELL(self) -> str:
+        return 'Shell'
 
 class GIG_CONSTS(object, metaclass=_GIG_CONSTS):
     pass

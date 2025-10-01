@@ -19,10 +19,12 @@ STRING_DATA = 'stringData'
 
 UID = 'uid'
 
+GIG_DEF_REFS = 'gig_def_refs'
+
 @kopf.on.mutate(
     GigRun.version,
     GigRun.plural,
-    operations=['CREATE', 'UPDATE']
+    operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE]
 )  # type: ignore
 def onmutategigrun(userinfo, patch, body, meta, logger, **_):
     gig_run = GigRun(body)
@@ -45,11 +47,11 @@ def onmutategigrun(userinfo, patch, body, meta, logger, **_):
         if (meta.name):
             patch[GIG_CONSTS.SPEC][GIG_CONSTS.INPUT_RECEIVED] = True
 
-@kopf.on.validate(GigRun.version, GigRun.plural)  # type: ignore
+@kopf.on.validate(GigRun.version, GigRun.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
 def onvalidategigrun(body, meta, logger, **_):
     gig_run = GigRun(body)
     gig = Gig(gig_run.gigRef, meta.namespace)
-    if (not gig.exists()):
+    if (gig.exists()):
         raise AdmissionError(f'Gig NOT FOUND for GigRun: {gig.namespace}:{gig.name}')
     else:
         gig.refresh()
@@ -70,12 +72,16 @@ def on_create_gigrun(body, meta, patch, logger, **_):
     gig = Gig.get(gig_run.gigRef, meta.namespace)
     cron_job = CronJob.get(gig.name, gig.namespace)
 
-    gig_def = GigDefinition.get(gig.gigDefinitionRef.name, gig.gigDefinitionRef.namespace)
-    update_gig_def_commands(gig_def)
+    namespace = gig.gigDefinitionRef.namespace if gig.gigDefinitionRef.namespace else gig_run.namespace
+    gig_def_secret = Secret.get(gig.gigDefinitionRef.name, namespace)
+    gig_def_secrets_map = {gig_def_secret.name: gig_def_secret}
+    gig_def_refs = gig_def_secret.get(GIG_DEF_REFS, None)
+    if (gig_def_secret):
+        collect_gig_def_secrets(gig_def_refs, gig_def_secrets_map, namespace)
 
-    secret = create_gigrunner_secret(gig_run, gig_def, meta.namespace)
+    create_gig_run_secrets(gig_def_secrets_map, gig_run)
 
-    job = create_job(cron_job, gig_run, gig_def, secret.name)
+    job = create_job(cron_job, gig_run, gig_def_secrets_map)
     gig_run.set_owner(job)
 
     create_or_patch_inputValues_secret(gig_run)
@@ -87,6 +93,22 @@ def on_create_gigrun(body, meta, patch, logger, **_):
     patch[GIG_CONSTS.STATUS] = {
         GIG_CONSTS.RUN_STATE: GigRunState.RUNNING
     }
+
+def collect_gig_def_secrets(secret_names, secrets_map, namespace):
+    for secret_name in secret_names:
+        if (secret_name not in secrets_map.keys()):
+            secrets_map[secret_name] = Secret.get(secret_name, namespace)
+            gig_def_refs = secrets_map[secret_name].get(GIG_DEF_REFS, None)
+            if (gig_def_refs):
+                collect_gig_def_secrets(gig_def_refs, secrets_map, namespace)
+
+def create_gig_run_secrets(gig_def_secrets_map: dict, gig_run: GigRun):
+    for secret in gig_def_secrets_map.values():
+        new_secret = Secret(f'{secret.name}-{gig_run.name}', gig_run.namespace)
+        new_secret.data = {**secret.data}
+        new_secret['immutable'] = True
+        gig_run.adopt(gig_run)
+        new_secret.create()
 
 @kopf.on.update(GigRun.version, GigRun.plural, field='spec.inputReceived', value=True)  # type: ignore
 def on_update_gigrun_inputReceived_True(body, patch, logger, **_):
@@ -115,7 +137,7 @@ def update_gig_def_commands(gig_def: GigDefinition):
 
     for stage in gig_def.stages:
         if (not stage.get('command')):
-            command = stage_processors.data.get(stage.processor, '')
+            command = stage_processors.data.get(stage.scriptType, '')
             if (command):
                 stage.command = command
 
