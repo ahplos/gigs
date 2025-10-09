@@ -87,7 +87,7 @@ export type StageSpec = {
     name: string;
     description?: string;
     displayName: string;
-    processor: string;
+    scriptType: string;
 };
 
 export type GigDefinition = K8sResourceCommon & {
@@ -153,10 +153,10 @@ export type GigRun = K8sResourceCommon & {
         inputReceived?: boolean;
         inputValues?: object;
         startedBy?: string;
+        runState?: GigRunState;
     };
 
     status?: {
-        runState?: GigRunState;
         runTime?: number;
     };
 };

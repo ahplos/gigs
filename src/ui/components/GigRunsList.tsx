@@ -69,7 +69,7 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
         {
             title: 'Run State',
             id: 'state',
-            sort: 'status.runState',
+            sort: 'spec.runState',
             transforms: [sortable],
         },
         {
@@ -91,7 +91,7 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
     ];
 
     const gigRunActions = (obj) => {
-        if ([GigRunState.Aborted, GigRunState.Failed, GigRunState.Succeeded].includes(obj.status.runState)) {
+        if ([GigRunState.Aborted, GigRunState.Failed, GigRunState.Succeeded].includes(obj.spec.runState)) {
             GigK8sUtils.deleteGigRun(obj);
         }
         else {
@@ -100,7 +100,7 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
     }
 
     const GigRunsRow: React.FC<RowProps<GigRun>> = ({ obj, activeColumnIDs }) => {
-        const isRunning = ![GigRunState.Aborted, GigRunState.Failed, GigRunState.Succeeded].includes(obj.status.runState);
+        const isRunning = ![GigRunState.Aborted, GigRunState.Failed, GigRunState.Succeeded].includes(obj.spec.runState);
         return (
             <>
                 <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
@@ -129,7 +129,7 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
                             onClick={() => gigRunActions(obj) }
                             isDanger={isRunning}
                             icon={isRunning ? <StopIcon/> : <TrashIcon/>}
-                            isDisabled={obj.status.runState == GigRunState.Aborting} />
+                            isDisabled={obj.spec.runState == GigRunState.Aborting} />
                 </TableData>
             </>
         );

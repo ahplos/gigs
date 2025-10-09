@@ -14,7 +14,7 @@ import {
 } from '../../utilities/objectDefs'
 
 export const GigRunRunStateDetail = (model) => {
-    let state = model.obj.status?.runState ?? model.obj.status?.latestGigRun?.runState;
+    let state = model.obj.spec?.runState ?? model.obj.status?.latestGigRun?.runState;
 
     let status: IconStatus = IconStatus.info;
     let iconType: IconType = IconType.QUESTION_CIRCLE;

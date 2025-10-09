@@ -45,7 +45,7 @@ elCicdTemplates:
     set -ex
     python --version
     python ./utilities/console_patch.py $<PLUGIN_NAME>
-    kopf run --all-namespaces --verbose $(ls *.py)
+    kopf run --all-namespaces --verbose $(ls *_controller.py)
   env:
   - name: TEKNETES_GIGS_OPERATOR_NAMESPACE
     value: $<HELM_RELEASE_NAMESPACE>
@@ -70,10 +70,10 @@ elCicdTemplates:
     PYTHON_JINJA_COMMAND: python ${GIG_RUNNER_HOME}/jinja_stage.py %s
   objName: $<TEKNETES_GIGS_PROCESSOR_MAP>
   data:
-    go: go run %s
-    input: $<PYTHON_JINJA_COMMAND>
-    jinja-template: $<PYTHON_JINJA_COMMAND>
-    python: python -m trace -t %s
+    Go: go run %s
+    Input: $<PYTHON_JINJA_COMMAND>
+    JinjaTemplate: $<PYTHON_JINJA_COMMAND>
+    Python: python -m trace -t %s
 
 - templateNames: [deployment, service, serviceAccount]
   annotations:

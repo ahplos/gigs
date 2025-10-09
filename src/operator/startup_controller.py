@@ -3,8 +3,6 @@ import logging
 import random
 from typing import AsyncIterator
 
-from box import Box
-
 import kopf
 
 class TeknetesGigsOperator:
@@ -12,8 +10,6 @@ class TeknetesGigsOperator:
     SERVICE = 'service'
 
     SVC = 'svc'
-
-    GLOBAL_REGISTRY = Box()
 
     def __init__(self):
         self.logger = logging.getLogger()
@@ -48,7 +44,7 @@ class TeknetesGigsOperator:
 
 @kopf.on.startup() # type: ignore
 def on_startup(settings: kopf.OperatorSettings, logger, **_):
-    settings.watching.connect_timeout = 60
+    settings.watching.connect_timeout = 120
     settings.watching.server_timeout = 600
 
     settings.peering.priority = random.randint(0, 32767)
@@ -59,7 +55,7 @@ def on_startup(settings: kopf.OperatorSettings, logger, **_):
     settings.admission.managed = 'batch.teknetes.gigs'
 
     # sensible number of workers so as to not overload the k8s API server
-    settings.batching.worker_limit = 3
+    settings.batching.worker_limit = 5
 
     # all logs by default go to the k8s event api making api server flooding even more likely
     settings.posting.enabled = False

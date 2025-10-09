@@ -17,10 +17,10 @@ import GigK8sUtils from '../utilities/gigK8sUtils';
 
 export const GigRunLogsTab = (model) => {
     const gigRun: GigRun = model.obj;
-    const [gigRunState, setGigRunState] = React.useState<GigRunState>(gigRun?.status?.runState);
+    const [gigRunState, setGigRunState] = React.useState<GigRunState>(gigRun?.spec?.runState);
     const navigate = useNavigate();
 
-    let runState = gigRun?.status?.runState;
+    let runState = gigRun?.spec?.runState;
     if (runState) {
         const currentState = GigRunState[runState]
 

@@ -36,7 +36,7 @@ export const GigRunInputTab = (model) => {
         navigate(path);
     }
 
-    let formType = (gigRun?.status?.runState == GigRunState.WaitingForInput) ? GigFormType.WAITING_FOR_INPUT : null;
+    let formType = (gigRun?.spec?.runState == GigRunState.WaitingForInput) ? GigFormType.WAITING_FOR_INPUT : null;
 
     return (
         <PageSection isFilled style={{ background: 'rgba(200, 54, 54, 0)' }}>

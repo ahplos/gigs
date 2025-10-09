@@ -1,5 +1,11 @@
 import os
 import uuid
+from copy import deepcopy
+import yaml
+
+from box import Box, BoxList
+
+from jinja2 import Environment, FileSystemLoader
 
 import kopf
 from kopf import AdmissionError
@@ -7,11 +13,8 @@ from kopf import AdmissionError
 import kr8s
 from kr8s.objects import ConfigMap, CronJob, Job, Secret
 
-from utilities.controller_helper import create_gigrunner_secret, create_job
 from utilities.gig_types import Gig, GigDefinition, GigRun, GigRunState
 from utilities.constants import GIG_CONSTS
-
-from teknetes_gigs_operator import TeknetesGigsOperator
 
 DATA = 'data'
 
@@ -21,11 +24,17 @@ UID = 'uid'
 
 GIG_DEF_REFS = 'gig_def_refs'
 
-@kopf.on.mutate(
-    GigRun.version,
-    GigRun.plural,
-    operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE]
-)  # type: ignore
+GIG_RUNNER = 'gigrunner'
+GIG_RUNNER_HOME = f'/{GIG_RUNNER}'
+GIG_RUNNER_SH = f'{GIG_RUNNER}.sh'
+WORK_DIR = 'workDir'
+GIG_RUNNER_WORKING_DIR = f'/{WORK_DIR}'
+
+RUNNER_DIR = 'runner'
+RUNNER_TEMPLATES_DIR = 'gigrunner-files'
+SECRET_JINJA_TEMPLATE = 'gigrunner-secret.j2'
+
+@kopf.on.mutate(GigRun.version, GigRun.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
 def onmutategigrun(userinfo, patch, body, meta, logger, **_):
     gig_run = GigRun(body)
     uid = str(meta.annotations.get(GigRun.UUID_ANNOTATION, uuid.uuid4()))
@@ -41,25 +50,25 @@ def onmutategigrun(userinfo, patch, body, meta, logger, **_):
         patch.setdefault(GIG_CONSTS.SPEC, {})[GIG_CONSTS.STARTED_BY] = userinfo['username']
 
     if (gig_run.inputValues):
-        TeknetesGigsOperator.GLOBAL_REGISTRY[uid] = gig_run.inputValues
+        GIG_CONSTS.GLOBAL_REGISTRY[uid] = gig_run.inputValues
 
         patch.setdefault(GIG_CONSTS.SPEC, {})[GIG_CONSTS.INPUT_VALUES] = None
         if (meta.name):
             patch[GIG_CONSTS.SPEC][GIG_CONSTS.INPUT_RECEIVED] = True
 
 @kopf.on.validate(GigRun.version, GigRun.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
-def onvalidategigrun(body, meta, logger, **_):
+def onvalidategigrun(body, logger, **_):
     gig_run = GigRun(body)
-    gig = Gig(gig_run.gigRef, meta.namespace)
+    gig = Gig(gig_run.gigRef, gig_run.namespace)
     if (gig.exists()):
-        raise AdmissionError(f'Gig NOT FOUND for GigRun: {gig.namespace}:{gig.name}')
-    else:
         gig.refresh()
         gig_def = GigDefinition.get(gig.gigDefinitionRef.name, gig.gigDefinitionRef.namespace)
 
         secrets = [s.name for s in gig_def.secrets if not s.get('optional', False)]
-        if (len(list(kr8s.get('secret', *secrets, namespace=meta.namespace))) != len(secrets)):
+        if (len(list(kr8s.get('secret', *secrets, namespace=gig_run.namespace))) != len(secrets)):
             raise AdmissionError(f'One or more missing REQUIRED Secrets when creating GigRun: {gig.namespace}:{secrets}')
+    elif (not gig_run.metadata.get('deletionTimestamp', None)):
+        raise AdmissionError(f'Gig NOT FOUND for GigRun: {gig.namespace}:{gig.name}')
 
     if (gig_run.inputValues):
         raise AdmissionError(f'GigRun should not be admitted with inputValues: {gig.namespace}:{gig.name}')
@@ -73,42 +82,44 @@ def on_create_gigrun(body, meta, patch, logger, **_):
     cron_job = CronJob.get(gig.name, gig.namespace)
 
     namespace = gig.gigDefinitionRef.namespace if gig.gigDefinitionRef.namespace else gig_run.namespace
-    gig_def_secret = Secret.get(gig.gigDefinitionRef.name, namespace)
-    gig_def_secrets_map = {gig_def_secret.name: gig_def_secret}
-    gig_def_refs = gig_def_secret.get(GIG_DEF_REFS, None)
-    if (gig_def_secret):
-        collect_gig_def_secrets(gig_def_refs, gig_def_secrets_map, namespace)
+    gig_def = GigDefinition.get(gig.gigDefinitionRef.name, namespace)
+    gig_def_secrets_map = {}
+    collect_gig_def_secrets(gig_def, gig_def_secrets_map)
+    create_gig_def_secrets(gig_def_secrets_map, gig)
 
-    create_gig_run_secrets(gig_def_secrets_map, gig_run)
+    gigrunner_secret = create_gigrunner_secret(gig_run, gig_def)
 
-    job = create_job(cron_job, gig_run, gig_def_secrets_map)
-    gig_run.set_owner(job)
+    job = create_job(cron_job, gig_run, gig_def, gigrunner_secret, gig_def_secrets_map)
 
     create_or_patch_inputValues_secret(gig_run)
 
     patch.metadata[GIG_CONSTS.LABELS] = {
-        GIG_CONSTS.JOB_NAME_SELECTOR_LABEL: job.name
-    }
-
-    patch[GIG_CONSTS.STATUS] = {
+        GIG_CONSTS.JOB_NAME_SELECTOR_LABEL: job.name,
         GIG_CONSTS.RUN_STATE: GigRunState.RUNNING
     }
 
-def collect_gig_def_secrets(secret_names, secrets_map, namespace):
-    for secret_name in secret_names:
-        if (secret_name not in secrets_map.keys()):
-            secrets_map[secret_name] = Secret.get(secret_name, namespace)
-            gig_def_refs = secrets_map[secret_name].get(GIG_DEF_REFS, None)
-            if (gig_def_refs):
-                collect_gig_def_secrets(gig_def_refs, secrets_map, namespace)
+def collect_gig_def_secrets(gig_def: GigDefinition, gig_def_secrets_map: dict):
+    secret = Secret.get(f'{gig_def.namespace}-{gig_def.name}', gig_def.namespace)
+    gig_def_secrets_map[secret.name] =  secret
 
-def create_gig_run_secrets(gig_def_secrets_map: dict, gig_run: GigRun):
+    for stage in gig_def.stages:
+        if (stage.scriptType == GigDefinition.singular):
+            name = stage.gigDefinitionRef.name
+            namespace = stage.gigDefintionRef.get(GIG_CONSTS.NAMESPACE, None)
+            namespace = namespace if namespace else gig_def.namespace
+            secret_name = f'{namespace}-{name}'
+            if (secret_name not in gig_def_secrets_map.keys()):
+                collect_gig_def_secrets(GigDefinition.get(name, namespace), gig_def_secrets_map)
+
+def create_gig_def_secrets(gig_def_secrets_map: dict, gig: Gig):
     for secret in gig_def_secrets_map.values():
-        new_secret = Secret(f'{secret.name}-{gig_run.name}', gig_run.namespace)
+        new_secret = Secret(f'{secret.name}', gig.namespace)
         new_secret.data = {**secret.data}
-        new_secret['immutable'] = True
-        gig_run.adopt(gig_run)
-        new_secret.create()
+        if (new_secret.exists()):
+            new_secret.patch(new_secret.to_dict())
+        else:
+            new_secret.create()
+        gig.adopt(new_secret)
 
 @kopf.on.update(GigRun.version, GigRun.plural, field='spec.inputReceived', value=True)  # type: ignore
 def on_update_gigrun_inputReceived_True(body, patch, logger, **_):
@@ -118,18 +129,16 @@ def on_update_gigrun_inputReceived_True(body, patch, logger, **_):
         create_or_patch_inputValues_secret(gig_run)
 
         patch[GIG_CONSTS.SPEC] = {
-            GIG_CONSTS.INPUT_RECEIVED: (not gig_run.inputReceived)
-        }
-
-        patch[GIG_CONSTS.STATUS] = {
+            GIG_CONSTS.INPUT_RECEIVED: (not gig_run.inputReceived),
             GIG_CONSTS.RUN_STATE: GigRunState.RUNNING
         }
 
 @kopf.on.delete(GigRun.version, GigRun.plural)  # type: ignore
 def on_delete_gigrun(body, logger, **_):
     gig_run = GigRun(body)
-    job = Job.get(gig_run.job_name, gig_run.namespace)
-    job.delete('Background')
+    job = Job(gig_run.name, gig_run.namespace)
+    if (job.exists()):
+        job.delete('Background')
 
 def update_gig_def_commands(gig_def: GigDefinition):
     stage_processors = ConfigMap.get(os.environ['TEKNETES_GIGS_PROCESSOR_MAP'],
@@ -143,7 +152,7 @@ def update_gig_def_commands(gig_def: GigDefinition):
 
 def create_or_patch_inputValues_secret(gig_run: GigRun):
     uid = gig_run.metadata.annotations[GigRun.UUID_ANNOTATION]
-    inputValues = TeknetesGigsOperator.GLOBAL_REGISTRY.pop(uid, {})
+    inputValues = GIG_CONSTS.GLOBAL_REGISTRY.pop(uid, {})
 
     for k in inputValues:
         inputValues[k] = str(inputValues[k])
@@ -159,3 +168,97 @@ def create_or_patch_inputValues_secret(gig_run: GigRun):
         inputValuesSecret.patch(
             {DATA: None, STRING_DATA: inputValues}, type='merge'
         )
+
+def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigDefinition, gigrunner_secret: Secret, gig_def_secrets_map: dict) -> Job:
+    spec = deepcopy(cron_job.spec.jobTemplate)
+    job = Job(spec)
+    job.metadata.name = None
+    job.metadata.generateName = f'{gig_run.name}-'
+    job.namespace = gig_run.metadata.namespace
+    job.spec.template.spec[GIG_CONSTS.RESTART_POLICY] = GIG_CONSTS.NEVER
+    job.spec[GIG_CONSTS.BACKOFF_LIMIT] = 0
+
+    container = get_container(job, cron_job.annotations.get(GigRun.CONTAINER_NAME_ANNOTATION, None))
+    configure_container(job, container, gig_run.name, gigrunner_secret, gig_def_secrets_map, gig_def.workDirSizeLimit)
+
+    job.create()
+    cron_job.adopt(job)
+
+    return job
+
+def get_container(job: Job, name: str) -> Box:
+    containers = job.spec.template.spec.containers
+
+    if (name):
+        containers = list(filter(lambda c: c.name == name, containers))
+
+        if (not containers):
+            raise kopf.PermanentError(f'Container NOT FOUND: {name}')
+
+    return containers[0]
+
+def configure_container(job: Job, container: Box, gig_run_name: str, gigrunner_secret: Secret, gig_def_secrets_map: dict, working_dir_size_limit: str):
+    mounted_volume = Box(name = GIG_RUNNER, emptyDir = Box(medium = 'Memory', sizeLimit = '50M'))
+    job.spec.template.spec.setdefault(GIG_CONSTS.VOLUMES, BoxList()).append(mounted_volume)
+
+    mounted_volume_mount = Box(name = GIG_RUNNER, mountPath = GIG_RUNNER_HOME)
+    container.setdefault(GIG_CONSTS.VOLUME_MOUNTS, BoxList()).append(mounted_volume_mount)
+
+    mountedDirectory = f'/{GIG_RUNNER}-mounted'
+    gigrunner_secret_volume = Box(name = gigrunner_secret.name, secret = Box(secretName = gigrunner_secret.name, defaultMode = 0o777))
+    job.spec.template.spec[GIG_CONSTS.VOLUMES].append(gigrunner_secret_volume)
+
+    gigrunner_secret_volume_mount = Box(name = gigrunner_secret.name, mountPath = mountedDirectory)
+    container[GIG_CONSTS.VOLUME_MOUNTS].append(gigrunner_secret_volume_mount)
+
+    for secret_name in gig_def_secrets_map.keys():
+        secret_volume = Box(name = secret_name, secret = Box(secretName = secret_name, defaultMode = 0o777))
+        job.spec.template.spec[GIG_CONSTS.VOLUMES].append(secret_volume)
+
+        secret_volume_mount = Box(name = secret_name, mountPath = f'{mountedDirectory}/{secret_name}')
+        container[GIG_CONSTS.VOLUME_MOUNTS].append(secret_volume_mount)
+
+    env = BoxList()
+    env.append(Box(name = 'GIG_RUNNER_HOME', value = GIG_RUNNER_HOME))
+    env.append(Box(name = 'GIG_RUNNER_WORKING_DIR', value = GIG_RUNNER_WORKING_DIR))
+    env.append(Box(name = 'GIG_RUN_NAME', value = gig_run_name))
+    env.append(Box(name = 'POD_NAME', valueFrom = Box(fieldRef = Box(fieldPath = f'{GIG_CONSTS.METADATA}.{GIG_CONSTS.NAME}'))))
+    env.append(Box(name = 'GIG_RUN_NAMESPACE', valueFrom = Box(fieldRef = Box(fieldPath = f'{GIG_CONSTS.METADATA}.{GIG_CONSTS.NAMESPACE}'))))
+    env.append(Box(name = 'POD_NAMESPACE', valueFrom = Box(fieldRef = Box(fieldPath = f'{GIG_CONSTS.METADATA}.{GIG_CONSTS.NAMESPACE}'))))
+    container.setdefault(GIG_CONSTS.ENV, env)
+
+    container['imagePullPolicy'] = 'Always'
+    set_job_working_dir(container, job, working_dir_size_limit)
+
+    container.command = BoxList(['bash', '-ce'])
+    container.args = BoxList([f'cp -rL {mountedDirectory}/. {GIG_RUNNER_HOME}/; {GIG_RUNNER_HOME}/{GIG_RUNNER_SH}'])
+
+def set_job_working_dir(container: Box, job: Job, working_dir_size_limit):
+    volumes = job.spec.template.spec.setdefault(GIG_CONSTS.VOLUMES, BoxList())
+    if (not list(filter(lambda vol: vol[GIG_CONSTS.NAME] == WORK_DIR, volumes))):
+        working_dir_volume = Box(name = WORK_DIR.lower(), emptyDir = Box(sizeLimit = working_dir_size_limit))
+        volumes.append(working_dir_volume)
+
+        working_dir_volumemount = Box(name = WORK_DIR.lower(), mountPath = GIG_RUNNER_WORKING_DIR)
+        container.volumeMounts.append(working_dir_volumemount)
+        container.workDir = GIG_RUNNER_WORKING_DIR
+
+def create_gigrunner_secret(gig_run: GigRun, gig_def: GigDefinition):
+    env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
+
+    secret_files = [file for file in os.listdir(f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}')]
+    template_data = {
+        'gig_run': gig_run,
+        'gig_def': gig_def,
+        'SECRET_FILES': secret_files,
+        "GIG_TIMEOUT": gig_def.activeDeadlineSeconds,
+    }
+
+    template = env.get_template(SECRET_JINJA_TEMPLATE)
+    output = template.render(template_data)
+
+    secret = Secret(yaml.safe_load(output))
+    secret.create()
+    secret.set_owner(gig_run)
+
+    return secret

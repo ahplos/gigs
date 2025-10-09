@@ -1,7 +1,11 @@
 from kopf import Operation
 
+from box import Box
+
 
 class _GIG_CONSTS(type):
+
+    GLOBAL_REGISTRY = Box()
 
     @property
     def BATCH_TEKNETES_ORG(self) -> str:

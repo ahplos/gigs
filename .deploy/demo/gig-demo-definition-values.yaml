@@ -63,19 +63,21 @@ elCicdTemplates:
           displayName: Cluster Admin Authentication
           name: cluster-admin-login-to-cluster
           script: |-
+            SOME_VAR='Testing scripts run in current process'
             oc login --insecure-skip-tls-verify -u ${CLUSTER_ADMIN_USER_NAME} -p ${CLUSTER_ADMIN_PASSWORD} https://kubernetes.default.svc
             sleep 2
         - description: Retrieve Gig Operator supported Stage languages.
           name: retrieve-gig-operator-supported-languages
           script: |-
+            echo "SOME_VAR: ${SOME_VAR}"
             JSON=$(oc get configmap teknetes-gigs-stage-processors -n gigs-operator -o jsonpath='{.data}')
-            LANGS=$(echo "${JSON}" | jq -r 'keys[]' | tr '\n' ',' | sed -E -e 's/([A-Za-z]+)/"\1"\ /g')
+            LANGS=$(echo "${JSON}" | jq -r 'keys[]' | paste -sd ',' - | sed -E -e 's/([A-Z][A-Za-z.-]+)/"\1"\ /g')
             echo "{%- set LANGS = [${LANGS}] %}" > tek_langs.j2
             sleep 2
         - description: Ask the user what Teknetes Gig language support they wish demonstrated.
           displayName: Which languages should be demoed?
           name: ask-user-what-languages-to-demo.j2
-          scriptType: input
+          scriptType: Input
           script: |-
             {%- include 'tek_langs.j2' %}
             {%- from 'tek_langs.j2' import LANGS %}
@@ -90,9 +92,9 @@ elCicdTemplates:
             {%- endfor %}
         - description: Set a test msg with a Go script.
           name: set-test-msg-with.go
-          scriptType: go
-          when:
-          - AND: env.LANG_GO
+          scriptType: Go
+          when: |-
+            env.LANG_GO
           script: |-
             package main
 
@@ -107,13 +109,13 @@ elCicdTemplates:
             }
         - displayName: Print the test msg set with Go.
           name: print-the-go-test-msg
-          when:
-          - AND: env.LANG_GO
+          when: |-
+            env.LANG_GO
           script: |-
             echo ${TEST_MSG}
         - description: Set a test msg with a Python script.
           name: set-test-msg-with.py
-          scriptType: python
+          scriptType: Python
           when: |-
             env.LANG_PYTHON
           script: |-

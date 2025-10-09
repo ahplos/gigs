@@ -1,11 +1,10 @@
 import kopf
-from kopf import Operation
+
+from box import Box
 
 from kr8s.objects import CronJob
 
 from utilities.gig_types import GIG_CONSTS, Gig, GigDefinition, GigLaunchForm
-
-from utilities.controller_helper import get_name_namespace_from_anno
 
 @kopf.on.mutate(
     CronJob.version,
@@ -63,8 +62,8 @@ def on_create_cronjob(body, meta, annotations, logger, **_):
 
     gig_form_ref = get_name_namespace_from_anno(annotations.get(GigLaunchForm.GIG_LAUNCHFORM_ANNOTATION))
     if (gig_form_ref or gig_def.gigLaunchFormRef):
-        gig.gigLaunchFormRef = gig_form_ref.name if gig_form_ref else gig_def.gigLaunchFormRef
-        gig.gigLaunchFormRefNamespace = gig_form_ref.namespace if gig_form_ref else gig_def.gigLaunchFormRefNamespace
+        gig.gigLaunchFormRef.name = gig_form_ref.name if gig_form_ref else gig_def.gigLaunchFormRef
+        gig.gigLaunchFormRef.namespace = gig_form_ref.namespace if gig_form_ref else gig_def.gigLaunchFormRef.namespace
 
     gig.create()
     gig.set_owner(cron_job)
@@ -85,3 +84,9 @@ def on_update_cronjob(old, new, patch, logger, **_):
         patch.setdefault(GIG_CONSTS.METADATA, {})[GIG_CONSTS.ANNOTATIONS] = {
             GigDefinition.GIG_DEFINITION_ANNOTATION: oldGigDef
         }
+
+def get_name_namespace_from_anno(annotation_val):
+    ref = annotation_val.split('/')
+    name = ref[0] if len(ref) == 1 else ref[1]
+    namespace = '' if len(ref) == 1 else ref[0]
+    return Box(name = name, namespace = namespace)

@@ -20,6 +20,7 @@ def onvalidategig(body, meta, logger, **_):
         raise AdmissionError(f'CronJob {gig_def.namespace}:{gig_def.name} does not exist for {gig.namespace}:{gig.name}')
 
     if (gig.gigLaunchFormRef):
-        gig_launch_form = GigLaunchForm(gig.gigLaunchFormRef.name, gig.gigLaunchFormRef.namespace)
+        namespace = gig.gigLaunchFormRef.get(GIG_CONSTS.NAMESPACE, gig_def.namespace)
+        gig_launch_form = GigLaunchForm(gig.gigLaunchFormRef.name, namespace)
         if (not gig_launch_form.exists()):
             raise AdmissionError(f'CronJob {gig_launch_form.namespace}:{gig_launch_form.name} does not exist for {gig.namespace}:{gig.name}')

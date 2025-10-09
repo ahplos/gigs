@@ -21,7 +21,7 @@ function __convertJsonDictToEnv() {
 }
 
 function __saveInputParamsToEnv() {
-    INPUT_PARAMS=$(kubectl get secret -n {{ gig_run.namespace }} {{ K8S_SECRET_NAME }} -o jsonpath='{.data}')
+    INPUT_PARAMS=$(kubectl get secret -n {{ gig_run.namespace }} {{ gig_run.name }} -o jsonpath='{.data}')
     if [[ ! -z ${INPUT_PARAMS} ]]
     then
         INPUT_PARAMS=$(__convertJsonDictToEnv ${INPUT_PARAMS} '' TRUE | tr ' ' '\n')
@@ -60,7 +60,12 @@ function __filterLogOutput() {
         __loadStageEnv
 
         SECRETS_REGEX=$(__generateSecretFilter)
-        echo "${LOGS}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g"
+        if [[ -z ${SECRETS_REGEX} ]]
+        then
+            echo "${LOGS}"
+        else
+            echo "${LOGS}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g"
+        fi
     done
 }
 
@@ -82,12 +87,11 @@ function __waitForUserInput() {
     python ${GIG_RUNNER_HOME}/jinja_stage.py ${1}
 
     kubectl patch gigrun ${GIG_RUN_NAME} -n ${POD_NAMESPACE} --patch-file user_input_patch.yaml --type='merge'
-    kubectl patch gigrun ${GIG_RUN_NAME} -n ${POD_NAMESPACE} --subresource=status --patch-file user_input_patch.yaml --type='merge'
 
     echo
     echo 'Waiting for user input...'
 
-    kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.status.runState}'='Running' -n {{ gig_run.namespace }} &> /dev/null
+    kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} &> /dev/null
 
     __saveInputParamsToEnv
 
@@ -100,7 +104,7 @@ set +o allexport
 function __checkForAbortSignal() {
     PID=${1}
     kubectl wait gigrun/{{ gig_run.name }} -n {{ gig_run.namespace }} \
-        --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.status.runState}'='Aborting'
+        --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.spec.runState}'='Aborting'
 
     echo "ABORT RUN..." > gig.log
     set -x
@@ -108,7 +112,7 @@ function __checkForAbortSignal() {
     set +x
 }
 
-${GIG_RUNNER_HOME}/${STAGE_RUNNER_SCRIPT}.sh &
+${GIG_RUNNER_HOME}/{{ gig_def.namespace }}-{{ gig_def.name }}/stagerunner.sh &
 PID=$!
 __checkForAbortSignal ${PID} &
 tail -q --pid ${PID} -f gig.log -n +1

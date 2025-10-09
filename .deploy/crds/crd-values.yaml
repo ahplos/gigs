@@ -123,7 +123,7 @@ elCicdDefs-$<GIG_DEF>:
         type: integer
         description: |
           Time in seconds before a GigRun will be terminated. This value will override any value set in an associated CronJob.
-        default: 3600
+        default: 600
       description:
         type: string
       gigLaunchFormRef:
@@ -210,9 +210,9 @@ elCicdDefs-$<GIG_DEF>:
               description: Human readable title of name for logging purposes.
             gigDefinitionRef:
               type: object
-              properties:
-                name:
-                  type: string
+              description: |
+                Reference to another GigDefintion that should be run in full for this stage.
+              properties: $<NAME_NAMESPACE_PROPS>
               required:
               - name
             iterate:
@@ -259,18 +259,18 @@ elCicdDefs-$<GIG_DEF>:
             scriptType:
               type: string
               description: |
-                The interpretor for the stage, either a definition type or language. For 'shell', scripts are executed directly.
+                The interpretor for the stage, either a definition type or language. For 'Shell', scripts are executed directly.
                 For all other interpretors, scripts are mounted as files in the Pod and executed; i.e. in a subprocess. If not defined,
-                then 'shell' is assumed.
+                then 'Shell' is assumed.
               enum:
-              - custom
-              - gigdefinition
-              - go
-              - input
-              - jinja-template
-              - python
-              - shell
-              default: shell
+              - Custom
+              - GigDefinition
+              - Go
+              - Input
+              - JinjaTemplate
+              - Python
+              - Shell
+              default: Shell
             script:
               type: string
               description: |
@@ -384,6 +384,7 @@ elCicdDefs-$<GIG_RUN>:
         properties:
           additionalProperties:
             type: string
+      runState: $<RUN_STATE>
       startedBy:
         type: string
         x-kubernetes-validations:
@@ -394,7 +395,6 @@ elCicdDefs-$<GIG_RUN>:
   STATUS_DEFINITION:
     type: object
     properties:
-      runState: $<RUN_STATE>
       runTime:
         type: integer
 

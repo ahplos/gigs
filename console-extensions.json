@@ -367,7 +367,7 @@
         "kind": "GigRun"
       },
       "component": { "$codeRef": "gigUiComponents.GigRunRunStateDetail" },
-      "path": "status.runState"
+      "path": "spec.runState"
     }
   },
   {

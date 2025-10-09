@@ -1,5 +1,4 @@
 import os
-import json
 import yaml
 
 from jinja2 import Environment, FileSystemLoader
@@ -26,11 +25,8 @@ def on_create_or_update_gigdefinition(body, logger, **_):
     stage_processors = ConfigMap.get(os.environ['TEKNETES_GIGS_PROCESSOR_MAP'],
                                      os.environ['TEKNETES_GIGS_OPERATOR_NAMESPACE'])
 
-    gig_def_refs = set()
     for stage in gig_def.stages:
-        if (stage.scriptType == GigDefinition.singular):
-            gig_def_refs.add(stage.gigDefinitionRef.name)
-        elif (not stage.get(COMMAND, None)):
+        if (not stage.get(COMMAND, None)):
             command = stage_processors.data.get(stage.scriptType, None)
             command = command if command else stage_processors.data.get(GIG_CONSTS.SHELL)
             if (command):
@@ -38,8 +34,7 @@ def on_create_or_update_gigdefinition(body, logger, **_):
 
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
     template_data = {
-        'gig_def': gig_def,
-        'gig_def_refs': gig_def_refs,
+        'gig_def': gig_def
     }
 
     template = env.get_template(STAGERUNNER_SECRET_TEMPLATE)

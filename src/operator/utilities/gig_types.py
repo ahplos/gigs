@@ -20,21 +20,12 @@ class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNE
         return self.spec[GIG_CONSTS.ACTIVE_DEADLINE_SECONDS]
 
     @property
-    def gigLaunchFormRef(self) -> str:
-        return self.spec['gigLaunchFormRef'][GIG_CONSTS.NAME]
+    def gigLaunchFormRef(self) -> Box:
+        return self.spec.setdefault('gigLaunchFormRef', Box())
 
     @gigLaunchFormRef.setter
-    def gigLaunchFormRef(self, value):
-        self.spec.setdefault('gigLaunchFormRef', Box())[GIG_CONSTS.NAME] = value
-
-    @property
-    def gigLaunchFormRefNamespace(self) -> str:
-        return self.spec['gigLaunchFormRef'][GIG_CONSTS.NAMESPACE]
-
-    @gigLaunchFormRefNamespace.setter
-    def gigLaunchFormRefNamespace(self, value):
-        self.spec.setdefault('gigLaunchFormRef', Box())[GIG_CONSTS.NAMESPACE] = value
-
+    def gigLaunchFormRef(self, value: Box):
+        self.spec['gigLaunchFormRef'] = value
 
     @property
     def secretEnvVars(self) -> BoxList:
@@ -49,7 +40,7 @@ class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNE
         return self.spec.setdefault(GIG_CONSTS.STAGES, BoxList())
 
     @property
-    def workDirSizeLimit(self) -> Box:
+    def workDirSizeLimit(self) -> str:
         return  self.spec['workDirSizeLimit']
 
 class GigLaunchForm(new_class('GigLaunchForm', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
@@ -73,7 +64,7 @@ class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS
 
     @property
     def gigDefinitionRef(self) -> Box:
-        return self.spec.setdefault('gigDefinitionRef', {})
+        return self.spec.setdefault('gigDefinitionRef', Box())
 
     @gigDefinitionRef.setter
     def gigDefinitionRef(self, value: Box):
@@ -81,19 +72,11 @@ class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS
 
     @property
     def gigLaunchFormRef(self) -> Box:
-        return self.spec.setdefault('gigLaunchFormRef', {})
+        return self.spec.setdefault('gigLaunchFormRef', Box())
 
     @gigLaunchFormRef.setter
-    def gigLaunchFormRef(self, value):
+    def gigLaunchFormRef(self, value: Box):
         self.spec['gigLaunchFormRef'] = value
-
-    @property
-    def gigLaunchFormRefNamespace(self) -> str:
-        return self.spec['gigLaunchFormRef'][GIG_CONSTS.NAMESPACE]
-
-    @gigLaunchFormRefNamespace.setter
-    def gigLaunchFormRefNamespace(self, value):
-        self.spec.setdefault('gigLaunchFormRef', Box())[GIG_CONSTS.NAMESPACE] = value
 
     @property
     def cronJobRef(self) -> str:
@@ -175,11 +158,11 @@ class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_
 
     @property
     def runState(self) -> GigRunState:
-        return self.status[GIG_CONSTS.RUN_STATE]
+        return self.spec.setdefault(GIG_CONSTS.RUN_STATE, None)
 
     @runState.setter
     def runState(self, runState: GigRunState):
-        self.status[GIG_CONSTS.RUN_STATE] = runState
+        self.spec[GIG_CONSTS.RUN_STATE] = runState
 
     @property
     def runTime(self) -> int:
