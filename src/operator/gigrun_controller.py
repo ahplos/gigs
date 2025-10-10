@@ -247,10 +247,14 @@ def create_gigrunner_secret(gig_run: GigRun, gig_def: GigDefinition):
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
 
     secret_files = [file for file in os.listdir(f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}')]
+
+    secret_vars = collect_secret_vars(gig_def, gig_run.metadata.namespace)
+    secret_vars = '\n'.join([f'{key_var}' for key_var in secret_vars])
     template_data = {
         'gig_run': gig_run,
         'gig_def': gig_def,
         'SECRET_FILES': secret_files,
+        'SECRET_VARS': secret_vars,
         "GIG_TIMEOUT": gig_def.activeDeadlineSeconds,
     }
 
@@ -262,3 +266,14 @@ def create_gigrunner_secret(gig_run: GigRun, gig_def: GigDefinition):
     secret.set_owner(gig_run)
 
     return secret
+
+def collect_secret_vars(gig_def: GigDefinition, namespace: str) -> list:
+    secrets = []
+    for secret in gig_def.secrets:
+        k8s_secret = Secret.get(secret[GIG_CONSTS.NAME], namespace)
+        secrets += k8s_secret.data.keys()
+
+    for secretEnvVar in gig_def.secretEnvVars:
+        secrets.append(secretEnvVar)
+
+    return secrets
