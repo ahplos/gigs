@@ -1,5 +1,9 @@
 elCicdDefs:
-  GIG_DEF_NAME: gig-demo-definition
+  GIG_DEF_SIGN_IN: gig-def-sign-in
+  GIG_DEF_ASK_USER: gig-dif-ask-user
+  GIG_DEF_GO_DEMO: gig-def-go-demo
+  GIG_DEF_PYTHON_DEMO: gig-def-python-demo
+  GIG_DEF_NAMES: [$<GIG_DEF_SIGN_IN>, $<GIG_DEF_ASK_USER>, $<GIG_DEF_GO_DEMO>, $<GIG_DEF_PYTHON_DEMO>]
 
   GIG_FORM_NAME: gig-demo-launchform
 
@@ -45,10 +49,10 @@ elCicdTemplates:
 
 - apiVersion: batch.teknetes.org/v1beta1
   kind: GigDefinition
-  objName: $<GIG_DEF_NAME>
-  template:
-    spec:
-      name: Gig Demo
+  objNames: $<GIG_DEF_NAMES>
+  elCicdDefs-$<GIG_DEF_SIGN_IN>:
+    GIG_DEF_SPECS:
+      name: $<GIG_DEF_SIGN_IN>
       gigLaunchFormRef:
         name: $<GIG_FORM_NAME>-1
       requiredInputParams:
@@ -57,73 +61,102 @@ elCicdTemplates:
       secretEnvVars:
       - CLUSTER_ADMIN_PASSWORD
       secrets:
-      - name: gig-demo-secrets
+      - name: gig-demo-gig-def-secret
       stages:
-        - description: Login into cluster as cluster admin
-          displayName: Cluster Admin Authentication
-          name: cluster-admin-login-to-cluster
-          script: |-
-            SOME_VAR='Testing scripts run in current process'
-            oc login --insecure-skip-tls-verify -u ${CLUSTER_ADMIN_USER_NAME} -p ${CLUSTER_ADMIN_PASSWORD} https://kubernetes.default.svc
-            sleep 2
-        - description: Retrieve Gig Operator supported Stage languages.
-          name: retrieve-gig-operator-supported-languages
-          script: |-
-            echo "SOME_VAR: ${SOME_VAR}"
-            JSON=$(oc get configmap teknetes-gigs-stage-processors -n gigs-operator -o jsonpath='{.data}')
-            LANGS=$(echo "${JSON}" | jq -r 'keys[]' | paste -sd ',' - | sed -E -e 's/([A-Z][A-Za-z.-]+)/"\1"\ /g')
-            echo "{%- set LANGS = [${LANGS}] %}" > tek_langs.j2
-            sleep 2
-        - description: Ask the user what Teknetes Gig language support they wish demonstrated.
-          displayName: Which languages should be demoed?
-          name: ask-user-what-languages-to-demo.j2
-          scriptType: Input
-          script: |-
-            {%- include 'tek_langs.j2' %}
-            {%- from 'tek_langs.j2' import LANGS %}
-            {%- for LANG in LANGS %}
-            {% filter indent(width=4) %}
-            - attributes:
-                label: {{ LANG }}
-              components:
-                - inputType: Checkbox
-              var: LANG_{{ LANG|upper }}
-            {%- endfilter %}
-            {%- endfor %}
-        - description: Set a test msg with a Go script.
-          name: set-test-msg-with.go
-          scriptType: Go
-          when: |-
-            env.LANG_GO
-          script: |-
-            package main
+      - description: Login into cluster as cluster admin
+        displayName: Cluster Admin Authentication
+        name: cluster-admin-login-to-cluster
+        script: |-
+          SOME_VAR='Testing scripts run in current process'
+          oc login --insecure-skip-tls-verify -u ${CLUSTER_ADMIN_USER_NAME} -p ${CLUSTER_ADMIN_PASSWORD} https://kubernetes.default.svc
+          sleep 2
+      - description: Retrieve Gig Operator supported Stage languages.
+        name: retrieve-gig-operator-supported-languages
+        scriptType: GigDefinition
+        gigDefinitionRef:
+          name: $<GIG_DEF_ASK_USER>
+  elCicdDefs-$<GIG_DEF_ASK_USER>:
+    GIG_DEF_SPECS:
+      name: $<GIG_DEF_ASK_USER>
+      stages:
+      - description: Retrieve Gig Operator supported Stage languages.
+        name: retrieve-gig-operator-supported-languages
+        script: |-
+          echo "SOME_VAR: ${SOME_VAR}"
+          JSON=$(oc get configmap teknetes-gigs-stage-processors -n gigs-operator -o jsonpath='{.data}')
+          LANGS=$(echo "${JSON}" | jq -r 'keys[]' | paste -sd ',' - | sed -E -e 's/([A-Z][A-Za-z.-]+)/"\1"\ /g')
+          echo "{%- set LANGS = [${LANGS}] %}" > tek_langs.j2
+          sleep 2
+      - description: Ask the user what Teknetes Gig language support they wish demonstrated.
+        displayName: Which languages should be demoed?
+        name: ask-user-what-languages-to-demo.j2
+        scriptType: Input
+        script: |-
+          {%- include 'tek_langs.j2' %}
+          {%- from 'tek_langs.j2' import LANGS %}
+          {%- for LANG in LANGS %}
+          {% filter indent(width=4) %}
+          - attributes:
+              label: {{ LANG }}
+            components:
+              - inputType: Checkbox
+            var: LANG_{{ LANG|upper }}
+          {%- endfilter %}
+          {%- endfor %}
+      - description: Demonstrate Go.
+        name: demonstrate-go
+        scriptType: GigDefinition
+        gigDefinitionRef:
+          name: $<GIG_DEF_GO_DEMO>
+      - description: Demonstrate Python.
+        name: demonstrate-python
+        scriptType: GigDefinition
+        gigDefinitionRef:
+          name: $<GIG_DEF_PYTHON_DEMO>
+  elCicdDefs-$<GIG_DEF_GO_DEMO>:
+    GIG_DEF_SPECS:
+      name: $<GIG_DEF_GO_DEMO>
+      stages:
+      - description: Set a test msg with a Go script.
+        name: set-test-msg-with.go
+        scriptType: Go
+        when: |-
+          env.LANG_GO
+        script: |-
+          package main
 
-            import (
-              "os"
-            )
+          import (
+            "os"
+          )
 
-            func main() {
-              var f, _ = os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
-              defer f.Close()
-              f.WriteString("\nTEST_MSG='This test msg was set using Go'")
-            }
-        - displayName: Print the test msg set with Go.
-          name: print-the-go-test-msg
-          when: |-
-            env.LANG_GO
-          script: |-
-            echo ${TEST_MSG}
-        - description: Set a test msg with a Python script.
-          name: set-test-msg-with.py
-          scriptType: Python
-          when: |-
-            env.LANG_PYTHON
-          script: |-
-            with open('.env', 'a') as env_file:
-              env_file.write("\nTEST_MSG='This test msg was set using Python'")
-        - displayName: Print the test msg set with Python.
-          name: print-the-python-test-msg
-          when: |-
-            env.LANG_PYTHON
-          script: |-
-            echo ${TEST_MSG}
+          func main() {
+            var f, _ = os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
+            defer f.Close()
+            f.WriteString("\nTEST_MSG='This test msg was set using Go'")
+          }
+      - displayName: Print the test msg set with Go.
+        name: print-the-go-test-msg
+        when: |-
+          env.LANG_GO
+        script: |-
+          echo ${TEST_MSG}
+  elCicdDefs-$<GIG_DEF_PYTHON_DEMO>:
+    GIG_DEF_SPECS:
+      name: $<GIG_DEF_PYTHON_DEMO>
+      stages:
+      - description: Set a test msg with a Python script.
+        name: set-test-msg-with.py
+        scriptType: Python
+        when: |-
+          env.LANG_PYTHON
+        script: |-
+          with open('.env', 'a') as env_file:
+            env_file.write("\nTEST_MSG='This test msg was set using Python'")
+      - displayName: Print the test msg set with Python.
+        name: print-the-python-test-msg
+        when: |-
+          env.LANG_PYTHON
+        script: |-
+          echo ${TEST_MSG}
+  template:
+    spec: $<GIG_DEF_SPECS>

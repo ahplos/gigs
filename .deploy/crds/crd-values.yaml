@@ -161,9 +161,9 @@ elCicdDefs-$<GIG_DEF>:
       secrets:
         type: array
         description: |
-          List of Secrets that will be included in a GigRun and whose values should be obfuscated in GigRun logs.  A GigRun will fail
-          to start if the Secret does not exist unless it's marked optional.  Referencing a Secret here will NOT mount the Secret
-          in a Pod.  It is the CronJob's/developer's responsibility to import the values.
+          List of Secrets used by the GigRuns derived from the GigDefinition. Secrets are expected to exist at the time
+          a GigRun is created, and they are copied into namespace to be included into the Pod executing a GigRun.  If any
+          Secret is missing and optional is not set to true, the GigRun will automatically fail.
         x-kubernetes-list-type: map
         x-kubernetes-list-map-keys:
         - name
@@ -175,7 +175,7 @@ elCicdDefs-$<GIG_DEF>:
             name:
               type: string
               description: |
-                Name of a Kubernetes Secret that is expected to exist in a the same namespace as a GigRun.
+                Name of a Kubernetes Secret.
             optional:
               type: boolean
               description: If true, ignore if the Secret is missing.

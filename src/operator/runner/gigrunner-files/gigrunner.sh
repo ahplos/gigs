@@ -69,7 +69,46 @@ function __filterLogOutput() {
     done
 }
 
-function __endStage() {
+function __stage_header() {
+    local STAGE_COUNTER=${1}
+    local STAGE_NAME=${2}
+    local STAGE_SCRIPT_TYPE=${3}
+    local STAGE_DESC="${4}"
+    local STAGE_TYPE="${5}"
+
+    export local BORDER='******************************************************************'
+    export local PREFIX='**'
+
+    local STAGE_HEADER=$(
+        echo "${BORDER}"
+        echo "${PREFIX}"
+        echo "${PREFIX} Stage $(printf '%02d' ${STAGE_COUNTER}): ${STAGE_NAME}"
+        echo "${PREFIX} Script: ${STAGE_SCRIPT_TYPE}"
+        echo "${PREFIX}"
+
+        if [[ ${STAGE_DESC} ]]
+        then
+            echo "${PREFIX} ${STAGE_DESC}"
+            echo "${PREFIX}"
+        fi
+
+        if [[ ${STAGE_TYPE} == 'HAS_SECRETS' ]]
+        then
+            echo "${PREFIX} WARNING: SECRETS REALIZED [Debug logging output suppressed]"
+            echo "${PREFIX}"
+        elif [[ ${STAGE_TYPE} == 'SKIPPED' ]]
+        then
+            echo "${PREFIX} WARNING: STAGE SKIPPED [Precondition(s) for execution failed]"
+            echo "${PREFIX}"
+        fi
+
+        echo "${BORDER}"
+    )
+
+    echo "${STAGE_HEADER}"
+}
+
+function __stage_header() {
     STAGE_NAME="${1}"
     STAGE_TYPE="${2}"
 
@@ -112,14 +151,50 @@ function __checkForAbortSignal() {
     set +x
 }
 
+function __gig_run_header() {
+    echo '======================='
+    echo "GIG: {{ gig_def.name }}"
+    if [[ "{{ gig_def.description }}" ]]
+    then
+        echo "{{ gig_def.description }}"
+    fi
+    echo
+    date
+    echo '======================='
+    echo
+
+    echo '======================='
+    KUBE_EXEC=kubectl
+    type oc >/dev/null 2>&1
+    if [[ $? ]]
+    then
+        KUBE_EXEC=oc
+    fi
+    echo "${KUBE_EXEC} version"
+    echo
+    ${KUBE_EXEC} version
+    echo '======================='
+    echo
+}
+
+function __gig_run_footer() {
+    echo
+    echo '******************************************************************'
+    echo '** GIG COMPLETE'
+    echo '******************************************************************'
+    echo
+}
+
+touch .env
+
+__gig_run_header
+
 ${GIG_RUNNER_HOME}/{{ gig_def.namespace }}-{{ gig_def.name }}/stagerunner.sh &
 PID=$!
 __checkForAbortSignal ${PID} &
 tail -q --pid ${PID} -f gig.log -n +1
-echo
-echo '******************************************************************'
-echo '** GIG COMPLETE'
-echo '******************************************************************'
-echo
+
+__gig_run_footer
+
 exit $([ -f .stagerunner_exit_status ] && cat .stagerunner_exit_status)
 

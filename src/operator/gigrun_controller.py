@@ -119,7 +119,7 @@ def create_gig_def_secrets(gig_def_secrets_map: dict, gig: Gig):
             new_secret.patch(new_secret.to_dict())
         else:
             new_secret.create()
-        gig.adopt(new_secret)
+        new_secret.set_owner(gig)
 
 @kopf.on.update(GigRun.version, GigRun.plural, field='spec.inputReceived', value=True)  # type: ignore
 def on_update_gigrun_inputReceived_True(body, patch, logger, **_):
@@ -182,7 +182,8 @@ def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigDefinition, gigru
     configure_container(job, container, gig_run.name, gigrunner_secret, gig_def_secrets_map, gig_def.workDirSizeLimit)
 
     job.create()
-    cron_job.adopt(job)
+    job.set_owner(cron_job)
+    gig_run.set_owner(job)
 
     return job
 
