@@ -158,27 +158,6 @@ elCicdDefs-$<GIG_DEF>:
         items:
           type: string
         x-kubernetes-list-type: set
-      secrets:
-        type: array
-        description: |
-          List of Secrets used by the GigRuns derived from the GigDefinition. Secrets are expected to exist at the time
-          a GigRun is created, and they are copied into namespace to be included into the Pod executing a GigRun.  If any
-          Secret is missing and optional is not set to true, the GigRun will automatically fail.
-        x-kubernetes-list-type: map
-        x-kubernetes-list-map-keys:
-        - name
-        items:
-          type: object
-          required:
-          - name
-          properties:
-            name:
-              type: string
-              description: |
-                Name of a Kubernetes Secret.
-            optional:
-              type: boolean
-              description: If true, ignore if the Secret is missing.
       stages:
         description: Units of work.  User input may potentially be required at the end of a name.
         type: array
@@ -211,7 +190,7 @@ elCicdDefs-$<GIG_DEF>:
             gigDefinitionRef:
               type: object
               description: |
-                Reference to another GigDefintion that should be run in full for this stage.
+                Reference to another GigDefinition that should be run in full for this stage.
               properties: $<NAME_NAMESPACE_PROPS>
               required:
               - name

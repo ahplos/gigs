@@ -32,10 +32,6 @@ class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNE
         return  self.spec.setdefault(GIG_CONSTS.SECRET_ENV_VARS, BoxList())
 
     @property
-    def secrets(self) -> BoxList:
-        return  self.spec.setdefault(GIG_CONSTS.SECRETS, BoxList())
-
-    @property
     def stages(self) -> BoxList:
         return self.spec.setdefault(GIG_CONSTS.STAGES, BoxList())
 

@@ -1,5 +1,5 @@
 elCicdDefs:
-  GIG_DEF_NAME: gig-demo-definition
+  GIG_DEF_NAME: gig-def-demo
   GIG_FORM_NAME: gig-demo-launchform-2
   GIG_ORG_NAMEPACE: gig-demo-org
 

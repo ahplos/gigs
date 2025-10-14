@@ -60,14 +60,7 @@ def onmutategigrun(userinfo, patch, body, meta, logger, **_):
 def onvalidategigrun(body, logger, **_):
     gig_run = GigRun(body)
     gig = Gig(gig_run.gigRef, gig_run.namespace)
-    if (gig.exists()):
-        gig.refresh()
-        gig_def = GigDefinition.get(gig.gigDefinitionRef.name, gig.gigDefinitionRef.namespace)
-
-        secrets = [s.name for s in gig_def.secrets if not s.get('optional', False)]
-        if (len(list(kr8s.get('secret', *secrets, namespace=gig_run.namespace))) != len(secrets)):
-            raise AdmissionError(f'One or more missing REQUIRED Secrets when creating GigRun: {gig.namespace}:{secrets}')
-    elif (not gig_run.metadata.get('deletionTimestamp', None)):
+    if (not gig.exists() and not gig_run.metadata.get('deletionTimestamp', None)):
         raise AdmissionError(f'Gig NOT FOUND for GigRun: {gig.namespace}:{gig.name}')
 
     if (gig_run.inputValues):
@@ -85,7 +78,7 @@ def on_create_gigrun(body, meta, patch, logger, **_):
     gig_def = GigDefinition.get(gig.gigDefinitionRef.name, namespace)
     gig_def_secrets_map = {}
     collect_gig_def_secrets(gig_def, gig_def_secrets_map)
-    create_gig_def_secrets(gig_def_secrets_map, gig)
+    copy_gig_def_secrets_to_gig_run_namespace(gig_def_secrets_map, gig)
 
     gigrunner_secret = create_gigrunner_secret(gig_run, gig_def)
 
@@ -103,21 +96,22 @@ def collect_gig_def_secrets(gig_def: GigDefinition, gig_def_secrets_map: dict):
     gig_def_secrets_map[secret.name] =  secret
 
     for stage in gig_def.stages:
-        if (stage.scriptType == GigDefinition.singular):
+        if (stage.scriptType == GigDefinition.kind):
             name = stage.gigDefinitionRef.name
-            namespace = stage.gigDefintionRef.get(GIG_CONSTS.NAMESPACE, None)
+            namespace = stage.gigDefinitionRef.get(GIG_CONSTS.NAMESPACE, None)
             namespace = namespace if namespace else gig_def.namespace
             secret_name = f'{namespace}-{name}'
             if (secret_name not in gig_def_secrets_map.keys()):
                 collect_gig_def_secrets(GigDefinition.get(name, namespace), gig_def_secrets_map)
 
-def create_gig_def_secrets(gig_def_secrets_map: dict, gig: Gig):
+def copy_gig_def_secrets_to_gig_run_namespace(gig_def_secrets_map: dict, gig: Gig):
     for secret in gig_def_secrets_map.values():
         new_secret = Secret(f'{secret.name}', gig.namespace)
         new_secret.data = {**secret.data}
         if (new_secret.exists()):
             new_secret.patch(new_secret.to_dict())
         else:
+            new_secret.raw.type = secret.raw.type
             new_secret.create()
         new_secret.set_owner(gig)
 
@@ -249,13 +243,10 @@ def create_gigrunner_secret(gig_run: GigRun, gig_def: GigDefinition):
 
     secret_files = [file for file in os.listdir(f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}')]
 
-    secret_vars = collect_secret_vars(gig_def, gig_run.metadata.namespace)
-    secret_vars = '\n'.join([f'{key_var}' for key_var in secret_vars])
     template_data = {
         'gig_run': gig_run,
         'gig_def': gig_def,
         'SECRET_FILES': secret_files,
-        'SECRET_VARS': secret_vars,
         "GIG_TIMEOUT": gig_def.activeDeadlineSeconds,
     }
 
@@ -267,14 +258,3 @@ def create_gigrunner_secret(gig_run: GigRun, gig_def: GigDefinition):
     secret.set_owner(gig_run)
 
     return secret
-
-def collect_secret_vars(gig_def: GigDefinition, namespace: str) -> list:
-    secrets = []
-    for secret in gig_def.secrets:
-        k8s_secret = Secret.get(secret[GIG_CONSTS.NAME], namespace)
-        secrets += k8s_secret.data.keys()
-
-    for secretEnvVar in gig_def.secretEnvVars:
-        secrets.append(secretEnvVar)
-
-    return secrets

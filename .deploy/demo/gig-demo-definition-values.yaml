@@ -1,9 +1,9 @@
 elCicdDefs:
-  GIG_DEF_SIGN_IN: gig-def-sign-in
+  GIG_DEF_DEMO: gig-def-demo
   GIG_DEF_ASK_USER: gig-dif-ask-user
   GIG_DEF_GO_DEMO: gig-def-go-demo
   GIG_DEF_PYTHON_DEMO: gig-def-python-demo
-  GIG_DEF_NAMES: [$<GIG_DEF_SIGN_IN>, $<GIG_DEF_ASK_USER>, $<GIG_DEF_GO_DEMO>, $<GIG_DEF_PYTHON_DEMO>]
+  GIG_DEF_NAMES: [$<GIG_DEF_DEMO>, $<GIG_DEF_ASK_USER>, $<GIG_DEF_GO_DEMO>, $<GIG_DEF_PYTHON_DEMO>]
 
   GIG_FORM_NAME: gig-demo-launchform
 
@@ -50,9 +50,9 @@ elCicdTemplates:
 - apiVersion: batch.teknetes.org/v1beta1
   kind: GigDefinition
   objNames: $<GIG_DEF_NAMES>
-  elCicdDefs-$<GIG_DEF_SIGN_IN>:
+  elCicdDefs-$<GIG_DEF_DEMO>:
     GIG_DEF_SPECS:
-      name: $<GIG_DEF_SIGN_IN>
+      name: $<GIG_DEF_DEMO>
       gigLaunchFormRef:
         name: $<GIG_FORM_NAME>-1
       requiredInputParams:
@@ -60,8 +60,6 @@ elCicdTemplates:
       - CLUSTER_ADMIN_PASSWORD
       secretEnvVars:
       - CLUSTER_ADMIN_PASSWORD
-      secrets:
-      - name: gig-demo-gig-def-secret
       stages:
       - description: Login into cluster as cluster admin
         displayName: Cluster Admin Authentication

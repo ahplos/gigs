@@ -1,9 +1,5 @@
 #!/usr/bin/bash -e
 
-STAGE_RUNNER_SCRIPT=${1}
-
-touch .env gig.log
-
 set -o allexport
 
 function __loadStageEnv() {
@@ -26,28 +22,25 @@ function __saveInputParamsToEnv() {
     then
         INPUT_PARAMS=$(__convertJsonDictToEnv ${INPUT_PARAMS} '' TRUE | tr ' ' '\n')
         echo "${INPUT_PARAMS}" > .env
+        echo
         echo '======================='
         echo 'INPUT PARAMS RECEIVED:'
         echo
         echo "${INPUT_PARAMS}" | awk '{ print "    " $0 }'
         echo '======================='
         echo
+
+        kubectl patch secret -n {{ gig_run.namespace }} {{ gig_run.name }} --patch 'data:' 2>&1 > /dev/null
     fi
+
 }
 
 function __generateSecretFilter() {
-    local SECRET_VARS=$(cat ${GIG_RUNNER_HOME}/.secrets)
+    local SECRET_VARS=$(cat .secrets)
     local SECRETS_REGEX=''
     for VAR in ${SECRET_VARS}
     do
         SECRETS_REGEX+=${SECRETS_REGEX:+${!VAR:+|}}${!VAR}
-    done
-
-    SECRET_VARS=$(ls .secrets)
-    for VAR in ${SECRET_VARS}
-    do
-        VAL="$(cat .secrets/${VAR})"
-        SECRETS_REGEX+=${VAL:+${VAL:+|}}${VAL}
     done
 
     echo ${SECRETS_REGEX}
@@ -58,7 +51,8 @@ function __filterLogOutput() {
     while read -r LOGS
     do
         __loadStageEnv
-
+        [[ ${LOGS} =~ ^[^\[] ]] && ! [[ ${LOGS} =~ ^\*\* ]] && \
+            echo -n "${LOGS:+[$(date +%H:%M:%S)|$(echo "${1}" | sed 's/\(.\{15\}\).*/\1.../')]} "
         SECRETS_REGEX=$(__generateSecretFilter)
         if [[ -z ${SECRETS_REGEX} ]]
         then
@@ -80,6 +74,7 @@ function __stage_header() {
     export local PREFIX='**'
 
     local STAGE_HEADER=$(
+        echo
         echo "${BORDER}"
         echo "${PREFIX}"
         echo "${PREFIX} Stage $(printf '%02d' ${STAGE_COUNTER}): ${STAGE_NAME}"
@@ -108,37 +103,19 @@ function __stage_header() {
     echo "${STAGE_HEADER}"
 }
 
-function __stage_header() {
-    STAGE_NAME="${1}"
-    STAGE_TYPE="${2}"
-
-    if [[ "${STAGE_TYPE}" == 'Input' ]]
-    then
-        __waitForUserInput ${STAGE_NAME}
-    fi
-
-    echo
-    echo "==> STAGE COMPLETE: ${STAGE_NAME}"
-    echo
-}
-
 function __waitForUserInput() {
     python ${GIG_RUNNER_HOME}/jinja_stage.py ${1}
 
-    kubectl patch gigrun ${GIG_RUN_NAME} -n ${POD_NAMESPACE} --patch-file user_input_patch.yaml --type='merge'
+    kubectl patch gigrun ${GIG_RUN_NAME} -n ${POD_NAMESPACE} --patch-file user_input_patch.yaml --type='merge' 2>&1 > /dev/null
 
-    echo
     echo 'Waiting for user input...'
 
     kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} &> /dev/null
 
     __saveInputParamsToEnv
 
-    echo
     echo 'User input received; continuing...'
 }
-
-set +o allexport
 
 function __checkForAbortSignal() {
     PID=${1}
@@ -181,20 +158,24 @@ function __gig_run_footer() {
     echo
     echo '******************************************************************'
     echo '** GIG COMPLETE'
+    echo '**'
+    echo "** $(date)"
     echo '******************************************************************'
     echo
 }
 
-touch .env
+set +o allexport
 
-__gig_run_header
+touch .secrets .env gig.log
 
-${GIG_RUNNER_HOME}/{{ gig_def.namespace }}-{{ gig_def.name }}/stagerunner.sh &
+echo "$(__gig_run_header)" 2>&1 >> gig.log
+
+${GIG_RUNNER_HOME}/{{ gig_def.namespace }}-{{ gig_def.name }}/stagerunner.sh >> gig.log &
 PID=$!
 __checkForAbortSignal ${PID} &
 tail -q --pid ${PID} -f gig.log -n +1
 
-__gig_run_footer
+__gig_run_footer | tee gig.log
 
 exit $([ -f .stagerunner_exit_status ] && cat .stagerunner_exit_status)
 

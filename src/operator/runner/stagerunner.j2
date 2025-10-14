@@ -1,21 +1,27 @@
 #!/usr/bin/bash -e
-mkdir .secrets
+
+SECRETS_FILE="$(dirname ${0})/.secrets"
+if [[ -f ${SECRETS_FILE} ]]
+then
+    echo $(cat ${SECRETS_FILE}) >> .secrets
+fi
 
 STAGE_COUNTER=0
 __stageRunner() {
+    echo "$(__saveInputParamsToEnv)"
     {%- set GIG_DEF_DIR_NAME = '{}-{}'.format(gig_def.namespace, gig_def.name) %}
-
-    __saveInputParamsToEnv
-
     {%- for stage in gig_def.stages %}
 
     function {{ stage.name }}() {
         __loadStageEnv
+
         if [[ ! -f ${GIG_RUNNER_HOME}/{{ GIG_DEF_DIR_NAME }}/when-{{ stage.name }}.js || \
             $(node ${GIG_RUNNER_HOME}/{{ GIG_DEF_DIR_NAME }}//when-{{ stage.name }}.js) == 'true' ]]
         then
             {%- set HAS_SECRETS = 'HAS_SECRETS' if stage.secretVars else '' %}
+            {%- if (not stage.gigDefinitionRef) %}
             __stage_header ${STAGE_COUNTER} '{{ stage.name }}' '{{ stage.scriptType }}' '{{ stage.description }}' {{ HAS_SECRETS }}
+            {%- endif %}
 
             {%- if ('command' in stage) %}
                 {%- set STAGE_SCRIPT = stage.command % '${{GIG_RUNNER_HOME}}/{}/{}'.format(GIG_DEF_DIR_NAME, stage.name) %}
@@ -37,15 +43,22 @@ __stageRunner() {
 
             __loadStageEnv
             {%- if stage.secretVars %}
-            {% for secretVar in stage.secretVars %}
-            echo "${ {{- secretVar }}}" >> .secrets/{{ secretVar }}
+            {%- for secretVar in stage.secretVars %}
+            echo "${ {{- secretVar }}}" >> .secrets
             {%- endfor %}
             {%- endif %}
 
-            __stage_footer '{{ stage.name }}' '{{ stage.scriptType }}'
+            {%- if (not stage.gigDefinitionRef) %}
+            if [[ '{{ stage.scriptType }}' == 'Input' ]]
+            then
+                __waitForUserInput {{ stage.name }}
+            fi
+
+            echo
+            echo 'STAGE COMPLETE: {{ stage.name }}'
+            {%- endif %}
         else
-            ${GIG_RUNNER_HOME}/stage_header.sh $((++STAGE_COUNTER)) \
-                '{{ stage.name }}' '{{ stage.scriptType }}' '{{ stage.description }}' 'SKIPPED'
+            __stage_header $((++STAGE_COUNTER)) '{{ stage.name }}' '{{ stage.scriptType }}' '{{ stage.description }}' 'SKIPPED'
         fi
     }
     ((STAGE_COUNTER+=1))
@@ -53,9 +66,9 @@ __stageRunner() {
     echo '******************************************************************'
     echo "** STAGE ${STAGE_COUNTER} RUNNING IN THE BACKGROUND"
     echo '******************************************************************'
-    {{ stage.name }} 2>&1 | __filterLogOutput >> gig.log &
+    {{ stage.name }} 2>&1 | __filterLogOutput '{{ stage.name }}' &
     {%- else %}
-    {{ stage.name }} 2>&1 | __filterLogOutput >> gig.log
+    {{ stage.name }} 2>&1 | __filterLogOutput '{{ stage.name }}'
     {%- endif %}
     {%- if (stage.wait) %}
 

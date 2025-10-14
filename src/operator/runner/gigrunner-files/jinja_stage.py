@@ -16,6 +16,7 @@ environment.filters['from_json'] = load
 environment.filters['from_yaml'] = safe_load
 environment.filters['from_yaml_all'] = safe_load_all
 
+print("Arguments:", sys.argv[1:])
 template_file = sys.argv[1]
 template = None
 is_user_input = os.path.isfile(f'{gigrunner_working_dir}/{template_file}')
