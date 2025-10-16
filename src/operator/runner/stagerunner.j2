@@ -6,9 +6,11 @@ then
     echo $(cat ${SECRETS_FILE}) >> .secrets
 fi
 
+echo "$(__saveInputParamsToEnv)" 2>&1 | __filterLogOutput
+
+PARENT_STAGE="${1}"
 STAGE_COUNTER=0
 __stageRunner() {
-    echo "$(__saveInputParamsToEnv)"
     {%- set GIG_DEF_DIR_NAME = '{}-{}'.format(gig_def.namespace, gig_def.name) %}
     {%- for stage in gig_def.stages %}
 
@@ -20,7 +22,7 @@ __stageRunner() {
         then
             {%- set HAS_SECRETS = 'HAS_SECRETS' if stage.secretVars else '' %}
             {%- if (not stage.gigDefinitionRef) %}
-            __stage_header ${STAGE_COUNTER} '{{ stage.name }}' '{{ stage.scriptType }}' '{{ stage.description }}' {{ HAS_SECRETS }}
+            __stage_header ${STAGE_ID} '{{ stage.name }}' '{{ stage.scriptType }}' '{{ stage.description }}' {{ HAS_SECRETS }}
             {%- endif %}
 
             {%- if ('command' in stage) %}
@@ -29,7 +31,7 @@ __stageRunner() {
             {%- elif (stage.gigDefinitionRef) %}
                 {%- set NAMESPACE = stage.gigDefinitionRef.get(namespace, None) %}
                 {%- set NAMESPACE = NAMESPACE if NAMESPACE else gig_def.metadata.namespace %}
-            ${GIG_RUNNER_HOME}/{{ NAMESPACE }}-{{ stage.gigDefinitionRef.name }}/stagerunner.sh
+            ${GIG_RUNNER_HOME}/{{ NAMESPACE }}-{{ stage.gigDefinitionRef.name }}/stagerunner.sh ${STAGE_ID}
             {%- else %}
                 {%- if not stage.secretVars %}
 
@@ -58,17 +60,18 @@ __stageRunner() {
             echo 'STAGE COMPLETE: {{ stage.name }}'
             {%- endif %}
         else
-            __stage_header $((++STAGE_COUNTER)) '{{ stage.name }}' '{{ stage.scriptType }}' '{{ stage.description }}' 'SKIPPED'
+            __stage_header ${STAGE_ID} '{{ stage.name }}' '{{ stage.scriptType }}' '{{ stage.description }}' 'SKIPPED'
         fi
     }
     ((STAGE_COUNTER+=1))
+    STAGE_ID="${PARENT_STAGE}${PARENT_STAGE:+-}$(printf '%02d' ${STAGE_COUNTER})"
     {%- if (stage.parallel) %}
     echo '******************************************************************'
     echo "** STAGE ${STAGE_COUNTER} RUNNING IN THE BACKGROUND"
     echo '******************************************************************'
-    {{ stage.name }} 2>&1 | __filterLogOutput '{{ stage.name }}' &
+    {{ stage.name }} 2>&1 | __filterLogOutput "${STAGE_ID}" &
     {%- else %}
-    {{ stage.name }} 2>&1 | __filterLogOutput '{{ stage.name }}'
+    {{ stage.name }} 2>&1 | __filterLogOutput "${STAGE_ID}"
     {%- endif %}
     {%- if (stage.wait) %}
 

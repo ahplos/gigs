@@ -51,8 +51,9 @@ function __filterLogOutput() {
     while read -r LOGS
     do
         __loadStageEnv
+        local GIG_RUN_TIME=$(echo $(($(date +%s) - ${GIG_RUN_START_TIME})) | sed 's/00://g')
         [[ ${LOGS} =~ ^[^\[] ]] && ! [[ ${LOGS} =~ ^\*\* ]] && \
-            echo -n "${LOGS:+[$(date +%H:%M:%S)|$(echo "${1}" | sed 's/\(.\{15\}\).*/\1.../')]} "
+            echo -n "${LOGS:+${1:+[$(date -d@${GIG_RUN_TIME} -u +%Hh:%Mm:%Ss)|STG ${1}]}} "
         SECRETS_REGEX=$(__generateSecretFilter)
         if [[ -z ${SECRETS_REGEX} ]]
         then
@@ -64,7 +65,7 @@ function __filterLogOutput() {
 }
 
 function __stage_header() {
-    local STAGE_COUNTER=${1}
+    local STAGE_ID=${1}
     local STAGE_NAME=${2}
     local STAGE_SCRIPT_TYPE=${3}
     local STAGE_DESC="${4}"
@@ -77,7 +78,7 @@ function __stage_header() {
         echo
         echo "${BORDER}"
         echo "${PREFIX}"
-        echo "${PREFIX} Stage $(printf '%02d' ${STAGE_COUNTER}): ${STAGE_NAME}"
+        echo "${PREFIX} Stage ${STAGE_ID}: ${STAGE_NAME}"
         echo "${PREFIX} Script: ${STAGE_SCRIPT_TYPE}"
         echo "${PREFIX}"
 
@@ -164,6 +165,7 @@ function __gig_run_footer() {
     echo
 }
 
+GIG_RUN_START_TIME=$(date +%s)
 set +o allexport
 
 touch .secrets .env gig.log
