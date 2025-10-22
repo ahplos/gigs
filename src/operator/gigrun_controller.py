@@ -13,7 +13,7 @@ from kopf import AdmissionError
 import kr8s
 from kr8s.objects import ConfigMap, CronJob, Job, Secret
 
-from utilities.gig_types import Gig, GigDefinition, GigRun, GigRunState
+from utilities.gig_types import Gig, GigModule, GigRun, GigRunState
 from utilities.constants import GIG_CONSTS
 
 DATA = 'data'
@@ -74,8 +74,8 @@ def on_create_gigrun(body, meta, patch, logger, **_):
     gig = Gig.get(gig_run.gigRef, meta.namespace)
     cron_job = CronJob.get(gig.name, gig.namespace)
 
-    namespace = gig.gigDefinitionRef.namespace if gig.gigDefinitionRef.namespace else gig_run.namespace
-    gig_def = GigDefinition.get(gig.gigDefinitionRef.name, namespace)
+    namespace = gig.sourceRef.namespace if gig.sourceRef.namespace else gig_run.namespace
+    gig_def = GigModule.get(gig.sourceRef.name, namespace)
     gig_def_secrets_map = {}
     collect_gig_def_secrets(gig_def, gig_def_secrets_map)
     copy_gig_def_secrets_to_gig_run_namespace(gig_def_secrets_map, gig)
@@ -91,18 +91,18 @@ def on_create_gigrun(body, meta, patch, logger, **_):
         GIG_CONSTS.RUN_STATE: GigRunState.RUNNING
     }
 
-def collect_gig_def_secrets(gig_def: GigDefinition, gig_def_secrets_map: dict):
+def collect_gig_def_secrets(gig_def: GigModule, gig_def_secrets_map: dict):
     secret = Secret.get(f'{gig_def.namespace}-{gig_def.name}', gig_def.namespace)
     gig_def_secrets_map[secret.name] =  secret
 
     for stage in gig_def.stages:
-        if (stage.scriptType == GigDefinition.kind):
-            name = stage.gigDefinitionRef.name
-            namespace = stage.gigDefinitionRef.get(GIG_CONSTS.NAMESPACE, None)
+        if (stage.sourceType == GigModule.kind):
+            name = stage.sourceRef.name
+            namespace = stage.sourceRef.get(GIG_CONSTS.NAMESPACE, None)
             namespace = namespace if namespace else gig_def.namespace
             secret_name = f'{namespace}-{name}'
             if (secret_name not in gig_def_secrets_map.keys()):
-                collect_gig_def_secrets(GigDefinition.get(name, namespace), gig_def_secrets_map)
+                collect_gig_def_secrets(GigModule.get(name, namespace), gig_def_secrets_map)
 
 def copy_gig_def_secrets_to_gig_run_namespace(gig_def_secrets_map: dict, gig: Gig):
     for secret in gig_def_secrets_map.values():
@@ -134,13 +134,13 @@ def on_delete_gigrun(body, logger, **_):
     if (job.exists()):
         job.delete('Background')
 
-def update_gig_def_commands(gig_def: GigDefinition):
-    stage_processors = ConfigMap.get(os.environ['TEKNETES_GIGS_PROCESSOR_MAP'],
-                                     os.environ['TEKNETES_GIGS_OPERATOR_NAMESPACE'])
+def update_gig_def_commands(gig_def: GigModule):
+    stage_processors = ConfigMap.get(os.environ['ahplos_GIGS_PROCESSOR_MAP'],
+                                     os.environ['ahplos_GIGS_OPERATOR_NAMESPACE'])
 
     for stage in gig_def.stages:
         if (not stage.get('command')):
-            command = stage_processors.data.get(stage.scriptType, '')
+            command = stage_processors.data.get(stage.sourceType, '')
             if (command):
                 stage.command = command
 
@@ -163,7 +163,7 @@ def create_or_patch_inputValues_secret(gig_run: GigRun):
             {DATA: None, STRING_DATA: inputValues}, type='merge'
         )
 
-def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigDefinition, gigrunner_secret: Secret, gig_def_secrets_map: dict) -> Job:
+def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigModule, gigrunner_secret: Secret, gig_def_secrets_map: dict) -> Job:
     spec = deepcopy(cron_job.spec.jobTemplate)
     job = Job(spec)
     job.metadata.name = None
@@ -238,7 +238,7 @@ def set_job_working_dir(container: Box, job: Job, working_dir_size_limit):
         container.volumeMounts.append(working_dir_volumemount)
         container.workDir = GIG_RUNNER_WORKING_DIR
 
-def create_gigrunner_secret(gig_run: GigRun, gig_def: GigDefinition):
+def create_gigrunner_secret(gig_run: GigRun, gig_def: GigModule):
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
 
     secret_files = [file for file in os.listdir(f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}')]

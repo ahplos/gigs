@@ -1,12 +1,12 @@
 {
-  "name": "teknetes-gigs",
+  "name": "ahplos-gigs",
   "version": "0.0.1",
   "description": "Declartive, browser-based UI's from CRD's in Kubernetes",
   "private": true,
   "license": "LGPL-2.1-or-later",
   "repository": {
     "type": "git",
-    "url": "https://github.com/teknetes/teknetes-gigs.git"
+    "url": "https://github.com/ahplos/ahplos-gigs.git"
   },
   "scripts": {
     "clean": "rm -rf dist",
@@ -61,9 +61,9 @@
     "webpack-cli": "^5.1.4"
   },
   "consolePlugin": {
-    "name": "teknetes-gigs-console-plugin",
+    "name": "ahplos-gigs-console-plugin",
     "version": "0.0.1",
-    "displayName": "Teknetes Gigs",
+    "displayName": "ahplos Gigs",
     "description": "Run's ad-hoc jobs natively in Kubernetes",
     "exposedModules": {
       "gigUiComponents": "./ui/gigUiComponents.ts"

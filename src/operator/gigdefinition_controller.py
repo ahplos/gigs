@@ -7,7 +7,7 @@ import kopf
 
 from kr8s.objects import ConfigMap, Secret
 
-from utilities.gig_types import GigDefinition
+from utilities.gig_types import GigModule
 from utilities.constants import GIG_CONSTS
 
 RUNNER_DIR = 'runner'
@@ -17,17 +17,17 @@ STAGERUNNER_SECRET_TEMPLATE = 'stagerunner-secret.j2'
 
 COMMAND = 'command'
 
-@kopf.on.update(GigDefinition.version, GigDefinition.plural)  # type: ignore
-@kopf.on.create(GigDefinition.version, GigDefinition.plural)  # type: ignore
+@kopf.on.update(GigModule.version, GigModule.plural)  # type: ignore
+@kopf.on.create(GigModule.version, GigModule.plural)  # type: ignore
 def on_create_or_update_gigdefinition(body, logger, **_):
-    gig_def: GigDefinition = GigDefinition(body)
+    gig_def: GigModule = GigModule(body)
 
-    stage_processors = ConfigMap.get(os.environ['TEKNETES_GIGS_PROCESSOR_MAP'],
-                                     os.environ['TEKNETES_GIGS_OPERATOR_NAMESPACE'])
+    stage_processors = ConfigMap.get(os.environ['ahplos_GIGS_PROCESSOR_MAP'],
+                                     os.environ['ahplos_GIGS_OPERATOR_NAMESPACE'])
 
     for stage in gig_def.stages:
         if (not stage.get(COMMAND, None)):
-            command = stage_processors.data.get(stage.scriptType, None)
+            command = stage_processors.data.get(stage.sourceType, None)
             command = command if command else stage_processors.data.get(GIG_CONSTS.SHELL)
             if (command):
                 stage.command = command

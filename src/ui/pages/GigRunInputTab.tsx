@@ -32,7 +32,7 @@ export const GigRunInputTab = (model) => {
             GigK8sUtils.patchGigRunRunState(gigRun, aborting ? GigRunState.Aborting : GigRunState.Running);
         }
 
-        let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.teknetes.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-log-viewer';
+        let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.ahplos.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-log-viewer';
         navigate(path);
     }
 

@@ -1,12 +1,12 @@
 elCicdDefs:
-  PLUGIN_NAME: teknetes-gigs-console-plugin
-  OPERATOR_NAME: teknetes-gigs-operator
+  PLUGIN_NAME: ahplos-gigs-console-plugin
+  OPERATOR_NAME: ahplos-gigs-operator
 
   IMAGE_REGISTRY: dev-demo-image-registry.apps-crc.testing
-  TEKNETES_GIGS_PLUGIN_IMAGE: $<IMAGE_REGISTRY>/$<PLUGIN_NAME>:latest
-  TEKNETES_GIGS_OPERATOR_IMAGE: $<IMAGE_REGISTRY>/$<OPERATOR_NAME>:latest
+  ahplos_GIGS_PLUGIN_IMAGE: $<IMAGE_REGISTRY>/$<PLUGIN_NAME>:latest
+  ahplos_GIGS_OPERATOR_IMAGE: $<IMAGE_REGISTRY>/$<OPERATOR_NAME>:latest
 
-  TEKNETES_GIGS_IMAGE_PULL_SECRET: gig-demo-registry-credentials
+  ahplos_GIGS_IMAGE_PULL_SECRET: gig-demo-registry-credentials
 
   PORT: 8443
 
@@ -15,7 +15,7 @@ elCicdDefs:
   NGINX_CONF_VOLUME: nginx-conf
   NGINX_CONF: nginx.conf
 
-  PATCH_SA_NAME: teknetes-console-patcher
+  PATCH_SA_NAME: ahplos-console-patcher
 
   CERT_NAME: $<HELM_RELEASE_NAME>-cert
 
@@ -23,7 +23,7 @@ elCicdDefs:
 
   GIGS_OCP_CONSOLE_ROLE: $<OPERATOR_NAME>-openshift-console
 
-  TEKNETES_GIGS_PROCESSOR_MAP: teknetes-gigs-stage-processors
+  ahplos_GIGS_PROCESSOR_MAP: ahplos-gigs-stage-processors
 
 elCicdDefs-dev:
   IMAGE_PULL_POLICY: Always
@@ -32,12 +32,12 @@ elCicdTemplates:
 - templateNames: [deployment, service, serviceAccount]
   objName: $<OPERATOR_NAME>
   port: $<PORT>
-  image: $<TEKNETES_GIGS_OPERATOR_IMAGE>
+  image: $<ahplos_GIGS_OPERATOR_IMAGE>
   imagePullSecrets:
-  - name: $<TEKNETES_GIGS_IMAGE_PULL_SECRET>
+  - name: $<ahplos_GIGS_IMAGE_PULL_SECRET>
   imagePullPolicy: $<IMAGE_PULL_POLICY>
   serviceAccountName: $<OBJ_NAME>
-  workDir: /teknetes-gigs-controller
+  workDir: /ahplos-gigs-controller
   command:
   - bash
   - -c
@@ -47,14 +47,14 @@ elCicdTemplates:
     python ./utilities/console_patch.py $<PLUGIN_NAME>
     kopf run --all-namespaces --verbose $(ls *_controller.py)
   env:
-  - name: TEKNETES_GIGS_OPERATOR_NAMESPACE
+  - name: ahplos_GIGS_OPERATOR_NAMESPACE
     value: $<HELM_RELEASE_NAMESPACE>
-  - name: TEKNETES_GIGS_OPERATOR_NAME
+  - name: ahplos_GIGS_OPERATOR_NAME
     value: $<OPERATOR_NAME>
-  - name: TEKNETES_GIGS_OPERATOR_PORT
+  - name: ahplos_GIGS_OPERATOR_PORT
     value: $<toString|PORT>
-  - name: TEKNETES_GIGS_PROCESSOR_MAP
-    value: $<TEKNETES_GIGS_PROCESSOR_MAP>
+  - name: ahplos_GIGS_PROCESSOR_MAP
+    value: $<ahplos_GIGS_PROCESSOR_MAP>
   volumeMounts:
     - name: $<CERT_NAME>
       readOnly: true
@@ -68,7 +68,7 @@ elCicdTemplates:
 - templateName: configMap
   elCicdDefs:
     PYTHON_JINJA_COMMAND: python ${GIG_RUNNER_HOME}/jinja_stage.py %s
-  objName: $<TEKNETES_GIGS_PROCESSOR_MAP>
+  objName: $<ahplos_GIGS_PROCESSOR_MAP>
   data:
     Go: go run %s
     Input: $<PYTHON_JINJA_COMMAND>
@@ -81,9 +81,9 @@ elCicdTemplates:
   objName: $<PLUGIN_NAME>
   replicas: 2
   port: $<PORT>
-  image: $<TEKNETES_GIGS_PLUGIN_IMAGE>
+  image: $<ahplos_GIGS_PLUGIN_IMAGE>
   imagePullSecrets:
-  - name: $<TEKNETES_GIGS_IMAGE_PULL_SECRET>
+  - name: $<ahplos_GIGS_IMAGE_PULL_SECRET>
   imagePullPolicy: $<IMAGE_PULL_POLICY>
   serviceAccountName: $<OBJ_NAME>
   command:
@@ -236,7 +236,7 @@ elCicdTemplates:
   - verbs:
     - '*'
     apiGroups:
-    - batch.teknetes.org
+    - batch.ahplos.org
     resources:
     - gigdefinitions
     - giglaunchforms
@@ -259,13 +259,13 @@ elCicdTemplates:
     rbac.authorization.k8s.io/aggregate-to-view: 'true'
   rules:
   - apiGroups:
-    - batch.teknetes.org
+    - batch.ahplos.org
     resources:
     - gigruns
     verbs:
     - '*'
   - apiGroups:
-    - batch.teknetes.org
+    - batch.ahplos.org
     resources:
     - gigs
     - gigs/status

@@ -20,7 +20,7 @@ import {
 
 
 import {
-    GigDefinition,
+    GigModule,
     GIG_DEFINITION_GVK,
     GIG_LAUNCHFORM_GVK,
     NS_GVK,
@@ -64,8 +64,8 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
         },
     ];
 
-    const GigDefinitionsRow: React.FC<RowProps<GigDefinition>> = ({ obj, activeColumnIDs }) => {
-        const gigDef: GigDefinition = obj;
+    const GigDefinitionsRow: React.FC<RowProps<GigModule>> = ({ obj, activeColumnIDs }) => {
+        const gigDef: GigModule = obj;
 
         const stageProcCounts = {};
         for (let stage of gigDef.spec.stages) {
@@ -132,8 +132,8 @@ export const GigDefinitionsListPage = (model) => {
 
     return (
         <>
-            <ListPageHeader title={'Teknetes GigDefinitions'}>
-                <ListPageCreate groupVersionKind={GIG_DEFINITION_GVK}>{'Create GigDefinition'}</ListPageCreate>
+            <ListPageHeader title={'ahplos GigDefinitions'}>
+                <ListPageCreate groupVersionKind={GIG_DEFINITION_GVK}>{'Create GigModule'}</ListPageCreate>
             </ListPageHeader>
             <ListPageBody>
                 <GigDefinitionsTable

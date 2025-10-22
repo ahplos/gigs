@@ -3,7 +3,7 @@ import {
     K8sResourceCommon,
 } from "@openshift-console/dynamic-plugin-sdk";
 
-export const BATCH_TEKNETES_ORG = "batch.teknetes.org";
+export const BATCH_ahplos_ORG = "batch.ahplos.org";
 export const API_VERSION = "v1beta1";
 
 export const CRONJOB_GVK: K8sGroupVersionKind = {
@@ -41,25 +41,25 @@ export const USER_GVK: K8sGroupVersionKind = {
 };
 
 export const GIG_GVK: K8sGroupVersionKind = {
-    group: BATCH_TEKNETES_ORG,
+    group: BATCH_ahplos_ORG,
     version: API_VERSION,
     kind: "Gig",
 };
 
 export const GIG_DEFINITION_GVK: K8sGroupVersionKind = {
-    group: BATCH_TEKNETES_ORG,
+    group: BATCH_ahplos_ORG,
     version: API_VERSION,
-    kind: "GigDefinition",
+    kind: "GigModule",
 };
 
 export const GIG_LAUNCHFORM_GVK: K8sGroupVersionKind = {
-    group: BATCH_TEKNETES_ORG,
+    group: BATCH_ahplos_ORG,
     version: API_VERSION,
-    kind: "GigLaunchForm",
+    kind: "GigForm",
 };
 
 export const GIG_RUN_GVK: K8sGroupVersionKind = {
-    group: BATCH_TEKNETES_ORG,
+    group: BATCH_ahplos_ORG,
     version: API_VERSION,
     kind: "GigRun",
 };
@@ -77,7 +77,7 @@ export type InputCompGroupSpec = {
     }[];
 };
 
-export type GigLaunchForm = K8sResourceCommon & {
+export type GigForm = K8sResourceCommon & {
     spec: {
         inputForm: InputCompGroupSpec[];
     };
@@ -90,7 +90,7 @@ export type StageSpec = {
     scriptType: string;
 };
 
-export type GigDefinition = K8sResourceCommon & {
+export type GigModule = K8sResourceCommon & {
     spec: {
         activeDeadlineSeconds: number;
         gigLaunchFormRef: {

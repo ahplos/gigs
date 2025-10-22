@@ -4,21 +4,21 @@ from datetime import datetime
 import kopf
 from kr8s.objects import Job
 
-from utilities.gig_types import GIG_CONSTS, Gig, GigDefinition, GigRun, GigRunState
+from utilities.gig_types import GIG_CONSTS, Gig, GigModule, GigRun, GigRunState
 
 WATCH_FIELDS=[f'{GIG_CONSTS.STATUS}.{GIG_CONSTS.SUCCEEDED}', f'{GIG_CONSTS.STATUS}.{GIG_CONSTS.FAILED}']
 
 @kopf.on.field(
     Job.version,
     Job.plural,
-    annotations={GigDefinition.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigModule.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
     field=f'{GIG_CONSTS.STATUS}.{GIG_CONSTS.SUCCEEDED}',
     value=kopf.PRESENT,
 )  # type: ignore
 @kopf.on.field(
     Job.version,
     Job.plural,
-    annotations={GigDefinition.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigModule.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
     field=f'{GIG_CONSTS.STATUS}.{GIG_CONSTS.FAILED}',
     value=kopf.PRESENT,
 )  # type: ignore

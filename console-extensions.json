@@ -2,21 +2,21 @@
   {
     "type": "console.navigation/section",
     "properties": {
-      "id": "teknetes-gigs-section",
-      "name": "Teknetes Gigs",
+      "id": "ahplos-gigs-section",
+      "name": "ahplos Gigs",
       "insertAfter": "storage"
     }
   },
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "teknetes-gigs-definitions",
-      "section": "teknetes-gigs-section",
+      "id": "ahplos-gigs-definitions",
+      "section": "ahplos-gigs-section",
       "name": "GigDefinitions",
       "model": {
-          "group": "batch.teknetes.org",
+          "group": "batch.ahplos.org",
           "version": "v1beta1",
-          "kind": "GigDefinition"
+          "kind": "GigModule"
       }
     }
   },
@@ -24,9 +24,9 @@
     "type": "console.page/resource/list",
     "properties": {
       "model": {
-          "group": "batch.teknetes.org",
+          "group": "batch.ahplos.org",
           "version": "v1beta1",
-          "kind": "GigDefinition"
+          "kind": "GigModule"
       },
       "component": { "$codeRef": "gigUiComponents.GigDefinitionsListPage" }
     }
@@ -38,9 +38,9 @@
       "column": "left",
       "title": "Active Deadline In Seconds",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
-        "kind": "GigDefinition"
+        "kind": "GigModule"
       },
       "path": "spec.activeDeadlineSeconds"
     }
@@ -52,9 +52,9 @@
       "column": "left",
       "title": "Working Directory Size Limit",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
-        "kind": "GigDefinition"
+        "kind": "GigModule"
       },
       "path": "spec.workDirSizeLimit"
     }
@@ -66,9 +66,9 @@
       "column": "right",
       "title": "Default Launch Form",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
-        "kind": "GigDefinition"
+        "kind": "GigModule"
       },
       "component": { "$codeRef": "gigUiComponents.GigLaunchFormDetail" }
     }
@@ -80,9 +80,9 @@
       "column": "right",
       "title": "Required Input Variables",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
-        "kind": "GigDefinition"
+        "kind": "GigModule"
       },
       "component": { "$codeRef": "gigUiComponents.GigDefRequiredInputVarsDetail" }
     }
@@ -94,9 +94,9 @@
       "column": "right",
       "title": "Stages Summary",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
-        "kind": "GigDefinition"
+        "kind": "GigModule"
       },
       "component": { "$codeRef": "gigUiComponents.GigDefStagesDetail" }
     }
@@ -107,13 +107,13 @@
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "teknetes-gig-launchforms",
-      "section": "teknetes-gigs-section",
+      "id": "ahplos-gig-launchforms",
+      "section": "ahplos-gigs-section",
       "name": "GigLaunchForms",
       "model": {
-          "group": "batch.teknetes.org",
+          "group": "batch.ahplos.org",
           "version": "v1beta1",
-          "kind": "GigLaunchForm"
+          "kind": "GigForm"
       }
     }
   },
@@ -121,9 +121,9 @@
     "type": "console.page/resource/list",
     "properties": {
       "model": {
-          "group": "batch.teknetes.org",
+          "group": "batch.ahplos.org",
           "version": "v1beta1",
-          "kind": "GigLaunchForm"
+          "kind": "GigForm"
       },
       "component": { "$codeRef": "gigUiComponents.GigLaunchFormsListPage" }
     }
@@ -135,9 +135,9 @@
       "column": "right",
       "title": "Form Parameters Summary",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
-        "kind": "GigLaunchForm"
+        "kind": "GigForm"
       },
       "component": { "$codeRef": "gigUiComponents.GigFormSummaryDetail" }
     }
@@ -150,9 +150,9 @@
         "href": "gigrun-preview"
       },
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
-        "kind": "GigLaunchForm"
+        "kind": "GigForm"
       },
       "component": { "$codeRef": "gigUiComponents.GigRunFormTab" }
     }
@@ -163,11 +163,11 @@
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "teknetes-gigs",
-      "section": "teknetes-gigs-section",
+      "id": "ahplos-gigs",
+      "section": "ahplos-gigs-section",
       "name": "Gigs",
       "model": {
-          "group": "batch.teknetes.org",
+          "group": "batch.ahplos.org",
           "version": "v1beta1",
           "kind": "Gig"
       }
@@ -177,7 +177,7 @@
     "type": "console.page/resource/list",
     "properties": {
       "model": {
-          "group": "batch.teknetes.org",
+          "group": "batch.ahplos.org",
           "version": "v1beta1",
           "kind": "Gig"
       },
@@ -191,7 +191,7 @@
       "column": "right",
       "title": "Latest GigRun Summary",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "Gig"
       },
@@ -205,7 +205,7 @@
       "column": "right",
       "title": "CronJob",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "Gig"
       },
@@ -217,9 +217,9 @@
     "properties": {
       "id": "giglaunchform-components-summary-item",
       "column": "right",
-      "title": "GigDefinition",
+      "title": "GigModule",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "Gig"
       },
@@ -231,9 +231,9 @@
     "properties": {
       "id": "giglaunchform-components-summary-item",
       "column": "right",
-      "title": "GigLaunchForm",
+      "title": "GigForm",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "Gig"
       },
@@ -244,7 +244,7 @@
     "type": "console.tab/horizontalNav",
     "properties": {
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "Gig"
       },
@@ -263,7 +263,7 @@
         "href": "gigrun"
       },
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "Gig"
       },
@@ -276,11 +276,11 @@
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "teknetes-gigruns",
-      "section": "teknetes-gigs-section",
+      "id": "ahplos-gigruns",
+      "section": "ahplos-gigs-section",
       "name": "GigRuns",
       "model": {
-          "group": "batch.teknetes.org",
+          "group": "batch.ahplos.org",
           "version": "v1beta1",
           "kind": "GigRun"
       }
@@ -290,7 +290,7 @@
     "type": "console.page/resource/list",
     "properties": {
       "model": {
-          "group": "batch.teknetes.org",
+          "group": "batch.ahplos.org",
           "version": "v1beta1",
           "kind": "GigRun"
       },
@@ -305,7 +305,7 @@
         "href": "gigrun-input-form"
       },
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "GigRun"
       },
@@ -320,7 +320,7 @@
         "href": "gigrun-log-viewer"
       },
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "GigRun"
       },
@@ -334,7 +334,7 @@
       "column": "right",
       "title": "Gig",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "GigRun"
       },
@@ -348,7 +348,7 @@
       "column": "right",
       "title": "Started by",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "GigRun"
       },
@@ -362,7 +362,7 @@
       "column": "right",
       "title": "State",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "GigRun"
       },
@@ -377,7 +377,7 @@
       "column": "right",
       "title": "Run Time",
       "model": {
-        "group": "batch.teknetes.org",
+        "group": "batch.ahplos.org",
         "version": "v1beta1",
         "kind": "GigRun"
       },

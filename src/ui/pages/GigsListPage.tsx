@@ -62,13 +62,13 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
             transforms: [sortable],
         },
         {
-            title: 'GigDefinition',
+            title: 'GigModule',
             id: 'gig-definition',
             sort: 'spec.gigDefinitionRef',
             transforms: [sortable],
         },
         {
-            title: 'GigLaunchForm',
+            title: 'GigForm',
             id: 'gig-launchform',
             sort: 'spec.gigLaunchFormRef',
             transforms: [sortable],
@@ -147,7 +147,7 @@ export const GigsListPage = (model) => {
 
     return (
         <>
-            <ListPageHeader title={'Teknetes Gigs'} />
+            <ListPageHeader title={'ahplos Gigs'} />
             <ListPageBody>
                 <GigsTable
                     data={gigs}

@@ -16,7 +16,7 @@ export const GigRunsListPage = (model) => {
 
     return (
         <>
-            <ListPageHeader title={'Teknetes GigRuns'} />
+            <ListPageHeader title={'ahplos GigRuns'} />
             <ListPageBody>
                 <GigRunsList
                     gigRuns={gigRuns}

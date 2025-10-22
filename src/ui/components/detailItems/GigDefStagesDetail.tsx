@@ -8,12 +8,12 @@ import {
 } from '@patternfly/react-core';
 
 import {
-    GigDefinition,
+    GigModule,
 } from '../../utilities/objectDefs';
 
 
 export const GigDefStagesDetail = (model) => {
-    const gigDef: GigDefinition = model.obj;
+    const gigDef: GigModule = model.obj;
 
     return (
         <List component={ListComponent.ol} type={OrderType.number}>

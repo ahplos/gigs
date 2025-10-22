@@ -27,7 +27,7 @@ export const GigRunLogsTab = (model) => {
         if (currentState != gigRunState) {
             setGigRunState(currentState);
             if (currentState == GigRunState.WaitingForInput) {
-                let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.teknetes.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-input-form';
+                let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.ahplos.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-input-form';
                 navigate(path);
             }
         }

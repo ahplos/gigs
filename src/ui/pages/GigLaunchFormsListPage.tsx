@@ -19,7 +19,7 @@ import {
 
 
 import {
-    GigLaunchForm,
+    GigForm,
     GIG_LAUNCHFORM_GVK,
     NS_GVK,
 } from '../utilities/objectDefs';
@@ -54,12 +54,12 @@ const GigDefinitionsTable: React.FC<GigLaunchFormTableProps> = ({ data, unfilter
         },
     ];
 
-    let listItems = (gigForm: GigLaunchForm) => {
+    let listItems = (gigForm: GigForm) => {
         return gigForm.spec.inputForm?.map((widget) => <ListItem><b>{widget.var}</b> [{widget.components[0].inputType}]</ListItem>)
     };
 
-    const GigDefinitionsRow: React.FC<RowProps<GigLaunchForm>> = ({ obj, activeColumnIDs }) => {
-        const gigForm: GigLaunchForm = obj;
+    const GigDefinitionsRow: React.FC<RowProps<GigForm>> = ({ obj, activeColumnIDs }) => {
+        const gigForm: GigForm = obj;
         return (
             <>
                 <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
@@ -98,8 +98,8 @@ export const GigLaunchFormsListPage = (model) => {
 
     return (
         <>
-            <ListPageHeader title={'Teknetes GigLaunchForms'}>
-                <ListPageCreate groupVersionKind={GIG_LAUNCHFORM_GVK}>{'Create GigLaunchForm'}</ListPageCreate>
+            <ListPageHeader title={'ahplos GigLaunchForms'}>
+                <ListPageCreate groupVersionKind={GIG_LAUNCHFORM_GVK}>{'Create GigForm'}</ListPageCreate>
             </ListPageHeader>
             <ListPageBody>
                 <GigDefinitionsTable

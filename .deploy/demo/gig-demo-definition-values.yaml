@@ -1,15 +1,15 @@
 elCicdDefs:
-  GIG_DEF_DEMO: gig-def-demo
-  GIG_DEF_ASK_USER: gig-dif-ask-user
-  GIG_DEF_GO_DEMO: gig-def-go-demo
-  GIG_DEF_PYTHON_DEMO: gig-def-python-demo
-  GIG_DEF_NAMES: [$<GIG_DEF_DEMO>, $<GIG_DEF_ASK_USER>, $<GIG_DEF_GO_DEMO>, $<GIG_DEF_PYTHON_DEMO>]
+  GIG_MOD_DEMO: gig-mod-demo
+  GIG_MOD_ASK_USER: gig-dif-ask-user
+  GIG_MOD_SOURCE_DEMO: gig-mod-source-demo
+  GIG_MOD_PRINT_MSG: gig-mod-print-msg-demo
+  GIG_MOD_NAMES: [$<GIG_MOD_DEMO>, $<GIG_MOD_ASK_USER>, $<GIG_MOD_SOURCE_DEMO>, $<GIG_MOD_PRINT_MSG>]
 
   GIG_FORM_NAME: gig-demo-launchform
 
 elCicdTemplates:
-- apiVersion: batch.teknetes.org/v1beta1
-  kind: GigLaunchForm
+- apiVersion: batch.ahplos.org/v1beta1
+  kind: GigForm
   objNames: [$<GIG_FORM_NAME>, $<GIG_FORM_NAME>]
   objName: $<GIG_FORM_NAME>-$<#>
   template:
@@ -47,114 +47,127 @@ elCicdTemplates:
             inputType: Radio
         var: RUN_DEBUG_MODE
 
-- apiVersion: batch.teknetes.org/v1beta1
-  kind: GigDefinition
-  objNames: $<GIG_DEF_NAMES>
-  elCicdDefs-$<GIG_DEF_DEMO>:
-    GIG_DEF_SPECS:
-      name: $<GIG_DEF_DEMO>
-      gigLaunchFormRef:
+- apiVersion: batch.ahplos.org/v1beta1
+  kind: GigModule
+  objNames: $<GIG_MOD_NAMES>
+  elCicdDefs-$<GIG_MOD_DEMO>:
+    GIG_MOD_SPECS:
+      gigFormRef:
         name: $<GIG_FORM_NAME>-1
       requiredInputParams:
       - CLUSTER_ADMIN_USER_NAME
       - CLUSTER_ADMIN_PASSWORD
-      secretEnvVars:
+      secretVars:
       - CLUSTER_ADMIN_PASSWORD
       stages:
-      - description: Login into cluster as cluster admin
-        displayName: Cluster Admin Authentication
-        name: cluster-admin-login-to-cluster
-        script: |-
-          SOME_VAR='Testing scripts run in current process'
-          oc login --insecure-skip-tls-verify -u ${CLUSTER_ADMIN_USER_NAME} -p ${CLUSTER_ADMIN_PASSWORD} https://kubernetes.default.svc
-          sleep 2
-      - description: Retrieve Gig Operator supported Stage languages.
-        name: retrieve-gig-operator-supported-languages
-        scriptType: GigDefinition
-        gigDefinitionRef:
-          name: $<GIG_DEF_ASK_USER>
-  elCicdDefs-$<GIG_DEF_ASK_USER>:
-    GIG_DEF_SPECS:
-      name: $<GIG_DEF_ASK_USER>
+      - name: login
+        description: Login into cluster as cluster admin, and retrieve Gig supported Step sourceTypes.
+        steps:
+        - name: cluster-admin-login.sh
+          sourceCode: |-
+            SOME_VAR='Testing scripts run in current process'
+            oc login --insecure-skip-tls-verify -u ${CLUSTER_ADMIN_USER_NAME} -p ${CLUSTER_ADMIN_PASSWORD} https://kubernetes.default.svc
+            sleep 2
+      - name: retrieve-gig-supported-languages
+        sourceRef:
+          gigModuleRef:
+            name: $<GIG_MOD_ASK_USER>
+  elCicdDefs-$<GIG_MOD_ASK_USER>:
+    GIG_MOD_SPECS:
+      mode: Library
       stages:
-      - description: Retrieve Gig Operator supported Stage languages.
-        name: retrieve-gig-operator-supported-languages
-        script: |-
-          echo "SOME_VAR: ${SOME_VAR}"
-          JSON=$(oc get configmap teknetes-gigs-stage-processors -n gigs-operator -o jsonpath='{.data}')
-          LANGS=$(echo "${JSON}" | jq -r 'keys[]' | paste -sd ',' - | sed -E -e 's/([A-Z][A-Za-z.-]+)/"\1"\ /g')
-          echo "{%- set LANGS = [${LANGS}] %}" > tek_langs.j2
-          sleep 2
-      - description: Ask the user what Teknetes Gig language support they wish demonstrated.
-        displayName: Which languages should be demoed?
-        name: ask-user-what-languages-to-demo.j2
-        scriptType: Input
-        script: |-
-          {%- include 'tek_langs.j2' %}
-          {%- from 'tek_langs.j2' import LANGS %}
-          {%- for LANG in LANGS %}
-          {% filter indent(width=4) %}
-          - attributes:
-              label: {{ LANG }}
-            components:
-              - inputType: Checkbox
-            var: LANG_{{ LANG|upper }}
-          {%- endfilter %}
-          {%- endfor %}
-      - description: Demonstrate Go.
-        name: demonstrate-go
-        scriptType: GigDefinition
-        gigDefinitionRef:
-          name: $<GIG_DEF_GO_DEMO>
-      - description: Demonstrate Python.
-        name: demonstrate-python
-        scriptType: GigDefinition
-        gigDefinitionRef:
-          name: $<GIG_DEF_PYTHON_DEMO>
-  elCicdDefs-$<GIG_DEF_GO_DEMO>:
-    GIG_DEF_SPECS:
-      name: $<GIG_DEF_GO_DEMO>
+      - name: choose-demo-source-types
+        description: Have user choose which Gig supported sourceTypes to demo.
+        steps:
+        - name: retrieve-gig-operator-supported-languages
+          sourceCode: |-
+            echo "SOME_VAR: ${SOME_VAR}"
+            JSON=$(oc get configmap ahplos-gigs-stage-processors -n gigs-operator -o jsonpath='{.data}')
+            LANGS=$(echo "${JSON}" | jq -r 'keys[]' | paste -sd ',' - | sed -E -e 's/([A-Z][A-Za-z.-]+)/"\1"\ /g')
+            echo "{%- set LANGS = [${LANGS}] %}" > tek_langs.j2
+            sleep 2
+        - name: ask-user-what-languages-to-demo.j2
+          sourceType: Input
+          sourceCode: |-
+            {%- include 'tek_langs.j2' %}
+            {%- from 'tek_langs.j2' import LANGS %}
+            {%- for LANG in LANGS %}
+            {% filter indent(width=4) %}
+            - attributes:
+                label: {{ LANG }}
+              components:
+                - inputType: Checkbox
+              var: LANG_{{ LANG|upper }}
+            {%- endfilter %}
+            {%- endfor %}
+      - name: execute-demo-source-types
+        description: Demonstrate the chosen sourceTypes
+        steps:
+        - name: demonstrate-go
+          sourceRef:
+            gigModuleRef:
+              name: $<GIG_MOD_SOURCE_DEMO>
+            stage: demonstrate-go
+          when: |-
+            env.LANG_GO
+        - name: demonstrate-python
+          sourceRef:
+            gigModuleRef:
+              name: $<GIG_MOD_SOURCE_DEMO>
+            stage: demonstrate-python
+  elCicdDefs-$<GIG_MOD_SOURCE_DEMO>:
+    GIG_MOD_SPECS:
       stages:
-      - description: Set a test msg with a Go script.
-        name: set-test-msg-with.go
-        scriptType: Go
-        when: |-
-          env.LANG_GO
-        script: |-
-          package main
+      - name: demonstrate-go
+        description: Set a test msg with a Go sourceCode and print it.
+        steps:
+        - name: set-test-msg-with.go
+          sourceType: Go
+          sourceCode: |-
+            package main
 
-          import (
-            "os"
-          )
+            import (
+              "os"
+            )
 
-          func main() {
-            var f, _ = os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
-            defer f.Close()
-            f.WriteString("\nTEST_MSG='This test msg was set using Go'")
-          }
-      - displayName: Print the test msg set with Go.
-        name: print-the-go-test-msg
-        when: |-
-          env.LANG_GO
-        script: |-
-          echo ${TEST_MSG}
-  elCicdDefs-$<GIG_DEF_PYTHON_DEMO>:
-    GIG_DEF_SPECS:
-      name: $<GIG_DEF_PYTHON_DEMO>
+            func main() {
+              var f, _ = os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
+              defer f.Close()
+              f.WriteString("\nTEST_MSG='This test msg was set using Go'")
+            }
+        - name: print-the-go-msg
+          sourceRef:
+            gigModuleRef:
+              name: $<GIG_MOD_PRINT_MSG>
+            stage: print-the-demo-msg
+            step: print-the-demo-msg
+      - name: demonstrate-python
+        description: Set a test msg with a Python sourceCode and print it.
+        steps:
+        - name: set-test-msg-with.py
+          sourceType: Python
+          sourceCode: |-
+            with open('.env', 'a') as env_file:
+              env_file.write("\nTEST_MSG='This test msg was set using Python'")
+          when: |-
+            env.LANG_PYTHON
+        - name: print-the-python-msg
+          sourceRef:
+            gigModuleRef:
+              name: $<GIG_MOD_PRINT_MSG>
+            stage: print-the-demo-msg
+            step: print-the-demo-msg
+          when: |-
+            env.LANG_PYTHON
+  elCicdDefs-$<GIG_MOD_PRINT_MSG>:
+    GIG_MOD_SPECS:
       stages:
-      - description: Set a test msg with a Python script.
-        name: set-test-msg-with.py
-        scriptType: Python
-        when: |-
-          env.LANG_PYTHON
-        script: |-
-          with open('.env', 'a') as env_file:
-            env_file.write("\nTEST_MSG='This test msg was set using Python'")
-      - displayName: Print the test msg set with Python.
-        name: print-the-python-test-msg
-        when: |-
-          env.LANG_PYTHON
-        script: |-
-          echo ${TEST_MSG}
+      - name: print-the-demo-msg
+        steps:
+        - name: print-the-demo-msg
+          when: |-
+            env.LANG_PYTHON
+          sourceCode: |-
+            echo ${TEST_MSG}
   template:
-    spec: $<GIG_DEF_SPECS>
+    spec: $<GIG_MOD_SPECS>

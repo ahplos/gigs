@@ -3,11 +3,11 @@ elCicdDefs:
   GIG_FORM_NAME: gig-demo-launchform-2
   GIG_ORG_NAMEPACE: gig-demo-org
 
-  TEKNETES_GIGS_OPERATOR: teknetes-gigs-operator
+  ahplos_GIGS_OPERATOR: ahplos-gigs-operator
 
-  TEKNETES_GIGS_IMAGE_PULL_SECRET: gig-demo-registry-credentials
+  ahplos_GIGS_IMAGE_PULL_SECRET: gig-demo-registry-credentials
 
-  IMAGE: dev-demo-image-registry.apps-crc.testing/teknetes-gigs-test-runner:latest
+  IMAGE: dev-demo-image-registry.apps-crc.testing/ahplos-gigs-test-runner:latest
 
   SCHEDULE: '* * 30 2 *'
 
@@ -24,13 +24,13 @@ elCicdTemplates:
   objNames: [$<OBJ_NAME_PREFIX>, $<OBJ_NAME_PREFIX>]
   objName: $<OBJ_NAME_PREFIX>-$<#>
   annotations:
-    batch.teknetes.org/gigdefinition: $<GIG_ORG_NAMEPACE>/$<GIG_DEF_NAME>
-    batch.teknetes.org/giglaunchform: $<GIG_ORG_NAMEPACE>/$<GIG_FORM_NAME>
+    batch.ahplos.org/gigdefinition: $<GIG_ORG_NAMEPACE>/$<GIG_DEF_NAME>
+    batch.ahplos.org/giglaunchform: $<GIG_ORG_NAMEPACE>/$<GIG_FORM_NAME>
   failedJobsHistoryLimit: $<HISTORY_LIMIT>
   successfulJobsHistoryLimit: $<HISTORY_LIMIT>
   image: $<IMAGE>
   imagePullSecrets:
-  - name: $<TEKNETES_GIGS_IMAGE_PULL_SECRET>
+  - name: $<ahplos_GIGS_IMAGE_PULL_SECRET>
   imagePullPolicy: IfNotPresent
   serviceAccountName: $<SERVICE_ACCOUNT_NAME>
   schedule: $<SCHEDULE>

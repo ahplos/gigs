@@ -17,7 +17,7 @@ import {
 
 import {
     Gig,
-    GigLaunchForm,
+    GigForm,
     GIG_GVK,
 } from '../utilities/objectDefs';
 
@@ -25,7 +25,7 @@ import GigK8sUtils from '../utilities/gigK8sUtils';
 
 export const GigRunFormTab = (model) => {
     let gig: Gig;
-    let gigLaunchForm: GigLaunchForm;
+    let gigLaunchForm: GigForm;
     let formSpec = [];
     let errorMessage: string;
 
@@ -50,7 +50,7 @@ export const GigRunFormTab = (model) => {
     const submissionAction = (formState: any) => {
         GigK8sUtils.createGigRun(gig, formState)
             .then((gigRun) => {
-                let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.teknetes.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-log-viewer';
+                let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.ahplos.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-log-viewer';
                 navigate(path);
             })
             .catch((e) => {

@@ -8,12 +8,12 @@ import {
 } from '@patternfly/react-core';
 
 import {
-    GigLaunchForm,
+    GigForm,
 } from '../../utilities/objectDefs';
 
 
 export const GigFormSummaryDetail = (model) => {
-    const gigForm: GigLaunchForm = model.obj;
+    const gigForm: GigForm = model.obj;
 
     return (
         <List component={ListComponent.ol} type={OrderType.number}>

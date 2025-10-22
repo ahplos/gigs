@@ -1,8 +1,8 @@
-FROM dev-demo-image-registry.apps-crc.testing/teknetes-gigs-operator-base:latest
+FROM dev-demo-image-registry.apps-crc.testing/ahplos-gigs-operator-base:latest
 USER root
 
-COPY src/operator /teknetes-gigs-controller/
+COPY src/operator /ahplos-gigs-controller/
 
-WORKDIR /teknetes-gigs-controller
+WORKDIR /ahplos-gigs-controller
 
 USER 1001

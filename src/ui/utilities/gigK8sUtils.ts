@@ -14,8 +14,8 @@ import {
     GIG_GVK,
     GIG_RUN_GVK,
     Gig,
-    GigDefinition,
-    GigLaunchForm,
+    GigModule,
+    GigForm,
     GigRun,
     GigRunState,
     JOB_GVK,
@@ -33,15 +33,15 @@ export default class GigK8sUtils {
 
     private static readonly gigRunModel: K8sModel = {
         abbr: 'GR',
-        apiGroup: 'batch.teknetes.org',
+        apiGroup: 'batch.ahplos.org',
         apiVersion: 'v1beta1',
         crd: true,
         id: 'gigrun',
         kind: 'GigRun',
         label: 'GigRun',
-        labelKey: 'teknetes-gigs-plugin~GigRun',
+        labelKey: 'ahplos-gigs-plugin~GigRun',
         labelPlural: 'GigRuns',
-        labelPluralKey: 'teknetes-gigs-plugin~GigRuns',
+        labelPluralKey: 'ahplos-gigs-plugin~GigRuns',
         namespaced: true,
         plural: 'gigruns',
         propagationPolicy: 'Background',
@@ -65,7 +65,7 @@ export default class GigK8sUtils {
 
     public static createGigRun(gig: Gig, inputValues: object): Promise<GigRun> {
         const gigRun: GigRun = {
-            apiVersion: 'batch.teknetes.org/v1beta1',
+            apiVersion: 'batch.ahplos.org/v1beta1',
             kind: 'GigRun',
             metadata: {
                 generateName: gig.metadata.name + '-',
@@ -117,7 +117,7 @@ export default class GigK8sUtils {
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = GIG_DEFINITION_GVK;
-        return GigK8sUtils.getK8sResource<GigDefinition>(options);
+        return GigK8sUtils.getK8sResource<GigModule>(options);
     }
 
     public static getGigDefinitions (
@@ -125,14 +125,14 @@ export default class GigK8sUtils {
     ) {
         options.groupVersionKind = GIG_DEFINITION_GVK;
         options.isList = true;
-        return GigK8sUtils.getK8sResources<GigDefinition[]>(options);
+        return GigK8sUtils.getK8sResources<GigModule[]>(options);
     }
 
     public static getGigLaunchForm (
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = GIG_LAUNCHFORM_GVK;
-        return GigK8sUtils.getK8sResource<GigLaunchForm>(options);
+        return GigK8sUtils.getK8sResource<GigForm>(options);
     }
 
     public static getGigLaunchForms (
@@ -140,7 +140,7 @@ export default class GigK8sUtils {
     ) {
         options.groupVersionKind = GIG_LAUNCHFORM_GVK;
         options.isList = true;
-        return GigK8sUtils.getK8sResources<GigLaunchForm[]>(options);
+        return GigK8sUtils.getK8sResources<GigForm[]>(options);
     }
 
     public static getGig (

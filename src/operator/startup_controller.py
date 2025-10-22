@@ -5,7 +5,7 @@ from typing import AsyncIterator
 
 import kopf
 
-class TeknetesGigsOperator:
+class ahplosGigsOperator:
     URL = 'url'
     SERVICE = 'service'
 
@@ -15,12 +15,12 @@ class TeknetesGigsOperator:
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.INFO)
 
-        self.namespace = os.environ['TEKNETES_GIGS_OPERATOR_NAMESPACE']
-        self.name = os.environ['TEKNETES_GIGS_OPERATOR_NAME']
-        self.host = f'{self.name}.{self.namespace}.{TeknetesGigsOperator.SVC}'
+        self.namespace = os.environ['ahplos_GIGS_OPERATOR_NAMESPACE']
+        self.name = os.environ['ahplos_GIGS_OPERATOR_NAME']
+        self.host = f'{self.name}.{self.namespace}.{ahplosGigsOperator.SVC}'
 
-        self.service_port = int(os.environ['TEKNETES_GIGS_OPERATOR_PORT'])
-        self.container_port = int(os.environ['TEKNETES_GIGS_OPERATOR_PORT'])
+        self.service_port = int(os.environ['ahplos_GIGS_OPERATOR_PORT'])
+        self.container_port = int(os.environ['ahplos_GIGS_OPERATOR_PORT'])
 
         self.cert_path = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
 
@@ -35,8 +35,8 @@ class TeknetesGigsOperator:
         server = kopf.WebhookServer(certfile=self.cert_path, port=self.container_port, host=self.host)
 
         async for client_config in server(fn):
-            client_config[TeknetesGigsOperator.URL] = None
-            client_config[TeknetesGigsOperator.SERVICE] = \
+            client_config[ahplosGigsOperator.URL] = None
+            client_config[ahplosGigsOperator.SERVICE] = \
                 kopf.WebhookClientConfigService(name=self.name,
                                                 namespace=self.namespace,
                                                 port=self.service_port)
@@ -51,8 +51,8 @@ def on_startup(settings: kopf.OperatorSettings, logger, **_):
     settings.peering.stealth = True
     settings.peering.clusterwide = True
 
-    settings.admission.server = TeknetesGigsOperator()
-    settings.admission.managed = 'batch.teknetes.gigs'
+    settings.admission.server = ahplosGigsOperator()
+    settings.admission.managed = 'batch.ahplos.gigs'
 
     # sensible number of workers so as to not overload the k8s API server
     settings.batching.worker_limit = 5

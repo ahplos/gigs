@@ -9,26 +9,26 @@ from kr8s.objects import new_class
 from utilities.constants import GIG_CONSTS
 
 
-class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
+class GigModule(new_class('GigModule', version=f'{GIG_CONSTS.BATCH_ahplos_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
-    GIG_DEFINITION_ANNOTATION: str = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/gigdefinition'
+    GIG_DEFINITION_ANNOTATION: str = f'{GIG_CONSTS.BATCH_ahplos_ORG}/gigdefinition'
 
-    group: str = GIG_CONSTS.BATCH_TEKNETES_ORG
+    group: str = GIG_CONSTS.BATCH_ahplos_ORG
 
     @property
     def activeDeadlineSeconds(self) -> str:
         return self.spec[GIG_CONSTS.ACTIVE_DEADLINE_SECONDS]
 
     @property
-    def gigLaunchFormRef(self) -> Box:
-        return self.spec.setdefault('gigLaunchFormRef', Box())
+    def gigFormRef(self) -> Box:
+        return self.spec.setdefault('gigFormRef', Box())
 
-    @gigLaunchFormRef.setter
-    def gigLaunchFormRef(self, value: Box):
-        self.spec['gigLaunchFormRef'] = value
+    @gigFormRef.setter
+    def gigFormRef(self, value: Box):
+        self.spec['gigFormRef'] = value
 
     @property
-    def secretEnvVars(self) -> BoxList:
+    def secretVars(self) -> BoxList:
         return  self.spec.setdefault(GIG_CONSTS.SECRET_ENV_VARS, BoxList())
 
     @property
@@ -39,19 +39,19 @@ class GigDefinition(new_class('GigDefinition', version=f'{GIG_CONSTS.BATCH_TEKNE
     def workDirSizeLimit(self) -> str:
         return  self.spec['workDirSizeLimit']
 
-class GigLaunchForm(new_class('GigLaunchForm', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
+class GigForm(new_class('GigForm', version=f'{GIG_CONSTS.BATCH_ahplos_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
-    GIG_LAUNCHFORM_ANNOTATION: str = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/giglaunchform'
+    GIG_LAUNCHFORM_ANNOTATION: str = f'{GIG_CONSTS.BATCH_ahplos_ORG}/giglaunchform'
 
-    group: str = GIG_CONSTS.BATCH_TEKNETES_ORG
+    group: str = GIG_CONSTS.BATCH_ahplos_ORG
 
     @property
     def inputForm(self) -> BoxList:
         return self.spec.setdefault(GIG_CONSTS.INPUT_FORM, Box())
 
-class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
+class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_ahplos_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
-    group: str = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}'
+    group: str = f'{GIG_CONSTS.BATCH_ahplos_ORG}'
 
     def __init__(self, resource: SpecType, namespace: str | None = None, api: Api | None = None) -> None:
         super().__init__(resource, namespace, api)
@@ -59,20 +59,20 @@ class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS
         self.raw.setdefault('status', Box())
 
     @property
-    def gigDefinitionRef(self) -> Box:
-        return self.spec.setdefault('gigDefinitionRef', Box())
+    def sourceRef(self) -> Box:
+        return self.spec.setdefault('sourceRef', Box())
 
-    @gigDefinitionRef.setter
-    def gigDefinitionRef(self, value: Box):
-        self.spec['gigDefinitionRef'] = value
+    @sourceRef.setter
+    def sourceRef(self, value: Box):
+        self.spec['sourceRef'] = value
 
     @property
-    def gigLaunchFormRef(self) -> Box:
-        return self.spec.setdefault('gigLaunchFormRef', Box())
+    def gigFormRef(self) -> Box:
+        return self.spec.setdefault('gigFormRef', Box())
 
-    @gigLaunchFormRef.setter
-    def gigLaunchFormRef(self, value: Box):
-        self.spec['gigLaunchFormRef'] = value
+    @gigFormRef.setter
+    def gigFormRef(self, value: Box):
+        self.spec['gigFormRef'] = value
 
     @property
     def cronJobRef(self) -> str:
@@ -92,12 +92,12 @@ class GigRunState(StrEnum):
     SUCCEEDED = 'Succeeded'
     WAITING_FOR_INPUT = 'WaitingForInput'
 
-class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
+class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_ahplos_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
-    CONTAINER_NAME_ANNOTATION = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/containername'
-    UUID_ANNOTATION = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}/uuid'
+    CONTAINER_NAME_ANNOTATION = f'{GIG_CONSTS.BATCH_ahplos_ORG}/containername'
+    UUID_ANNOTATION = f'{GIG_CONSTS.BATCH_ahplos_ORG}/uuid'
 
-    group: str = f'{GIG_CONSTS.BATCH_TEKNETES_ORG}'
+    group: str = f'{GIG_CONSTS.BATCH_ahplos_ORG}'
 
     def __init__(self, resource: SpecType, namespace: str | None = None, api: Api | None = None) -> None:
         super().__init__(resource, namespace, api)

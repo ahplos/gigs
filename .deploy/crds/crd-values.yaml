@@ -1,9 +1,9 @@
 elCicdDefs:
   GIG: gig
-  GIG_LAUNCHFORM: $<GIG>launchform
-  GIG_DEF: $<GIG>definition
+  GIG_FORM: $<GIG>form
+  GIG_MODULE: $<GIG>module
   GIG_RUN: $<GIG>run
-  GIG_TYPES: [$<GIG_DEF>, $<GIG_LAUNCHFORM>, $<GIG>, $<GIG_RUN>]
+  GIG_TYPES: [$<GIG_MODULE>, $<GIG_FORM>, $<GIG>, $<GIG_RUN>]
 
   RUN_STATE:
     type: string
@@ -16,6 +16,20 @@ elCicdDefs:
     - Succeeded
     - WaitingForInput
 
+  GIG_MODULE_REF:
+    type: object
+    description: Reference to a GigModule.
+    properties: $<NAME_NAMESPACE_PROPS>
+    required:
+    - name
+
+  GIG_FORM_REF:
+    type: object
+    description: Reference to a GigForm.
+    properties: $<NAME_NAMESPACE_PROPS>
+    required:
+    - name
+
   NAME_NAMESPACE_PROPS:
     name:
       type: string
@@ -25,7 +39,7 @@ elCicdDefs:
   FORM_SPEC:
     type: array
     description: |
-      Optional list of groups of components organized into sections of a form users will use to launch a job.
+      Optional list of groups of components organized into sections of a form users will use to  a job.
     x-kubernetes-list-type: map
     x-kubernetes-list-map-keys:
     - var
@@ -36,9 +50,9 @@ elCicdDefs:
       - var
       properties:
         attributes:
+          type: object
           description: |-
             A map of key/value pairs that optionally configure a group of components.
-          type: object
           additionalProperties:
             type: string
         components:
@@ -81,13 +95,57 @@ elCicdDefs:
             required:
             - inputType
         var:
+          type: string
           description: |-
             Variable that will be assigned from the value of component(s) in the group.
-          type: string
           pattern: '^\w+$'
 
-elCicdDefs-$<GIG_LAUNCHFORM>:
-  TITLE_CASE_NAME: GigLaunchForm
+  ITERATE_SPEC:
+    type: array
+    items:
+      type: object
+      properties:
+        envVar:
+          type: string
+        range:
+          type: object
+          properties:
+            start:
+              type: integer
+              default: 0
+            stop:
+              type: integer
+            step:
+              type: integer
+              default: 1
+          required:
+          - stop
+        values:
+          type: array
+          items:
+            x-kubernetes-int-or-string: true
+          minLength: 1
+      anyOne:
+      - required:
+        - envVar
+      - required:
+        - range
+      - required:
+        - values
+
+  SOURCE_REF_SPEC:
+    type: object
+    description: |
+      Reference to another GigModule, Stage, or Step that should be processed.
+    properties:
+      gigModuleRef: $<GIG_MODULE_REF>
+      stage:
+        type: string
+      step:
+        type: string
+
+elCicdDefs-$<GIG_FORM>:
+  TITLE_CASE_NAME: GigForm
   SHORT_NAMES:
   - glf
   - glfs
@@ -96,7 +154,7 @@ elCicdDefs-$<GIG_LAUNCHFORM>:
   SPEC_DEFINITION:
     type: object
     description: |
-      $<TITLE_CASE_NAME>Spec defines a GigLaunchForm, and the optional and/or required inputValues to launch it.
+      $<TITLE_CASE_NAME>Spec defines a GigForm, and the optional and/or required inputValues to  it.
     required:
     - inputForm
     properties:
@@ -104,17 +162,16 @@ elCicdDefs-$<GIG_LAUNCHFORM>:
         type: string
       inputForm: $<FORM_SPEC>
 
-elCicdDefs-$<GIG_DEF>:
-  TITLE_CASE_NAME: GigDefinition
+elCicdDefs-$<GIG_MODULE>:
+  TITLE_CASE_NAME: GigModule
   SHORT_NAMES:
-  - gigdef
-  - gigdefs
+  - gigmod
+  - gigmods
   SPEC_DEFINITION:
     type: object
     description: |
-      $<TITLE_CASE_NAME>Spec defines a GigDefinition, and the optional and/or required inputValues to launch it.
+      $<TITLE_CASE_NAME>Spec defines a GigModule, and the optional and/or required inputValues to  it.
     required:
-    - name
     - activeDeadlineSeconds
     - stages
     - workDirSizeLimit
@@ -126,32 +183,30 @@ elCicdDefs-$<GIG_DEF>:
         default: 600
       description:
         type: string
-      gigLaunchFormRef:
-        type: object
-        description: |
-          Optional default GigLaunchForm to use with GigDefinition. Can be overridden in a Gig.
-        properties: $<NAME_NAMESPACE_PROPS>
-        required:
-        - name
+      gigFormRef: $<GIG_FORM_REF>
       inputParams:
         type: array
         description: |
-          List of input params used by the definition.  This list has no functional value and is not verified. Use it for
+          List of input params used by the module.  This list has no functional value and is not verified. Use it for
           documentation purposes only.
         items:
           type: string
         x-kubernetes-list-type: set
-      name:
+      mode:
         type: string
+        enum:
+        - Executable
+        - Library
+        default: Executable
       requiredInputParams:
         type: array
         description: |
-          List of required input parameters that are required to launch to definition.  A Secret with the same name as the GigRun
-          will be checked for existence and that the required params are defined before launching.
+          List of required input parameters that are required to  to module.  A Secret with the same name as the GigRun
+          will be checked for existence and that the required params are defined before ing.
         items:
           type: string
         x-kubernetes-list-type: set
-      secretEnvVars:
+      secretVars:
         type: array
         description: |
           List of environment variables that are secrets and should be obfuscated in GigRun logs.
@@ -159,123 +214,112 @@ elCicdDefs-$<GIG_DEF>:
           type: string
         x-kubernetes-list-type: set
       stages:
-        description: Units of work.  User input may potentially be required at the end of a name.
         type: array
+        description: |
+          List of stages. Stages are a comprised of a list of Steps.  Can be referenced from other GigModules.
         x-kubernetes-list-type: map
         x-kubernetes-list-map-keys:
         - name
         items:
           type: object
-          oneOf:
-          - required:
-            - gigDefinitionRef
-          - required:
-            - script
           required:
           - name
           properties:
-            command:
-              type: string
-              descriptions: |
-                Express a custom command to run this name's source. The command should have the form
-                <command> <args...> %s <args...>. %s will be used by Teknetes Gigs to inject the
-                filename (i.e. the name of the name) where the source will be stored. Leave blank
-                if the source is a shell source, in which case the source will be executed directly.
             description:
               type: string
-              description: Description of name's purpose.
-            displayName:
-              type: string
-              description: Human readable title of name for logging purposes.
-            gigDefinitionRef:
-              type: object
-              description: |
-                Reference to another GigDefinition that should be run in full for this stage.
-              properties: $<NAME_NAMESPACE_PROPS>
-              required:
-              - name
-            iterate:
-              type: array
-              items:
-                type: object
-                properties:
-                  envVar:
-                    type: string
-                  range:
-                    type: object
-                    properties:
-                      start:
-                        type: integer
-                        default: 0
-                      stop:
-                        type: integer
-                      step:
-                        type: integer
-                        default: 1
-                    required:
-                    - stop
-                  values:
-                    type: array
-                    items:
-                      x-kubernetes-int-or-string: true
-                    minLength: 1
-                anyOne:
-                - required:
-                  - envVar
-                - required:
-                  - range
-                - required:
-                  - values
+            iterate: $<ITERATE_SPEC>
             name:
               type: string
-              description: |
-                Name of the stage. Must start and end with an alphanumeric character, and '-' and '.' may be used.
-                The name will reflect the name of the file used to store the source, so name appropiately;
-                e.g. <some-name>.py if the name is a Python source.
-              pattern: '(?:^\w(?:[-\w.]{0,251}[\w])?)$'
             parallel:
               type: boolean
-            scriptType:
-              type: string
-              description: |
-                The interpretor for the stage, either a definition type or language. For 'Shell', scripts are executed directly.
-                For all other interpretors, scripts are mounted as files in the Pod and executed; i.e. in a subprocess. If not defined,
-                then 'Shell' is assumed.
-              enum:
-              - Custom
-              - GigDefinition
-              - Go
-              - Input
-              - JinjaTemplate
-              - Python
-              - Shell
-              default: Shell
-            script:
-              type: string
-              description: |
-                The source to execute. Can be writting in any language or definition type supported by Teknetes Gigs,
-                or as a source for a custom command to run.  Can alse refer to another GigDefinition.
-            secretEnvVars:
-              type: array
-              description: |
-                A list of environment variables that should be obfuscated in the logs. Because these variables may
-                be assigned before the log filtering component is aware of the variable, debug logging/tracing will be turned
-                off for this stage if secretEnvVars are defined.  Once declared, the value assigned in this stage
-                will be obfuscated throughout the GigRun. If the value needs to be updated in a subsequent stage,
-                it will need to be redeclared.
-              items:
-                type: string
-              x-kubernetes-list-type: set
+            sourceRef: $<SOURCE_REF_SPEC>
             wait:
               type: boolean
             when:
               type: string
               description: |
-                Javascript statement that must evaluate to `true` for the name to execute. For ease of writing expressions,
+                Javascript statement that must evaluate to `true` for the stage to be processed. For ease of writing expressions,
                 environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in shell can be refered
                 to as `env.FOO` in the statements.
             workDir:
               type: string
+            steps:
+              type: array
+              description: |
+                List of Steps within a Stage.  Steps define a unit of work within a Stage. Can be referenced by name in other Stages.
+              x-kubernetes-list-type: map
+              x-kubernetes-list-map-keys:
+              - name
+              items:
+                type: object
+                required:
+                - name
+                oneOf:
+                - required:
+                  - sourceRef
+                - required:
+                  - sourceCode
+                properties:
+                  command:
+                    type: string
+                    descriptions: |
+                      Command used to process the sourceCode. Typically will be set by the controller unless
+                      the sourceType is Custom.
+                  description:
+                    type: string
+                    description: Description of name's purpose.
+                  iterate: $<ITERATE_SPEC>
+                  name:
+                    type: string
+                    description: |
+                      Name of the stage. Must start and end with an alphanumeric character, and '-' and '.' may be used.
+                      The name will reflect the name of the file used to store the sourceCode, so name appropiately;
+                      e.g. <some-name>.py if the name is a Python sourceCode.
+                    pattern: '(?:^\w(?:[-\w.]{0,251}[\w])?)$'
+                  parallel:
+                    type: boolean
+                  sourceCode:
+                    type: string
+                    description: |
+                      The sourceCode to execute. Can be writting in any language or module type supported by Ahplos Gigs,
+                      or as a sourceCode for a custom command to run.  Can alse refer to another GigModule.
+                  sourceRef: $<SOURCE_REF_SPEC>
+                  sourceType:
+                    type: string
+                    description: |
+                      The interpretor for the stage, either a module type or language. For 'Shell', scripts are executed directly.
+                      For all other interpretors, scripts are mounted as files in the Pod and executed; i.e. in a subprocess. If not defined,
+                      then 'Shell' is assumed.
+                    enum:
+                    - Custom
+                    - GigModule
+                    - Go
+                    - Input
+                    - JinjaTemplate
+                    - Python
+                    - Shell
+                    default: Shell
+                  secretVars:
+                    type: array
+                    description: |
+                      A list of environment variables that should be obfuscated in the logs. Because these variables may
+                      be assigned before the log filtering component is aware of the variable, debug logging/tracing will be turned
+                      off for this stage if secretVars are defined.  Once declared, the value assigned in this stage
+                      will be obfuscated throughout the GigRun. If the value needs to be updated in a subsequent stage,
+                      it will need to be redeclared.
+                    items:
+                      type: string
+                    x-kubernetes-list-type: set
+                  wait:
+                    type: boolean
+                  when:
+                    type: string
+                    description: |
+                      Javascript statement that must evaluate to `true` for the step to be processed. For ease of writing expressions,
+                      environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in shell can be refered
+                      to as `env.FOO` in the statements.
+                  workDir:
+                    type: string
       workDirSizeLimit:
         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
         x-kubernetes-int-or-string: true
@@ -284,33 +328,23 @@ elCicdDefs-$<GIG_DEF>:
 elCicdDefs-$<GIG>:
   TITLE_CASE_NAME: Gig
   SPEC_DEFINITION:
-    description: $<TITLE_CASE_NAME>Spec defines the relationship between a $<GIG_DEF> and specific CronJob (i.e. JobTemplate).
     type: object
+    description: $<TITLE_CASE_NAME>Spec defines the relationship between a $<GIG_MODULE> and specific CronJob (i.e. JobTemplate).
     properties:
       cronJobRef:
-        description: Reference to a CronJob in the same Namespace as the Gig.
         type: object
+        description: Reference to a CronJob in the same Namespace as the Gig.
         properties:
           name:
-            description: Name of a CronJob in the same Namespace as the Gig.
             type: string
+            description: Name of a CronJob in the same Namespace as the Gig.
         required:
         - name
-      gigDefinitionRef:
-        description: Reference to a GigDefinition.
-        type: object
-        properties: $<NAME_NAMESPACE_PROPS>
-        required:
-        - name
-      gigLaunchFormRef:
-        description: Reference to a GigLaunchForm.
-        type: object
-        properties: $<NAME_NAMESPACE_PROPS>
-        required:
-        - name
+      gigModuleRef: $<GIG_MODULE_REF>
+      gigFormRef: $<GIG_FORM_REF>
     required:
     - cronJobRef
-    - gigDefinitionRef
+    - gigModuleRef
   STATUS_DEFINITION:
     type: object
     properties:
@@ -366,6 +400,8 @@ elCicdDefs-$<GIG_RUN>:
       runState: $<RUN_STATE>
       startedBy:
         type: string
+        description: |
+          User or ServiceAccount that created the GigRun.
         x-kubernetes-validations:
         - rule: "size(oldSelf) > 0 && !(self != oldSelf)"
           message: startedBy is immutable
@@ -376,19 +412,19 @@ elCicdDefs-$<GIG_RUN>:
     properties:
       runTime:
         type: integer
+        description: |
+          Time in seconds it took to complete processing the GigRun.
 
 elCicdTemplates:
 - apiVersion: apiextensions.k8s.io/v1
   kind: CustomResourceDefinition
   objNames: $<GIG_TYPES>
-  objName: $<>s.batch.teknetes.org
+  objName: $<>s.batch.ahplos.org
   template:
     spec:
       conversion:
         strategy: None
-      # group name to use for REST API: /apis/<group>/<version>
-      group: batch.teknetes.org
-      # list of versions supported by this CustomResourceDefinition
+      group: batch.ahplos.org
       names:
         kind: $<TITLE_CASE_NAME>
         plural: $<BASE_OBJ_NAME>s
@@ -407,20 +443,20 @@ elCicdTemplates:
             type: object
             properties:
               apiVersion:
+                type: string
                 description: |-
-                  APIVersion defines the versioned definition of this representation of an object.
+                  APIVersion defines the versioned module of this representation of an object.
                   Servers should convert recognized schemas to the latest internal value, and
                   may reject unrecognized values.
                   More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-                type: string
               kind:
+                type: string
                 description: |-
                   Kind is a string value representing the REST resource this object represents.
                   Servers may infer this from the endpoint the client submits requests to.
                   Cannot be updated.
                   In CamelCase.
                   More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-                type: string
               metadata:
                 type: object
               spec: $<SPEC_DEFINITION>
