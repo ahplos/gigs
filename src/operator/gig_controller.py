@@ -15,12 +15,12 @@ def onvalidategig(body, meta, logger, **_):
     if (not cron_job.exists()):
         raise AdmissionError(f'CronJob {cron_job.name} does not exist for {gig.namespace}:{gig.name}')
 
-    gig_def = GigModule(gig.sourceRef.name, gig.sourceRef.namespace)
-    if (not gig_def.exists()):
-        raise AdmissionError(f'CronJob {gig_def.namespace}:{gig_def.name} does not exist for {gig.namespace}:{gig.name}')
+    gig_mod = GigModule(gig.gigModuleRef.name, gig.gigModuleRef.namespace)
+    if (not gig_mod.exists()):
+        raise AdmissionError(f'CronJob {gig_mod.namespace}:{gig_mod.name} does not exist for {gig.namespace}:{gig.name}')
 
     if (gig.gigFormRef):
-        namespace = gig.gigFormRef.get(GIG_CONSTS.NAMESPACE, gig_def.namespace)
+        namespace = gig.gigFormRef.get(GIG_CONSTS.NAMESPACE, gig_mod.namespace)
         gig_launch_form = GigForm(gig.gigFormRef.name, namespace)
         if (not gig_launch_form.exists()):
             raise AdmissionError(f'CronJob {gig_launch_form.namespace}:{gig_launch_form.name} does not exist for {gig.namespace}:{gig.name}')

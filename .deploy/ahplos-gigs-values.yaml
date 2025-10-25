@@ -3,10 +3,10 @@ elCicdDefs:
   OPERATOR_NAME: ahplos-gigs-operator
 
   IMAGE_REGISTRY: dev-demo-image-registry.apps-crc.testing
-  ahplos_GIGS_PLUGIN_IMAGE: $<IMAGE_REGISTRY>/$<PLUGIN_NAME>:latest
-  ahplos_GIGS_OPERATOR_IMAGE: $<IMAGE_REGISTRY>/$<OPERATOR_NAME>:latest
+  AHPLOS_GIGS_PLUGIN_IMAGE: $<IMAGE_REGISTRY>/$<PLUGIN_NAME>:latest
+  AHPLOS_GIGS_OPERATOR_IMAGE: $<IMAGE_REGISTRY>/$<OPERATOR_NAME>:latest
 
-  ahplos_GIGS_IMAGE_PULL_SECRET: gig-demo-registry-credentials
+  AHPLOS_GIGS_IMAGE_PULL_SECRET: gig-demo-registry-credentials
 
   PORT: 8443
 
@@ -23,7 +23,7 @@ elCicdDefs:
 
   GIGS_OCP_CONSOLE_ROLE: $<OPERATOR_NAME>-openshift-console
 
-  ahplos_GIGS_PROCESSOR_MAP: ahplos-gigs-stage-processors
+  AHPLOS_GIGS_INTERPRETER_MAP: ahplos-gigs-interpreters
 
 elCicdDefs-dev:
   IMAGE_PULL_POLICY: Always
@@ -32,9 +32,9 @@ elCicdTemplates:
 - templateNames: [deployment, service, serviceAccount]
   objName: $<OPERATOR_NAME>
   port: $<PORT>
-  image: $<ahplos_GIGS_OPERATOR_IMAGE>
+  image: $<AHPLOS_GIGS_OPERATOR_IMAGE>
   imagePullSecrets:
-  - name: $<ahplos_GIGS_IMAGE_PULL_SECRET>
+  - name: $<AHPLOS_GIGS_IMAGE_PULL_SECRET>
   imagePullPolicy: $<IMAGE_PULL_POLICY>
   serviceAccountName: $<OBJ_NAME>
   workDir: /ahplos-gigs-controller
@@ -47,14 +47,14 @@ elCicdTemplates:
     python ./utilities/console_patch.py $<PLUGIN_NAME>
     kopf run --all-namespaces --verbose $(ls *_controller.py)
   env:
-  - name: ahplos_GIGS_OPERATOR_NAMESPACE
+  - name: AHPLOS_GIGS_OPERATOR_NAMESPACE
     value: $<HELM_RELEASE_NAMESPACE>
-  - name: ahplos_GIGS_OPERATOR_NAME
+  - name: AHPLOS_GIGS_OPERATOR_NAME
     value: $<OPERATOR_NAME>
-  - name: ahplos_GIGS_OPERATOR_PORT
+  - name: AHPLOS_GIGS_OPERATOR_PORT
     value: $<toString|PORT>
-  - name: ahplos_GIGS_PROCESSOR_MAP
-    value: $<ahplos_GIGS_PROCESSOR_MAP>
+  - name: AHPLOS_GIGS_INTERPRETER_MAP
+    value: $<AHPLOS_GIGS_INTERPRETER_MAP>
   volumeMounts:
     - name: $<CERT_NAME>
       readOnly: true
@@ -68,12 +68,13 @@ elCicdTemplates:
 - templateName: configMap
   elCicdDefs:
     PYTHON_JINJA_COMMAND: python ${GIG_RUNNER_HOME}/jinja_stage.py %s
-  objName: $<ahplos_GIGS_PROCESSOR_MAP>
+  objName: $<AHPLOS_GIGS_INTERPRETER_MAP>
   data:
     Go: go run %s
     Input: $<PYTHON_JINJA_COMMAND>
     JinjaTemplate: $<PYTHON_JINJA_COMMAND>
     Python: python -m trace -t %s
+    Shell: source %s
 
 - templateNames: [deployment, service, serviceAccount]
   annotations:
@@ -81,9 +82,9 @@ elCicdTemplates:
   objName: $<PLUGIN_NAME>
   replicas: 2
   port: $<PORT>
-  image: $<ahplos_GIGS_PLUGIN_IMAGE>
+  image: $<AHPLOS_GIGS_PLUGIN_IMAGE>
   imagePullSecrets:
-  - name: $<ahplos_GIGS_IMAGE_PULL_SECRET>
+  - name: $<AHPLOS_GIGS_IMAGE_PULL_SECRET>
   imagePullPolicy: $<IMAGE_PULL_POLICY>
   serviceAccountName: $<OBJ_NAME>
   command:
@@ -238,16 +239,16 @@ elCicdTemplates:
     apiGroups:
     - batch.ahplos.org
     resources:
-    - gigdefinitions
-    - giglaunchforms
+    - gigmodules
+    - gigforms
     - gigs
     - gigruns
-    - gigdefinitions/status
-    - giglaunchforms/status
+    - gigmodules/status
+    - gigforms/status
     - gigs/status
     - gigruns/status
-    - gigdefinitions/finalizers
-    - giglaunchforms/finalizers
+    - gigmodules/finalizers
+    - gigforms/finalizers
     - gigs/finalizers
     - gigruns/finalizers
 
@@ -270,7 +271,7 @@ elCicdTemplates:
     - gigs
     - gigs/status
     - gigruns/status
-    - giglaunchforms
+    - gigforms
     verbs:
     - get
     - list

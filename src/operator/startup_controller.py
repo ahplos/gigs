@@ -15,12 +15,12 @@ class ahplosGigsOperator:
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.INFO)
 
-        self.namespace = os.environ['ahplos_GIGS_OPERATOR_NAMESPACE']
-        self.name = os.environ['ahplos_GIGS_OPERATOR_NAME']
+        self.namespace = os.environ['AHPLOS_GIGS_OPERATOR_NAMESPACE']
+        self.name = os.environ['AHPLOS_GIGS_OPERATOR_NAME']
         self.host = f'{self.name}.{self.namespace}.{ahplosGigsOperator.SVC}'
 
-        self.service_port = int(os.environ['ahplos_GIGS_OPERATOR_PORT'])
-        self.container_port = int(os.environ['ahplos_GIGS_OPERATOR_PORT'])
+        self.service_port = int(os.environ['AHPLOS_GIGS_OPERATOR_PORT'])
+        self.container_port = int(os.environ['AHPLOS_GIGS_OPERATOR_PORT'])
 
         self.cert_path = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
 

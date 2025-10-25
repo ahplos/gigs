@@ -3,7 +3,7 @@ import {
     K8sResourceCommon,
 } from "@openshift-console/dynamic-plugin-sdk";
 
-export const BATCH_ahplos_ORG = "batch.ahplos.org";
+export const BATCH_AHPLOS_ORG = "batch.ahplos.org";
 export const API_VERSION = "v1beta1";
 
 export const CRONJOB_GVK: K8sGroupVersionKind = {
@@ -41,25 +41,25 @@ export const USER_GVK: K8sGroupVersionKind = {
 };
 
 export const GIG_GVK: K8sGroupVersionKind = {
-    group: BATCH_ahplos_ORG,
+    group: BATCH_AHPLOS_ORG,
     version: API_VERSION,
     kind: "Gig",
 };
 
-export const GIG_DEFINITION_GVK: K8sGroupVersionKind = {
-    group: BATCH_ahplos_ORG,
+export const GIG_MODULE_GVK: K8sGroupVersionKind = {
+    group: BATCH_AHPLOS_ORG,
     version: API_VERSION,
     kind: "GigModule",
 };
 
 export const GIG_LAUNCHFORM_GVK: K8sGroupVersionKind = {
-    group: BATCH_ahplos_ORG,
+    group: BATCH_AHPLOS_ORG,
     version: API_VERSION,
     kind: "GigForm",
 };
 
 export const GIG_RUN_GVK: K8sGroupVersionKind = {
-    group: BATCH_ahplos_ORG,
+    group: BATCH_AHPLOS_ORG,
     version: API_VERSION,
     kind: "GigRun",
 };
@@ -87,7 +87,7 @@ export type StageSpec = {
     name: string;
     description?: string;
     displayName: string;
-    scriptType: string;
+    interpreter: string;
 };
 
 export type GigModule = K8sResourceCommon & {

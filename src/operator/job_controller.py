@@ -11,14 +11,14 @@ WATCH_FIELDS=[f'{GIG_CONSTS.STATUS}.{GIG_CONSTS.SUCCEEDED}', f'{GIG_CONSTS.STATU
 @kopf.on.field(
     Job.version,
     Job.plural,
-    annotations={GigModule.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigModule.GIG_MODULE_ANNOTATION: kopf.PRESENT},
     field=f'{GIG_CONSTS.STATUS}.{GIG_CONSTS.SUCCEEDED}',
     value=kopf.PRESENT,
 )  # type: ignore
 @kopf.on.field(
     Job.version,
     Job.plural,
-    annotations={GigModule.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigModule.GIG_MODULE_ANNOTATION: kopf.PRESENT},
     field=f'{GIG_CONSTS.STATUS}.{GIG_CONSTS.FAILED}',
     value=kopf.PRESENT,
 )  # type: ignore

@@ -1,0 +1,45 @@
+#!/usr/bin/bash -e
+
+{%- set GIG_MOD_DIR_NAME = '{}_{}'.format(gig_mod.namespace, gig_mod.name) %}
+{%- set STAGE_FUNCTION_NAME = '{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
+
+STAGE_COUNTER=${1}
+function __{{ STAGE_FUNCTION_NAME }}() {
+    local STEP_COUNTER=0
+    {%- for step in stage.steps %}
+    {%- set STEP_FUNCTION_NAME = '{}_{}'.format(STAGE_FUNCTION_NAME, step.name) %}
+    function __{{ STEP_FUNCTION_NAME }}() {
+        {%- set GIG_MODULE_NAME = gig_mod.name %}
+        {%- set NAMESPACE = gig_mod.namespace %}
+        {%- set STAGE_NAME = stage.name %}
+        {%- if step.stepRef %}
+          {%- set STAGE_NAME = step.stepRef.stage if step.stepRef.stage else stage.name %}
+          {%- set GIG_MODULE_NAME = step.stepRef.gigModuleRef.name %}
+          {%- if step.stepRef.gigModuleRef.namespace %}
+            {%- set NAMESPACE = step.stepRef.gigModuleRef.namespace %}
+          {%- endif %}
+        {%- endif %}
+
+        {%- set STEP_DIR = '{}_{}'.format(NAMESPACE, GIG_MODULE_NAME) %}
+        {%- set STEP_NAME = '{}_{}'.format(STAGE_NAME, step.name) %}
+        {%- set STEP_COMMAND = '${{GIG_RUNNER_HOME}}/{}/{}-run.sh'.format(STEP_DIR, STEP_NAME) %}
+        ((STEP_COUNTER+=1))
+        if [[ ! -f ${GIG_RUNNER_HOME}/{{ GIG_MOD_DIR_NAME }}/when-{{ stage.name }}-{{ step.name }}.js || \
+            $(node ${GIG_RUNNER_HOME}/{{ GIG_MOD_DIR_NAME }}/when-{{ stage.name }}-{{ step.name }}.js) == 'true' ]]
+        then
+            __stepHeader ${1} '{{ STAGE_FUNCTION_NAME }}' '{{ step.interpreter }}' {{ HAS_SECRETS }}
+            source {{ STEP_COMMAND }}
+        else
+            __stepHeader ${STAGE_ID} '{{ STEP_NAME }}' '{{ step.interpreter }}' 'SKIPPED'
+        fi
+    }
+
+    {%- set RUN_PARALLEL = '&' if step.parallel else '' +%}
+    __{{ STEP_FUNCTION_NAME }} 2>&1 | __filterLogOutput "[${STAGE_COUNTER}-${STEP_COUNTER}]" {{ RUN_PARALLEL }}
+    {%- if (step.wait) +%}
+    wait
+    {%- endif %}
+    {%- endfor %}
+}
+
+__{{ STAGE_FUNCTION_NAME }}

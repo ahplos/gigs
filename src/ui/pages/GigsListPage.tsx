@@ -26,7 +26,7 @@ import {
     CRONJOB_GVK,
     Gig,
     GIG_GVK,
-    GIG_DEFINITION_GVK,
+    GIG_MODULE_GVK,
     GIG_LAUNCHFORM_GVK,
     NS_GVK
 } from '../utilities/objectDefs';
@@ -63,7 +63,7 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
         },
         {
             title: 'GigModule',
-            id: 'gig-definition',
+            id: 'gig-module',
             sort: 'spec.gigDefinitionRef',
             transforms: [sortable],
         },
@@ -99,7 +99,7 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
                     <ResourceLink groupVersionKind={NS_GVK} name={obj.metadata.namespace} />
                 </TableData>
                 <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={GIG_DEFINITION_GVK}
+                    <ResourceLink groupVersionKind={GIG_MODULE_GVK}
                                   name={obj.spec.gigDefinitionRef.name}
                                   namespace={obj.spec.gigDefinitionRef.namespace ?? obj.metadata.namespace} />
                 </TableData>

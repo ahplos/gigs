@@ -8,16 +8,12 @@ class _GIG_CONSTS(type):
     GLOBAL_REGISTRY = Box()
 
     @property
-    def BATCH_ahplos_ORG(self) -> str:
+    def BATCH_AHPLOS_ORG(self) -> str:
         return 'batch.ahplos.org'
 
     @property
     def V1_BETA1(self) -> str:
         return 'v1beta1'
-
-    @property
-    def GIG_DEFINITIONS(self) -> str:
-        return 'gigdefinitions'
 
     @property
     def GIG(self) -> str:
@@ -37,7 +33,7 @@ class _GIG_CONSTS(type):
 
     @property
     def GIG_REF_LABEL(self) -> str:
-        return f'{self.BATCH_ahplos_ORG}/{self.GIG}'
+        return f'{self.BATCH_AHPLOS_ORG}/{self.GIG}'
 
     @property
     def JOB_NAME_SELECTOR_LABEL(self) -> str:

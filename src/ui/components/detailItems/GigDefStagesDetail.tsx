@@ -17,7 +17,7 @@ export const GigDefStagesDetail = (model) => {
 
     return (
         <List component={ListComponent.ol} type={OrderType.number}>
-            {gigDef.spec.stages?.map((stage) => <ListItem><b>{stage.displayName ?? stage.name}</b> [{stage.scriptType}]</ListItem>)}
+            {gigDef.spec.stages?.map((stage) => <ListItem><b>{stage.displayName ?? stage.name}</b> [{stage.interpreter}]</ListItem>)}
         </List>
     );
 }

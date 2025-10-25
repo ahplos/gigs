@@ -1,0 +1,22 @@
+if [[ ! -f ${GIG_RUNNER_HOME}/{{ GIG_MOD_DIR_NAME }}/when-{{ stage.name }}-{{ step.name }}.js || \
+    $(node ${GIG_RUNNER_HOME}/{{ GIG_MOD_DIR_NAME }}/when-{{ stage.name }}-{{ step.name }}.js) == 'true' ]]
+then
+    {%- set HAS_SECRETS = 'HAS_SECRETS' if step.secretVars else '' %}
+    {%- if HAS_SECRETS %}
+      {%- for secretVar in step.secretVars %}
+    echo "${ {{- secretVar }}}" >> .secrets
+      {%- endfor %}
+    {%- endif %}
+    __loadStageEnv
+
+    {{ step.command % STEP_NAME }}
+
+    if [[ '{{ step.interpreter}}' == 'Input' ]]
+    then
+        __waitForUserInput {{ step.name }}
+    fi
+
+    __stepFooter ${1} '{{ gig_mod.name }}_{{ STEP_NAME }}'
+else
+    __stepHeader ${1} '{{ gig_mod.name }}_{{ STEP_NAME }}' '{{ step.interpreter }}' 'SKIPPED'
+fi

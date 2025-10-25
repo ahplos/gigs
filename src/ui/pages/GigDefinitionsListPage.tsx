@@ -21,7 +21,7 @@ import {
 
 import {
     GigModule,
-    GIG_DEFINITION_GVK,
+    GIG_MODULE_GVK,
     GIG_LAUNCHFORM_GVK,
     NS_GVK,
 } from '../utilities/objectDefs';
@@ -69,8 +69,8 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
 
         const stageProcCounts = {};
         for (let stage of gigDef.spec.stages) {
-            stageProcCounts[stage.scriptType] = stageProcCounts[stage.scriptType] ?? 0;
-            stageProcCounts[stage.scriptType]++;
+            stageProcCounts[stage.interpreter] = stageProcCounts[stage.interpreter] ?? 0;
+            stageProcCounts[stage.interpreter]++;
         }
 
         let stageProcs = []
@@ -81,7 +81,7 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
         return (
             <>
                 <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={GIG_DEFINITION_GVK}
+                    <ResourceLink groupVersionKind={GIG_MODULE_GVK}
                                   name={gigDef.metadata.name}
                                   namespace={gigDef.metadata.namespace}>
                         <span>&nbsp;{gigDef.spec.isLibrary ? '[Library]' : ''}</span>
@@ -133,7 +133,7 @@ export const GigDefinitionsListPage = (model) => {
     return (
         <>
             <ListPageHeader title={'ahplos GigDefinitions'}>
-                <ListPageCreate groupVersionKind={GIG_DEFINITION_GVK}>{'Create GigModule'}</ListPageCreate>
+                <ListPageCreate groupVersionKind={GIG_MODULE_GVK}>{'Create GigModule'}</ListPageCreate>
             </ListPageHeader>
             <ListPageBody>
                 <GigDefinitionsTable

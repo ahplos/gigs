@@ -64,7 +64,7 @@ function __filterLogOutput() {
     done
 }
 
-function __stage_header() {
+function __stageHeader() {
     local STAGE_ID=${1}
     local STAGE_NAME=${2}
     local STAGE_SCRIPT_TYPE=${3}
@@ -129,12 +129,12 @@ function __checkForAbortSignal() {
     set +x
 }
 
-function __gig_run_header() {
+function __gigRunHeader() {
     echo '======================='
-    echo "GIG: {{ gig_def.name }}"
-    if [[ "{{ gig_def.description }}" ]]
+    echo "GIG: {{ gig_mod.name }}"
+    if [[ "{{ gig_mod.description }}" ]]
     then
-        echo "{{ gig_def.description }}"
+        echo "{{ gig_mod.description }}"
     fi
     echo
     date
@@ -155,7 +155,7 @@ function __gig_run_header() {
     echo
 }
 
-function __gig_run_footer() {
+function __gigRunFooter() {
     echo
     echo '******************************************************************'
     echo '** GIG COMPLETE'
@@ -170,14 +170,14 @@ set +o allexport
 
 touch .secrets .env gig.log
 
-echo "$(__gig_run_header)" 2>&1 >> gig.log
+echo "$(__gigRunHeader)" 2>&1 >> gig.log
 
-${GIG_RUNNER_HOME}/{{ gig_def.namespace }}-{{ gig_def.name }}/stagerunner.sh >> gig.log &
+${GIG_RUNNER_HOME}/{{ gig_mod.namespace }}-{{ gig_mod.name }}/stagerunner.sh >> gig.log &
 PID=$!
 __checkForAbortSignal ${PID} &
 tail -q --pid ${PID} -f gig.log -n +1
 
-__gig_run_footer | tee gig.log
+__gigRunFooter | tee gig.log
 
 exit $([ -f .stagerunner_exit_status ] && cat .stagerunner_exit_status)
 

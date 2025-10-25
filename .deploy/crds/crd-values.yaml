@@ -5,6 +5,12 @@ elCicdDefs:
   GIG_RUN: $<GIG>run
   GIG_TYPES: [$<GIG_MODULE>, $<GIG_FORM>, $<GIG>, $<GIG_RUN>]
 
+  NAME_NAMESPACE_PROPS:
+    name:
+      type: string
+    namespace:
+      type: string
+
   RUN_STATE:
     type: string
     enum:
@@ -16,12 +22,12 @@ elCicdDefs:
     - Succeeded
     - WaitingForInput
 
-  GIG_MODULE_REF:
-    type: object
-    description: Reference to a GigModule.
-    properties: $<NAME_NAMESPACE_PROPS>
-    required:
-    - name
+  MODE_SPEC:
+    type: string
+    enum:
+    - Executable
+    - Library
+    default: Executable
 
   GIG_FORM_REF:
     type: object
@@ -30,11 +36,12 @@ elCicdDefs:
     required:
     - name
 
-  NAME_NAMESPACE_PROPS:
-    name:
-      type: string
-    namespace:
-      type: string
+  GIG_MODULE_REF:
+    type: object
+    description: Reference to a GigModule.
+    properties: $<NAME_NAMESPACE_PROPS>
+    required:
+    - name
 
   FORM_SPEC:
     type: array
@@ -100,6 +107,42 @@ elCicdDefs:
             Variable that will be assigned from the value of component(s) in the group.
           pattern: '^\w+$'
 
+elCicdDefs-$<GIG_FORM>:
+  TITLE_CASE_NAME: GigForm
+  SHORT_NAMES:
+  - glf
+  - glfs
+  - gigform
+  - gigforms
+  SPEC_DEFINITION:
+    type: object
+    description: |
+      $<TITLE_CASE_NAME>Spec defines a GigForm, and the optional and/or required inputValues to  it.
+    required:
+    - inputForm
+    properties:
+      title:
+        type: string
+      inputForm: $<FORM_SPEC>
+
+elCicdDefs-$<GIG_MODULE>:
+  TITLE_CASE_NAME: GigModule
+  SHORT_NAMES:
+  - gigmod
+  - gigmods
+  GIG_MODULE_REF:
+    type: object
+    description: |
+      Reference to another Stage or Step in a GigModule to be processed where referenced.
+    properties:
+      name:
+        type: string
+      namespace:
+        type: string
+      stage:
+        type: string
+      step:
+        type: string
   ITERATE_SPEC:
     type: array
     items:
@@ -132,41 +175,6 @@ elCicdDefs:
         - range
       - required:
         - values
-
-  SOURCE_REF_SPEC:
-    type: object
-    description: |
-      Reference to another GigModule, Stage, or Step that should be processed.
-    properties:
-      gigModuleRef: $<GIG_MODULE_REF>
-      stage:
-        type: string
-      step:
-        type: string
-
-elCicdDefs-$<GIG_FORM>:
-  TITLE_CASE_NAME: GigForm
-  SHORT_NAMES:
-  - glf
-  - glfs
-  - gigform
-  - gigforms
-  SPEC_DEFINITION:
-    type: object
-    description: |
-      $<TITLE_CASE_NAME>Spec defines a GigForm, and the optional and/or required inputValues to  it.
-    required:
-    - inputForm
-    properties:
-      title:
-        type: string
-      inputForm: $<FORM_SPEC>
-
-elCicdDefs-$<GIG_MODULE>:
-  TITLE_CASE_NAME: GigModule
-  SHORT_NAMES:
-  - gigmod
-  - gigmods
   SPEC_DEFINITION:
     type: object
     description: |
@@ -192,12 +200,7 @@ elCicdDefs-$<GIG_MODULE>:
         items:
           type: string
         x-kubernetes-list-type: set
-      mode:
-        type: string
-        enum:
-        - Executable
-        - Library
-        default: Executable
+      mode: $<MODE_SPEC>
       requiredInputParams:
         type: array
         description: |
@@ -224,15 +227,31 @@ elCicdDefs-$<GIG_MODULE>:
           type: object
           required:
           - name
+          oneOf:
+          - required:
+            - stageRef
+          - required:
+            - steps
           properties:
             description:
               type: string
             iterate: $<ITERATE_SPEC>
+            mode: $<MODE_SPEC>
             name:
               type: string
             parallel:
               type: boolean
-            sourceRef: $<SOURCE_REF_SPEC>
+            stageRef:
+              type: object
+              description: |
+                Reference to another Stage in a GigModule to be processed where referenced.  When clauses in the
+                referenced Stage are ignored.
+              required:
+              - gigModuleRef
+              properties:
+                gigModuleRef: $<GIG_MODULE_REF>
+                name:
+                  type: string
             wait:
               type: boolean
             when:
@@ -256,7 +275,7 @@ elCicdDefs-$<GIG_MODULE>:
                 - name
                 oneOf:
                 - required:
-                  - sourceRef
+                  - stepRef
                 - required:
                   - sourceCode
                 properties:
@@ -264,10 +283,25 @@ elCicdDefs-$<GIG_MODULE>:
                     type: string
                     descriptions: |
                       Command used to process the sourceCode. Typically will be set by the controller unless
-                      the sourceType is Custom.
+                      the interpreter is Custom.
                   description:
                     type: string
                     description: Description of name's purpose.
+                  interpreter:
+                    type: string
+                    description: |
+                      The interpretor for the stage, either a module type or language. For 'Shell', scripts are executed directly.
+                      For all other interpretors, scripts are mounted as files in the Pod and executed; i.e. in a subprocess. If not defined,
+                      then 'Shell' is assumed.
+                    enum:
+                    - Custom
+                    - GigModule
+                    - Go
+                    - Input
+                    - JinjaTemplate
+                    - Python
+                    - Shell
+                    default: Shell
                   iterate: $<ITERATE_SPEC>
                   name:
                     type: string
@@ -283,22 +317,20 @@ elCicdDefs-$<GIG_MODULE>:
                     description: |
                       The sourceCode to execute. Can be writting in any language or module type supported by Ahplos Gigs,
                       or as a sourceCode for a custom command to run.  Can alse refer to another GigModule.
-                  sourceRef: $<SOURCE_REF_SPEC>
-                  sourceType:
-                    type: string
+                  stepRef:
+                    type: object
                     description: |
-                      The interpretor for the stage, either a module type or language. For 'Shell', scripts are executed directly.
-                      For all other interpretors, scripts are mounted as files in the Pod and executed; i.e. in a subprocess. If not defined,
-                      then 'Shell' is assumed.
-                    enum:
-                    - Custom
-                    - GigModule
-                    - Go
-                    - Input
-                    - JinjaTemplate
-                    - Python
-                    - Shell
-                    default: Shell
+                      Reference to another Step in a Stage in a GigModuleto be processed where referenced.  When clauses in the
+                      referenced Step are ignored.
+                    required:
+                    - gigModuleRef
+                    - stage
+                    properties:
+                      gigModuleRef: $<GIG_MODULE_REF>
+                      name:
+                        type: string
+                      stage:
+                        type: string
                   secretVars:
                     type: array
                     description: |
@@ -340,7 +372,12 @@ elCicdDefs-$<GIG>:
             description: Name of a CronJob in the same Namespace as the Gig.
         required:
         - name
-      gigModuleRef: $<GIG_MODULE_REF>
+      gigModuleRef:
+        type: object
+        description: Reference to a GigModule.
+        properties: $<NAME_NAMESPACE_PROPS>
+        required:
+        - name
       gigFormRef: $<GIG_FORM_REF>
     required:
     - cronJobRef

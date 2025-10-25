@@ -10,7 +10,7 @@
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "ahplos-gigs-definitions",
+      "id": "ahplos-gigs-modules",
       "section": "ahplos-gigs-section",
       "name": "GigDefinitions",
       "model": {
@@ -34,7 +34,7 @@
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "gigdefinition-activedeadlineseconds-item",
+      "id": "gigmodule-activedeadlineseconds-item",
       "column": "left",
       "title": "Active Deadline In Seconds",
       "model": {
@@ -48,7 +48,7 @@
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "gigdefinition-workdirsizelimit-item",
+      "id": "gigmodule-workdirsizelimit-item",
       "column": "left",
       "title": "Working Directory Size Limit",
       "model": {
@@ -62,7 +62,7 @@
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "gigdefinition-giglaunchformdetails-item",
+      "id": "gigmodule-giglaunchformdetails-item",
       "column": "right",
       "title": "Default Launch Form",
       "model": {
@@ -76,7 +76,7 @@
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "gigdefinition-required-inputvars-item",
+      "id": "gigmodule-required-inputvars-item",
       "column": "right",
       "title": "Required Input Variables",
       "model": {
@@ -90,7 +90,7 @@
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "gigdefinition-stages-item",
+      "id": "gigmodule-stages-item",
       "column": "right",
       "title": "Stages Summary",
       "model": {

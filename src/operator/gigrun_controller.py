@@ -22,7 +22,7 @@ STRING_DATA = 'stringData'
 
 UID = 'uid'
 
-GIG_DEF_REFS = 'gig_def_refs'
+GIG_MOD_REFS = 'gig_def_refs'
 
 GIG_RUNNER = 'gigrunner'
 GIG_RUNNER_HOME = f'/{GIG_RUNNER}'
@@ -74,15 +74,15 @@ def on_create_gigrun(body, meta, patch, logger, **_):
     gig = Gig.get(gig_run.gigRef, meta.namespace)
     cron_job = CronJob.get(gig.name, gig.namespace)
 
-    namespace = gig.sourceRef.namespace if gig.sourceRef.namespace else gig_run.namespace
-    gig_def = GigModule.get(gig.sourceRef.name, namespace)
+    namespace = gig.gigModuleRef.namespace if gig.gigModuleRef.namespace else gig_run.namespace
+    gig_mod = GigModule.get(gig.gigModuleRef.name, namespace)
     gig_def_secrets_map = {}
-    collect_gig_def_secrets(gig_def, gig_def_secrets_map)
+    collect_gig_def_secrets(gig_mod, gig_def_secrets_map)
     copy_gig_def_secrets_to_gig_run_namespace(gig_def_secrets_map, gig)
 
-    gigrunner_secret = create_gigrunner_secret(gig_run, gig_def)
+    gigrunner_secret = create_gigrunner_secret(gig_run, gig_mod)
 
-    job = create_job(cron_job, gig_run, gig_def, gigrunner_secret, gig_def_secrets_map)
+    job = create_job(cron_job, gig_run, gig_mod, gigrunner_secret, gig_def_secrets_map)
 
     create_or_patch_inputValues_secret(gig_run)
 
@@ -91,15 +91,15 @@ def on_create_gigrun(body, meta, patch, logger, **_):
         GIG_CONSTS.RUN_STATE: GigRunState.RUNNING
     }
 
-def collect_gig_def_secrets(gig_def: GigModule, gig_def_secrets_map: dict):
-    secret = Secret.get(f'{gig_def.namespace}-{gig_def.name}', gig_def.namespace)
+def collect_gig_def_secrets(gig_mod: GigModule, gig_def_secrets_map: dict):
+    secret = Secret.get(gig_mod.name, gig_mod.namespace)
     gig_def_secrets_map[secret.name] =  secret
 
-    for stage in gig_def.stages:
-        if (stage.sourceType == GigModule.kind):
-            name = stage.sourceRef.name
-            namespace = stage.sourceRef.get(GIG_CONSTS.NAMESPACE, None)
-            namespace = namespace if namespace else gig_def.namespace
+    for stage in gig_mod.spec.stages:
+        if (stage.interpreter == GigModule.kind):
+            name = stage.stageRef.name
+            namespace = stage.stageRef.get(GIG_CONSTS.NAMESPACE, None)
+            namespace = namespace if namespace else gig_mod.namespace
             secret_name = f'{namespace}-{name}'
             if (secret_name not in gig_def_secrets_map.keys()):
                 collect_gig_def_secrets(GigModule.get(name, namespace), gig_def_secrets_map)
@@ -134,13 +134,13 @@ def on_delete_gigrun(body, logger, **_):
     if (job.exists()):
         job.delete('Background')
 
-def update_gig_def_commands(gig_def: GigModule):
-    stage_processors = ConfigMap.get(os.environ['ahplos_GIGS_PROCESSOR_MAP'],
-                                     os.environ['ahplos_GIGS_OPERATOR_NAMESPACE'])
+def update_gig_def_commands(gig_mod: GigModule):
+    stage_processors = ConfigMap.get(os.environ['AHPLOS_GIGS_INTERPRETER_MAP'],
+                                     os.environ['AHPLOS_GIGS_OPERATOR_NAMESPACE'])
 
-    for stage in gig_def.stages:
+    for stage in gig_mod.stages:
         if (not stage.get('command')):
-            command = stage_processors.data.get(stage.sourceType, '')
+            command = stage_processors.data.get(stage.interpreter, '')
             if (command):
                 stage.command = command
 
@@ -163,7 +163,7 @@ def create_or_patch_inputValues_secret(gig_run: GigRun):
             {DATA: None, STRING_DATA: inputValues}, type='merge'
         )
 
-def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigModule, gigrunner_secret: Secret, gig_def_secrets_map: dict) -> Job:
+def create_job(cron_job: CronJob, gig_run: GigRun, gig_mod: GigModule, gigrunner_secret: Secret, gig_def_secrets_map: dict) -> Job:
     spec = deepcopy(cron_job.spec.jobTemplate)
     job = Job(spec)
     job.metadata.name = None
@@ -173,7 +173,7 @@ def create_job(cron_job: CronJob, gig_run: GigRun, gig_def: GigModule, gigrunner
     job.spec[GIG_CONSTS.BACKOFF_LIMIT] = 0
 
     container = get_container(job, cron_job.annotations.get(GigRun.CONTAINER_NAME_ANNOTATION, None))
-    configure_container(job, container, gig_run.name, gigrunner_secret, gig_def_secrets_map, gig_def.workDirSizeLimit)
+    configure_container(job, container, gig_run.name, gigrunner_secret, gig_def_secrets_map, gig_mod.workDirSizeLimit)
 
     job.create()
     job.set_owner(cron_job)
@@ -238,16 +238,16 @@ def set_job_working_dir(container: Box, job: Job, working_dir_size_limit):
         container.volumeMounts.append(working_dir_volumemount)
         container.workDir = GIG_RUNNER_WORKING_DIR
 
-def create_gigrunner_secret(gig_run: GigRun, gig_def: GigModule):
+def create_gigrunner_secret(gig_run: GigRun, gig_mod: GigModule):
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
 
     secret_files = [file for file in os.listdir(f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}')]
 
     template_data = {
         'gig_run': gig_run,
-        'gig_def': gig_def,
+        'gig_mod': gig_mod,
         'SECRET_FILES': secret_files,
-        "GIG_TIMEOUT": gig_def.activeDeadlineSeconds,
+        "GIG_TIMEOUT": gig_mod.activeDeadlineSeconds,
     }
 
     template = env.get_template(SECRET_JINJA_TEMPLATE)

@@ -9,7 +9,7 @@ from utilities.gig_types import GIG_CONSTS, Gig, GigModule, GigForm
 @kopf.on.mutate(
     CronJob.version,
     CronJob.plural,
-    annotations={GigModule.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigModule.GIG_MODULE_ANNOTATION: kopf.PRESENT},
     operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE],
 ) # type: ignore
 def onmutatecronjob(patch, meta, annotations, logger, **_):
@@ -17,22 +17,22 @@ def onmutatecronjob(patch, meta, annotations, logger, **_):
         patch.spec.setdefault('jobTemplate', {}).setdefault('metadata', {}).setdefault('annotations', {})
     )
 
-    jobAnnotations[GigModule.GIG_DEFINITION_ANNOTATION] = annotations[
-        GigModule.GIG_DEFINITION_ANNOTATION
+    jobAnnotations[GigModule.GIG_MODULE_ANNOTATION] = annotations[
+        GigModule.GIG_MODULE_ANNOTATION
     ]
 
 @kopf.on.validate(
     CronJob.version,
     CronJob.plural,
-    annotations={GigModule.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigModule.GIG_MODULE_ANNOTATION: kopf.PRESENT},
     operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE]
 )   # type: ignore
 def onvalidatecronjob(annotations, meta, logger, **_):
-    gig_def_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_DEFINITION_ANNOTATION])
+    gig_def_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
     gigDef = GigModule.get(gig_def_ref.name, namespace = gig_def_ref.namespace)
     if (not gigDef.exists()):
         raise kopf.AdmissionError(
-            f'The GigModule {annotations[GigModule.GIG_DEFINITION_ANNOTATION]} for the {GigModule.GIG_DEFINITION_ANNOTATION} annotation in CronJob {meta.name} does not exist.',
+            f'The GigModule {annotations[GigModule.GIG_MODULE_ANNOTATION]} for the {GigModule.GIG_MODULE_ANNOTATION} annotation in CronJob {meta.name} does not exist.',
             code=499,
         )
 
@@ -48,22 +48,22 @@ def onvalidatecronjob(annotations, meta, logger, **_):
 @kopf.on.create(
     CronJob.version,
     CronJob.plural,
-    annotations={GigModule.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigModule.GIG_MODULE_ANNOTATION: kopf.PRESENT},
 )  # type: ignore
 def on_create_cronjob(body, meta, annotations, logger, **_):
     cron_job = CronJob(body)
     gig = Gig(meta.name, namespace=meta.namespace)
     gig.cronJobRef = meta.name
 
-    gig_def_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_DEFINITION_ANNOTATION])
-    gig_def = GigModule.get(gig_def_ref.name, gig_def_ref.namespace)
-    gig.sourceRef.name = gig_def.name
-    gig.sourceRef.namespace = gig_def.namespace
+    gig_def_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
+    gig_mod = GigModule.get(gig_def_ref.name, gig_def_ref.namespace)
+    gig.gigModuleRef.name = gig_mod.name
+    gig.gigModuleRef.namespace = gig_mod.namespace
 
     gig_form_ref = get_name_namespace_from_anno(annotations.get(GigForm.GIG_LAUNCHFORM_ANNOTATION))
-    if (gig_form_ref or gig_def.gigFormRef):
-        gig.gigFormRef.name = gig_form_ref.name if gig_form_ref else gig_def.gigFormRef
-        gig.gigFormRef.namespace = gig_form_ref.namespace if gig_form_ref else gig_def.gigFormRef.namespace
+    if (gig_form_ref or gig_mod.gigFormRef):
+        gig.gigFormRef.name = gig_form_ref.name if gig_form_ref else gig_mod.gigFormRef
+        gig.gigFormRef.namespace = gig_form_ref.namespace if gig_form_ref else gig_mod.gigFormRef.namespace
 
     gig.create()
     gig.set_owner(cron_job)
@@ -73,16 +73,16 @@ def on_create_cronjob(body, meta, annotations, logger, **_):
 @kopf.on.update(
     CronJob.version,
     CronJob.plural,
-    annotations={GigModule.GIG_DEFINITION_ANNOTATION: kopf.PRESENT},
+    annotations={GigModule.GIG_MODULE_ANNOTATION: kopf.PRESENT},
 )  # type: ignore
 def on_update_cronjob(old, new, patch, logger, **_):
     old_cron_job = CronJob(old)
     new_cron_job = CronJob(new)
-    oldGigDef = old_cron_job.metadata.annotations[GigModule.GIG_DEFINITION_ANNOTATION]
-    newGigDef = new_cron_job.metadata.annotations[GigModule.GIG_DEFINITION_ANNOTATION]
+    oldGigDef = old_cron_job.metadata.annotations[GigModule.GIG_MODULE_ANNOTATION]
+    newGigDef = new_cron_job.metadata.annotations[GigModule.GIG_MODULE_ANNOTATION]
     if oldGigDef != newGigDef:
         patch.setdefault(GIG_CONSTS.METADATA, {})[GIG_CONSTS.ANNOTATIONS] = {
-            GigModule.GIG_DEFINITION_ANNOTATION: oldGigDef
+            GigModule.GIG_MODULE_ANNOTATION: oldGigDef
         }
 
 def get_name_namespace_from_anno(annotation_val):

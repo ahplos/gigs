@@ -16,7 +16,7 @@ import {
     Gig,
     GigRun,
     GIG_GVK,
-    GIG_DEFINITION_GVK,
+    GIG_MODULE_GVK,
     GIG_LAUNCHFORM_GVK,
     GIG_MAP,
     CURRENT_GIG_RUN
@@ -59,7 +59,7 @@ export const GigDefinitionDetail = (model) => {
 
     let namespace = gig.spec.gigDefinitionRef.namespace ?? model.obj.metadata.namespace;
 
-    return <ResourceLink groupVersionKind={GIG_DEFINITION_GVK} name={gig.spec.gigDefinitionRef.name} namespace={namespace} />
+    return <ResourceLink groupVersionKind={GIG_MODULE_GVK} name={gig.spec.gigDefinitionRef.name} namespace={namespace} />
 }
 
 export const GigLaunchFormDetail = (model) => {

@@ -9,7 +9,7 @@ import {
 } from '@openshift-console/dynamic-plugin-sdk';
 
 import {
-    GIG_DEFINITION_GVK,
+    GIG_MODULE_GVK,
     GIG_LAUNCHFORM_GVK,
     GIG_GVK,
     GIG_RUN_GVK,
@@ -116,14 +116,14 @@ export default class GigK8sUtils {
     public static getGigDefinition (
         options: WatchK8sResource = {}
     ) {
-        options.groupVersionKind = GIG_DEFINITION_GVK;
+        options.groupVersionKind = GIG_MODULE_GVK;
         return GigK8sUtils.getK8sResource<GigModule>(options);
     }
 
     public static getGigDefinitions (
         options: WatchK8sResource = {}
     ) {
-        options.groupVersionKind = GIG_DEFINITION_GVK;
+        options.groupVersionKind = GIG_MODULE_GVK;
         options.isList = true;
         return GigK8sUtils.getK8sResources<GigModule[]>(options);
     }
