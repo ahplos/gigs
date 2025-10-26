@@ -1,0 +1,15 @@
+#!/usr/bin/bash -e
+
+{%- set HAS_SECRETS = 'HAS_SECRETS' if step.secretVars else '' %}
+{%- if HAS_SECRETS %}
+  {%- for secretVar in step.secretVars %}
+echo "${ {{- secretVar }}}" >> .secrets
+  {%- endfor %}
+{%- endif %}
+
+__loadStageEnv
+{{ step.command % '/${{GIG_RUNNER_HOME}}/{}/{}'.format(GIG_MOD_DIR_NAME, STEP_NAME) }}
+
+{%- if step.interpreter == 'Input' %}
+__waitForUserInput {{ stage.name }}_{{ step.name }}
+{%- endif %}

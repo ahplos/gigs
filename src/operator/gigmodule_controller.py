@@ -12,7 +12,7 @@ from utilities.gig_types import GigModule
 RUNNER_DIR = 'runner'
 RUNNER_TEMPLATES_DIR = 'templates'
 
-STAGERUNNER_SECRET_TEMPLATE = 'stagerunner-secret.j2'
+STAGERUNNER_SECRET_TEMPLATE = 'gigmodule-secret.j2'
 
 COMMAND = 'command'
 
@@ -28,6 +28,7 @@ def on_create_or_update_gigmodule(body, logger, **_):
         if (not stage.stageRef):
             for step in stage.steps:
                 if (not step.stepRef and step.interpreter != 'Custom'):
+                    step.interpreter = step.interpreter if step.interpreter else 'Shell'
                     step.command = step_interpreters.data[step.interpreter]
 
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
@@ -37,11 +38,9 @@ def on_create_or_update_gigmodule(body, logger, **_):
 
     template = env.get_template(STAGERUNNER_SECRET_TEMPLATE)
     output = template.render(template_data)
-    logger.error('================')
-    logger.error(f'output: {output}')
-    logger.error('================')
-    secret = Secret(yaml.safe_load(output))
+    logger.error(f'{output}')
 
+    secret = Secret(yaml.safe_load(output))
     if (secret.exists()):
         secret.patch(secret.to_dict(), type='merge')
     else:

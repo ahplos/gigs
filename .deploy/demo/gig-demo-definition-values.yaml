@@ -168,6 +168,8 @@ elCicdTemplates:
       mode: Library
       stages:
       - name: $<PRINT_THE_DEMO_MSG>
+        description: Print the message assigned to the TEST_MSG environment variable.
+        mode: Library
         steps:
         - name: $<PRINT_THE_DEMO_MSG>
           sourceCode: |-

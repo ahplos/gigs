@@ -301,7 +301,6 @@ elCicdDefs-$<GIG_MODULE>:
                     - JinjaTemplate
                     - Python
                     - Shell
-                    default: Shell
                   iterate: $<ITERATE_SPEC>
                   name:
                     type: string
