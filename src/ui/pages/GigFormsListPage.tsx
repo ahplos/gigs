@@ -20,20 +20,20 @@ import {
 
 import {
     GigForm,
-    GIG_LAUNCHFORM_GVK,
+    GIG_FORM_GVK,
     NS_GVK,
 } from '../utilities/objectDefs';
 
 import GigK8sUtils from '../utilities/gigK8sUtils';
 
-type GigLaunchFormTableProps = {
+type GigFormTableProps = {
     data: K8sResourceCommon[];
     unfilteredData: K8sResourceCommon[];
     loaded: boolean;
     loadError: any;
 };
 
-const GigDefinitionsTable: React.FC<GigLaunchFormTableProps> = ({ data, unfilteredData, loaded, loadError }) => {
+const GigModulesTable: React.FC<GigFormTableProps> = ({ data, unfilteredData, loaded, loadError }) => {
 
     const columns: TableColumn<K8sResourceCommon>[] = [
         {
@@ -58,12 +58,12 @@ const GigDefinitionsTable: React.FC<GigLaunchFormTableProps> = ({ data, unfilter
         return gigForm.spec.inputForm?.map((widget) => <ListItem><b>{widget.var}</b> [{widget.components[0].inputType}]</ListItem>)
     };
 
-    const GigDefinitionsRow: React.FC<RowProps<GigForm>> = ({ obj, activeColumnIDs }) => {
+    const GigModulesRow: React.FC<RowProps<GigForm>> = ({ obj, activeColumnIDs }) => {
         const gigForm: GigForm = obj;
         return (
             <>
                 <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={GIG_LAUNCHFORM_GVK} name={gigForm.metadata.name} namespace={gigForm.metadata.namespace} />
+                    <ResourceLink groupVersionKind={GIG_FORM_GVK} name={gigForm.metadata.name} namespace={gigForm.metadata.namespace} />
                 </TableData>
                 <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
                     <ResourceLink groupVersionKind={NS_GVK} name={gigForm.metadata.namespace} />
@@ -87,22 +87,22 @@ const GigDefinitionsTable: React.FC<GigLaunchFormTableProps> = ({ data, unfilter
             loaded={loaded}
             loadError={loadError}
             columns={columns}
-            Row={GigDefinitionsRow}
+            Row={GigModulesRow}
         />
     );
 }
 
-export const GigLaunchFormsListPage = (model) => {
+export const GigFormsListPage = (model) => {
 
-    const [gds, loaded, loadError] = GigK8sUtils.getGigLaunchForms({namespace: model.namespace});
+    const [gds, loaded, loadError] = GigK8sUtils.getGigForms({namespace: model.namespace});
 
     return (
         <>
-            <ListPageHeader title={'ahplos GigLaunchForms'}>
-                <ListPageCreate groupVersionKind={GIG_LAUNCHFORM_GVK}>{'Create GigForm'}</ListPageCreate>
+            <ListPageHeader title={'Ahplos GigForms'}>
+                <ListPageCreate groupVersionKind={GIG_FORM_GVK}>{'Create GigForm'}</ListPageCreate>
             </ListPageHeader>
             <ListPageBody>
-                <GigDefinitionsTable
+                <GigModulesTable
                     data={gds}
                     unfilteredData={gds}
                     loaded={loaded}
@@ -113,4 +113,4 @@ export const GigLaunchFormsListPage = (model) => {
     );
 };
 
-export default GigLaunchFormsListPage;
+export default GigFormsListPage;

@@ -55,13 +55,13 @@ export const GigFormType = {
 
 export type GigFormType = typeof GigFormType[keyof typeof GigFormType];
 
-interface GigDefinitionFormProps {
+interface GigModuleFormProps {
     formSpec: Array<object>;
     submissionAction(formState: Object): any;
     formType: GigFormType;
 }
 
-export const GigInputForm = ({formSpec, submissionAction, formType}: GigDefinitionFormProps) => {
+export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFormProps) => {
     const [gigDefFormState, setGigDefFormState] = React.useState({});
 
     let formName = 'generic-form';

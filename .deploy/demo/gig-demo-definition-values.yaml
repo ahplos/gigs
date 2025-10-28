@@ -5,7 +5,7 @@ elCicdDefs:
   GIG_MOD_PRINT_MSG: gig-mod-print-msg-demo
   GIG_MOD_NAMES: [$<GIG_MOD_DEMO>, $<GIG_MOD_ASK_USER>, $<GIG_MOD_SOURCE_DEMO>, $<GIG_MOD_PRINT_MSG>]
 
-  GIG_FORM_NAME: gig-demo-launchform
+  GIG_FORM_NAME: gig-form-demo
 
 elCicdTemplates:
 - apiVersion: batch.ahplos.org/v1beta1

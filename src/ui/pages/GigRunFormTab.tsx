@@ -31,9 +31,9 @@ export const GigRunFormTab = (model) => {
 
     if (model.obj.kind == GIG_GVK.kind) {
         gig = model.obj
-        const [glf, _, glfLoadError] = GigK8sUtils.getGigLaunchForm({
-            name: gig.spec.gigLaunchFormRef.name,
-            namespace: gig.spec.gigLaunchFormRef.namespace
+        const [glf, _, glfLoadError] = GigK8sUtils.getGigForm({
+            name: gig.spec.gigFormRef.name,
+            namespace: gig.spec.gigFormRef.namespace
         });
 
         gigLaunchForm = glf;

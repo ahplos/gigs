@@ -1,5 +1,5 @@
-export { GigDefinitionsListPage } from './pages/GigDefinitionsListPage';
-export { GigLaunchFormsListPage } from './pages/GigLaunchFormsListPage';
+export { GigModulesListPage } from './pages/GigModulesListPage';
+export { GigFormsListPage } from './pages/GigFormsListPage';
 export { GigRunFormTab } from './pages/GigRunFormTab';
 export { GigRunLogsTab } from './pages/GigRunLogsTab';
 export { GigRunInputTab } from './pages/GigRunInputTab';
@@ -12,15 +12,15 @@ export { GigFormType } from './components/GigInputForm';
 export { GigRunsList } from './components/GigRunsList';
 export { GigRunLogViewer } from './components/GigRunLogViewer';
 
-export { GigDefRequiredInputVarsDetail } from './components/detailItems/GigDefRequiredInputVarsDetail';
-export { GigDefStagesDetail } from './components/detailItems/GigDefStagesDetail';
+export { GigModRequiredInputVarsDetail } from './components/detailItems/GigModRequiredInputVarsDetail';
+export { GigModStagesDetail } from './components/detailItems/GigModStagesDetail';
 
 export { GigFormSummaryDetail } from './components/detailItems/GigFormSummaryDetail';
 
 export { CronJobDetail } from './components/detailItems/ResourceDetailItems';
 export { GigDetail } from './components/detailItems/ResourceDetailItems';
-export { GigDefinitionDetail } from './components/detailItems/ResourceDetailItems';
-export { GigLaunchFormDetail } from './components/detailItems/ResourceDetailItems';
+export { GigModuleDetail } from './components/detailItems/ResourceDetailItems';
+export { GigFormDetail } from './components/detailItems/ResourceDetailItems';
 export { LatestGigRunDetail } from './components/detailItems/ResourceDetailItems';
 
 export { GigRunRunTimeDetail } from './components/detailItems/GigRunRunTimeDetail';

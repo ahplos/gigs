@@ -52,7 +52,7 @@ export const GIG_MODULE_GVK: K8sGroupVersionKind = {
     kind: "GigModule",
 };
 
-export const GIG_LAUNCHFORM_GVK: K8sGroupVersionKind = {
+export const GIG_FORM_GVK: K8sGroupVersionKind = {
     group: BATCH_AHPLOS_ORG,
     version: API_VERSION,
     kind: "GigForm",
@@ -83,21 +83,14 @@ export type GigForm = K8sResourceCommon & {
     };
 };
 
-export type StageSpec = {
-    name: string;
-    description?: string;
-    displayName: string;
-    interpreter: string;
-};
-
 export type GigModule = K8sResourceCommon & {
     spec: {
         activeDeadlineSeconds: number;
-        gigLaunchFormRef: {
+        gigFormRef: {
             name: string;
             namespace: string;
         };
-        isLibrary: boolean;
+        mode: boolean;
         name: string;
         requiredInputParams: string[];
         stages: StageSpec[];
@@ -105,16 +98,34 @@ export type GigModule = K8sResourceCommon & {
     };
 };
 
+export type StageSpec = {
+    name: string;
+    description?: string;
+    steps: StepSpec[];
+    interpreter: string;
+};
+
+export type StepSpec = {
+    name: string;
+    interpreter: string;
+    stageRef: {
+        gigModuleRef: {
+            name: string;
+            namespace: string;
+        }
+    }
+}
+
 export type Gig = K8sResourceCommon & {
     spec: {
         cronJobRef: {
             name: string;
         };
-        gigDefinitionRef: {
+        gigModuleRef: {
             name: string;
             namespace: string;
         };
-        gigLaunchFormRef: {
+        gigFormRef: {
             name: string;
             namespace: string;
         };

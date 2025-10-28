@@ -27,7 +27,7 @@ import {
     Gig,
     GIG_GVK,
     GIG_MODULE_GVK,
-    GIG_LAUNCHFORM_GVK,
+    GIG_FORM_GVK,
     NS_GVK
 } from '../utilities/objectDefs';
 
@@ -64,13 +64,13 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
         {
             title: 'GigModule',
             id: 'gig-module',
-            sort: 'spec.gigDefinitionRef',
+            sort: 'spec.gigModuleRef',
             transforms: [sortable],
         },
         {
             title: 'GigForm',
             id: 'gig-launchform',
-            sort: 'spec.gigLaunchFormRef',
+            sort: 'spec.gigFormRef',
             transforms: [sortable],
         },
         {
@@ -100,13 +100,13 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
                 </TableData>
                 <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
                     <ResourceLink groupVersionKind={GIG_MODULE_GVK}
-                                  name={obj.spec.gigDefinitionRef.name}
-                                  namespace={obj.spec.gigDefinitionRef.namespace ?? obj.metadata.namespace} />
+                                  name={obj.spec.gigModuleRef.name}
+                                  namespace={obj.spec.gigModuleRef.namespace ?? obj.metadata.namespace} />
                 </TableData>
                 <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={GIG_LAUNCHFORM_GVK}
-                                  name={obj.spec.gigLaunchFormRef.name}
-                                  namespace={obj.spec.gigLaunchFormRef.namespace ?? obj.metadata.namespace} />
+                    <ResourceLink groupVersionKind={GIG_FORM_GVK}
+                                  name={obj.spec.gigFormRef.name}
+                                  namespace={obj.spec.gigFormRef.namespace ?? obj.metadata.namespace} />
                 </TableData>
                 <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
                     <ResourceLink groupVersionKind={CRONJOB_GVK} name={obj.spec.cronJobRef.name} namespace={obj.metadata.namespace} />
@@ -147,7 +147,7 @@ export const GigsListPage = (model) => {
 
     return (
         <>
-            <ListPageHeader title={'ahplos Gigs'} />
+            <ListPageHeader title={'Ahplos Gigs'} />
             <ListPageBody>
                 <GigsTable
                     data={gigs}

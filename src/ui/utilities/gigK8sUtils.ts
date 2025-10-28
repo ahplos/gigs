@@ -10,7 +10,7 @@ import {
 
 import {
     GIG_MODULE_GVK,
-    GIG_LAUNCHFORM_GVK,
+    GIG_FORM_GVK,
     GIG_GVK,
     GIG_RUN_GVK,
     Gig,
@@ -113,14 +113,14 @@ export default class GigK8sUtils {
         return GigK8sUtils.getK8sResources(options);
     }
 
-    public static getGigDefinition (
+    public static getGigModule (
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = GIG_MODULE_GVK;
         return GigK8sUtils.getK8sResource<GigModule>(options);
     }
 
-    public static getGigDefinitions (
+    public static getGigModules (
         options: WatchK8sResource = {}
     ) {
         options.groupVersionKind = GIG_MODULE_GVK;
@@ -128,17 +128,17 @@ export default class GigK8sUtils {
         return GigK8sUtils.getK8sResources<GigModule[]>(options);
     }
 
-    public static getGigLaunchForm (
+    public static getGigForm (
         options: WatchK8sResource = {}
     ) {
-        options.groupVersionKind = GIG_LAUNCHFORM_GVK;
+        options.groupVersionKind = GIG_FORM_GVK;
         return GigK8sUtils.getK8sResource<GigForm>(options);
     }
 
-    public static getGigLaunchForms (
+    public static getGigForms (
         options: WatchK8sResource = {}
     ) {
-        options.groupVersionKind = GIG_LAUNCHFORM_GVK;
+        options.groupVersionKind = GIG_FORM_GVK;
         options.isList = true;
         return GigK8sUtils.getK8sResources<GigForm[]>(options);
     }

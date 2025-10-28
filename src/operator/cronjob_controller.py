@@ -28,11 +28,12 @@ def onmutatecronjob(patch, meta, annotations, logger, **_):
     operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE]
 )   # type: ignore
 def onvalidatecronjob(annotations, meta, logger, **_):
-    gig_def_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
-    gigDef = GigModule.get(gig_def_ref.name, namespace = gig_def_ref.namespace)
-    if (not gigDef.exists()):
+    gig_mod_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
+    gig_mod = GigModule.get(gig_mod_ref.name, namespace = gig_mod_ref.namespace)
+    if (not gig_mod.exists()):
+        anno = f'metadata.annotations.{GigModule.GIG_MODULE_ANNOTATION}: {annotations[GigModule.GIG_MODULE_ANNOTATION]}'
         raise kopf.AdmissionError(
-            f'The GigModule {annotations[GigModule.GIG_MODULE_ANNOTATION]} for the {GigModule.GIG_MODULE_ANNOTATION} annotation in CronJob {meta.name} does not exist.',
+            f'GigModule {gig_mod_ref.namespace}:{gig_mod_ref.name} referenced in CronJob {meta.name} does not exist:\n[{anno}]',
             code=499,
         )
 
@@ -52,23 +53,24 @@ def onvalidatecronjob(annotations, meta, logger, **_):
 )  # type: ignore
 def on_create_cronjob(body, meta, annotations, logger, **_):
     cron_job = CronJob(body)
-    gig = Gig(meta.name, namespace=meta.namespace)
-    gig.cronJobRef = meta.name
 
-    gig_def_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
-    gig_mod = GigModule.get(gig_def_ref.name, gig_def_ref.namespace)
-    gig.gigModuleRef.name = gig_mod.name
-    gig.gigModuleRef.namespace = gig_mod.namespace
+    gig = Gig(cron_job.name, namespace=meta.namespace)
+    gig.spec.cronJobRef.name = cron_job.name
+
+    gig_mod_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
+    gig_mod = GigModule.get(gig_mod_ref.name, gig_mod_ref.namespace)
+    gig.spec.gigModuleRef.name = gig_mod.name
+    gig.spec.gigModuleRef.namespace = gig_mod.namespace
 
     gig_form_ref = get_name_namespace_from_anno(annotations.get(GigForm.GIG_LAUNCHFORM_ANNOTATION))
-    if (gig_form_ref or gig_mod.gigFormRef):
-        gig.gigFormRef.name = gig_form_ref.name if gig_form_ref else gig_mod.gigFormRef
-        gig.gigFormRef.namespace = gig_form_ref.namespace if gig_form_ref else gig_mod.gigFormRef.namespace
+    if (gig_form_ref or gig_mod.spec.gigFormRef):
+        gig.spec.gigFormRef.name = gig_form_ref.name if gig_form_ref else gig_mod.spec.gigFormRef
+        gig.spec.gigFormRef.namespace = gig_form_ref.namespace if gig_form_ref else gig_mod.spec.gigFormRef.namespace
 
     gig.create()
     gig.set_owner(cron_job)
     cron_job.set_owner(gig)
-    logger.info(f'NEW Gig {gig.name} CREATED, and owner set to CronJob {meta.name}')
+    logger.info(f'NEW Gig {gig.spec.name} CREATED, and owner set to CronJob {meta.name}')
 
 @kopf.on.update(
     CronJob.version,

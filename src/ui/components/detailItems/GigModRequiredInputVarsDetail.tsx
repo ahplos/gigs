@@ -10,7 +10,7 @@ import {
 } from '../../utilities/objectDefs';
 
 
-export const GigDefRequiredInputVarsDetail = (model) => {
+export const GigModRequiredInputVarsDetail = (model) => {
     const gigDef: GigModule = model.obj;
 
     return (
@@ -20,4 +20,4 @@ export const GigDefRequiredInputVarsDetail = (model) => {
     );
 }
 
-export default GigDefRequiredInputVarsDetail;
+export default GigModRequiredInputVarsDetail;

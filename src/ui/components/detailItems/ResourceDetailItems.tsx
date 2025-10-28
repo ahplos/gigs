@@ -17,7 +17,7 @@ import {
     GigRun,
     GIG_GVK,
     GIG_MODULE_GVK,
-    GIG_LAUNCHFORM_GVK,
+    GIG_FORM_GVK,
     GIG_MAP,
     CURRENT_GIG_RUN
 } from '../../utilities/objectDefs';
@@ -54,22 +54,21 @@ export const GigDetail = (model) => {
     return <ResourceLink groupVersionKind={GIG_GVK} name={gigRun.spec.gigRef.name} namespace={model.obj.metadata.namespace} />
 }
 
-export const GigDefinitionDetail = (model) => {
+export const GigModuleDetail = (model) => {
     let gig: Gig = model.obj;
 
-    let namespace = gig.spec.gigDefinitionRef.namespace ?? model.obj.metadata.namespace;
+    let namespace = gig.spec.gigModuleRef?.namespace ?? model.obj.metadata.namespace;
 
-    return <ResourceLink groupVersionKind={GIG_MODULE_GVK} name={gig.spec.gigDefinitionRef.name} namespace={namespace} />
+    return <ResourceLink groupVersionKind={GIG_MODULE_GVK} name={gig.spec.gigModuleRef.name} namespace={namespace} />
 }
 
-export const GigLaunchFormDetail = (model) => {
-    let namespace = model.obj.spec.gigLaunchFormRef.namespace ?? model.obj.metadata.namespace;
-
-    if (model.obj.spec.gigLaunchFormRef?.name) {
-        return <ResourceLink groupVersionKind={GIG_LAUNCHFORM_GVK} name={model.obj.spec.gigLaunchFormRef.name} namespace={namespace} />;
+export const GigFormDetail = (model) => {
+    if (model.obj.spec.gigFormRef?.name) {
+        let namespace = model.obj.spec.gigFormRef.namespace ?? model.obj.metadata.namespace;
+        return <ResourceLink groupVersionKind={GIG_FORM_GVK} name={model.obj.spec.gigFormRef.name} namespace={namespace} />;
     }
     else {
-        return <Text>No GigLaunchFrame</Text>
+        return <Text>No GigFrame</Text>
     }
 }
 
@@ -77,10 +76,10 @@ export const CronJobDetail = (model) => {
     let gig: Gig = model.obj;
     let namespace = gig.metadata.namespace;
 
-    if (model.obj.spec.gigLaunchFormRef?.name) {
+    if (model.obj.spec.gigFormRef?.name) {
         return <ResourceLink groupVersionKind={CRONJOB_GVK} name={gig.spec.cronJobRef.name} namespace={namespace} />;
     }
     else {
-        return <Text>No GigLaunchFrame</Text>
+        return <Text>No GigFrame</Text>
     }
 }

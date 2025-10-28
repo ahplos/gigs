@@ -63,7 +63,7 @@
   "consolePlugin": {
     "name": "ahplos-gigs-console-plugin",
     "version": "0.0.1",
-    "displayName": "ahplos Gigs",
+    "displayName": "Ahplos Gigs",
     "description": "Run's ad-hoc jobs natively in Kubernetes",
     "exposedModules": {
       "gigUiComponents": "./ui/gigUiComponents.ts"

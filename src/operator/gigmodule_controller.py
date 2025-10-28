@@ -38,7 +38,7 @@ def on_create_or_update_gigmodule(body, logger, **_):
 
     template = env.get_template(STAGERUNNER_SECRET_TEMPLATE)
     output = template.render(template_data)
-    logger.error(f'{output}')
+    logger.debug(f'{output}')
 
     secret = Secret(yaml.safe_load(output))
     if (secret.exists()):

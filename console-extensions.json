@@ -3,7 +3,7 @@
     "type": "console.navigation/section",
     "properties": {
       "id": "ahplos-gigs-section",
-      "name": "ahplos Gigs",
+      "name": "Ahplos Gigs",
       "insertAfter": "storage"
     }
   },
@@ -12,7 +12,7 @@
     "properties": {
       "id": "ahplos-gigs-modules",
       "section": "ahplos-gigs-section",
-      "name": "GigDefinitions",
+      "name": "GigModules",
       "model": {
           "group": "batch.ahplos.org",
           "version": "v1beta1",
@@ -28,7 +28,7 @@
           "version": "v1beta1",
           "kind": "GigModule"
       },
-      "component": { "$codeRef": "gigUiComponents.GigDefinitionsListPage" }
+      "component": { "$codeRef": "gigUiComponents.GigModulesListPage" }
     }
   },
   {
@@ -62,7 +62,7 @@
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "gigmodule-giglaunchformdetails-item",
+      "id": "gigmodule-gigformdetails-item",
       "column": "right",
       "title": "Default Launch Form",
       "model": {
@@ -70,7 +70,7 @@
         "version": "v1beta1",
         "kind": "GigModule"
       },
-      "component": { "$codeRef": "gigUiComponents.GigLaunchFormDetail" }
+      "component": { "$codeRef": "gigUiComponents.GigFormDetail" }
     }
   },
   {
@@ -84,7 +84,7 @@
         "version": "v1beta1",
         "kind": "GigModule"
       },
-      "component": { "$codeRef": "gigUiComponents.GigDefRequiredInputVarsDetail" }
+      "component": { "$codeRef": "gigUiComponents.GigModRequiredInputVarsDetail" }
     }
   },
   {
@@ -98,18 +98,16 @@
         "version": "v1beta1",
         "kind": "GigModule"
       },
-      "component": { "$codeRef": "gigUiComponents.GigDefStagesDetail" }
+      "component": { "$codeRef": "gigUiComponents.GigModStagesDetail" }
     }
   },
-
-
 
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "ahplos-gig-launchforms",
+      "id": "ahplos-gig-forms",
       "section": "ahplos-gigs-section",
-      "name": "GigLaunchForms",
+      "name": "GigForms",
       "model": {
           "group": "batch.ahplos.org",
           "version": "v1beta1",
@@ -125,13 +123,13 @@
           "version": "v1beta1",
           "kind": "GigForm"
       },
-      "component": { "$codeRef": "gigUiComponents.GigLaunchFormsListPage" }
+      "component": { "$codeRef": "gigUiComponents.GigFormsListPage" }
     }
   },
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "giglaunchform-components-summary-item",
+      "id": "gigform-components-summary-item",
       "column": "right",
       "title": "Form Parameters Summary",
       "model": {
@@ -157,8 +155,6 @@
       "component": { "$codeRef": "gigUiComponents.GigRunFormTab" }
     }
   },
-
-
 
   {
     "type": "console.navigation/resource-ns",
@@ -187,7 +183,7 @@
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "giglaunchform-components-summary-item",
+      "id": "gigform-components-summary-item",
       "column": "right",
       "title": "Latest GigRun Summary",
       "model": {
@@ -201,7 +197,7 @@
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "giglaunchform-components-summary-item",
+      "id": "gigform-components-summary-item",
       "column": "right",
       "title": "CronJob",
       "model": {
@@ -215,7 +211,7 @@
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "giglaunchform-components-summary-item",
+      "id": "gigform-components-summary-item",
       "column": "right",
       "title": "GigModule",
       "model": {
@@ -223,13 +219,13 @@
         "version": "v1beta1",
         "kind": "Gig"
       },
-      "component": { "$codeRef": "gigUiComponents.GigDefinitionDetail" }
+      "component": { "$codeRef": "gigUiComponents.GigModuleDetail" }
     }
   },
   {
     "type": "console.resource/details-item",
     "properties": {
-      "id": "giglaunchform-components-summary-item",
+      "id": "gigform-components-summary-item",
       "column": "right",
       "title": "GigForm",
       "model": {
@@ -237,7 +233,7 @@
         "version": "v1beta1",
         "kind": "Gig"
       },
-      "component": { "$codeRef": "gigUiComponents.GigLaunchFormDetail" }
+      "component": { "$codeRef": "gigUiComponents.GigFormDetail" }
     }
   },
   {

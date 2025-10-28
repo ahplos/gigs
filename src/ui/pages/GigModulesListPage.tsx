@@ -22,20 +22,20 @@ import {
 import {
     GigModule,
     GIG_MODULE_GVK,
-    GIG_LAUNCHFORM_GVK,
+    GIG_FORM_GVK,
     NS_GVK,
 } from '../utilities/objectDefs';
 
 import GigK8sUtils from '../utilities/gigK8sUtils';
 
-type GigDefinitionTableProps = {
+type GigModuleTableProps = {
     data: K8sResourceCommon[];
     unfilteredData: K8sResourceCommon[];
     loaded: boolean;
     loadError: any;
 };
 
-const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilteredData, loaded, loadError }) => {
+const GigModulesTable: React.FC<GigModuleTableProps> = ({ data, unfilteredData, loaded, loadError }) => {
 
     const columns: TableColumn<K8sResourceCommon>[] = [
         {
@@ -47,16 +47,20 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
             id: 'namespace',
         },
         {
+            title: 'Mode',
+            id: 'mode',
+        },
+        {
             title: 'Default Launch Form',
-            id: 'default-launch-form',
+            id: 'default-gig-form',
         },
         {
             title: 'Required Input Variables',
             id: 'required-input-vars',
         },
         {
-            title: 'Processors',
-            id: 'processors',
+            title: 'Stages',
+            id: 'stages',
         },
         {
             title: 'Created',
@@ -64,50 +68,48 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
         },
     ];
 
-    const GigDefinitionsRow: React.FC<RowProps<GigModule>> = ({ obj, activeColumnIDs }) => {
-        const gigDef: GigModule = obj;
+    const GigModulesRow: React.FC<RowProps<GigModule>> = ({ obj, activeColumnIDs }) => {
+        const gigMod: GigModule = obj;
 
-        const stageProcCounts = {};
-        for (let stage of gigDef.spec.stages) {
-            stageProcCounts[stage.interpreter] = stageProcCounts[stage.interpreter] ?? 0;
-            stageProcCounts[stage.interpreter]++;
+        const stageList = [];
+        for (let stage of gigMod.spec.stages) {
+            let stageName = stage.name;
+            let stepCountOrRef = stage.steps ? stage.steps.length : 'REFERENCE';
+            stageList.push(<ListItem><b>{stageName}</b> ({stepCountOrRef})</ListItem>);
         }
-
-        let stageProcs = []
-        Object.keys(stageProcCounts).forEach(proc => {
-            stageProcs.push(<ListItem><b>{proc}</b> ({stageProcCounts[proc]})</ListItem>);
-        });
 
         return (
             <>
                 <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
                     <ResourceLink groupVersionKind={GIG_MODULE_GVK}
-                                  name={gigDef.metadata.name}
-                                  namespace={gigDef.metadata.namespace}>
-                        <span>&nbsp;{gigDef.spec.isLibrary ? '[Library]' : ''}</span>
+                                  name={gigMod.metadata.name}
+                                  namespace={gigMod.metadata.namespace}>
                     </ResourceLink>
                 </TableData>
                 <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={NS_GVK} name={gigDef.metadata.namespace} />
-                </TableData>
-                <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-                    { gigDef.spec.gigLaunchFormRef &&
-                        <ResourceLink groupVersionKind={GIG_LAUNCHFORM_GVK}
-                                      name={gigDef.spec.gigLaunchFormRef.name}
-                                      namespace={gigDef.spec.gigLaunchFormRef.namespace ?? gigDef.metadata.namespace}/>
-                    }
-                </TableData>
-                <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-                    <List isPlain>
-                        {gigDef.spec.requiredInputParams?.map((param) => <ListItem><b>{param}</b></ListItem>)}
-                    </List>
-                </TableData>
-                <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-                    <List isPlain>
-                        {...stageProcs}
-                    </List>
+                    <ResourceLink groupVersionKind={NS_GVK} name={gigMod.metadata.namespace} />
                 </TableData>
                 <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
+                    <span>&nbsp;{gigMod.spec.mode}</span>
+                </TableData>
+                <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
+                    { gigMod.spec.gigFormRef &&
+                        <ResourceLink groupVersionKind={GIG_FORM_GVK}
+                                      name={gigMod.spec.gigFormRef.name}
+                                      namespace={gigMod.spec.gigFormRef.namespace ?? gigMod.metadata.namespace}/>
+                    }
+                </TableData>
+                <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
+                    <List isPlain>
+                        {gigMod.spec.requiredInputParams?.map((param) => <ListItem><b>{param}</b></ListItem>)}
+                    </List>
+                </TableData>
+                <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
+                    <List isPlain>
+                        {...stageList}
+                    </List>
+                </TableData>
+                <TableData id={columns[6].id} activeColumnIDs={activeColumnIDs}>
                     <Timestamp timestamp={obj.metadata.creationTimestamp} />
                 </TableData>
             </>
@@ -121,22 +123,22 @@ const GigDefinitionsTable: React.FC<GigDefinitionTableProps> = ({ data, unfilter
             loaded={loaded}
             loadError={loadError}
             columns={columns}
-            Row={GigDefinitionsRow}
+            Row={GigModulesRow}
         />
     );
 }
 
-export const GigDefinitionsListPage = (model) => {
+export const GigModulesListPage = (model) => {
 
-    const [gds, loaded, loadError] = GigK8sUtils.getGigDefinitions({namespace: model.namespace});
+    const [gds, loaded, loadError] = GigK8sUtils.getGigModules({namespace: model.namespace});
 
     return (
         <>
-            <ListPageHeader title={'ahplos GigDefinitions'}>
+            <ListPageHeader title={'Ahplos GigModules'}>
                 <ListPageCreate groupVersionKind={GIG_MODULE_GVK}>{'Create GigModule'}</ListPageCreate>
             </ListPageHeader>
             <ListPageBody>
-                <GigDefinitionsTable
+                <GigModulesTable
                     data={gds}
                     unfilteredData={gds}
                     loaded={loaded}
@@ -147,4 +149,4 @@ export const GigDefinitionsListPage = (model) => {
     );
 };
 
-export default GigDefinitionsListPage;
+export default GigModulesListPage;

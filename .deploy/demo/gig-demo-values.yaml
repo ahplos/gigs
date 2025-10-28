@@ -1,6 +1,6 @@
 elCicdDefs:
-  GIG_MOD_NAME: gig-def-demo
-  GIG_FORM_NAME: gig-demo-launchform-2
+  GIG_MOD_NAME: gig-mod-demo
+  GIG_FORM_NAME: gig-form-demo-2
   GIG_ORG_NAMEPACE: gig-demo-org
 
   AHPLOS_GIGS_OPERATOR: ahplos-gigs-operator
@@ -25,7 +25,7 @@ elCicdTemplates:
   objName: $<OBJ_NAME_PREFIX>-$<#>
   annotations:
     batch.ahplos.org/gigmodule: $<GIG_ORG_NAMEPACE>/$<GIG_MOD_NAME>
-    batch.ahplos.org/giglaunchform: $<GIG_ORG_NAMEPACE>/$<GIG_FORM_NAME>
+    batch.ahplos.org/gigform: $<GIG_ORG_NAMEPACE>/$<GIG_FORM_NAME>
   failedJobsHistoryLimit: $<HISTORY_LIMIT>
   successfulJobsHistoryLimit: $<HISTORY_LIMIT>
   image: $<IMAGE>
