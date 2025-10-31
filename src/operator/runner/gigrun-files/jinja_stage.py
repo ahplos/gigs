@@ -9,14 +9,13 @@ USER_INPUT_PATCH = 'USER_INPUT_PATCH'
 USER_INPUT_PATCH_J2 = 'user_input_patch.j2'
 USER_INPUT_PATCH_YAML = 'user_input_patch.yaml'
 
-gigrunner_home = os.environ['GIG_RUNNER_HOME']
-gigrunner_working_dir = os.environ['GIG_RUNNER_WORKING_DIR']
+gigrunner_home = os.environ['GIG_RUN_HOME']
+gigrunner_working_dir = os.environ['GIG_RUN_WORKING_DIR']
 environment = Environment(loader = FileSystemLoader([gigrunner_working_dir, gigrunner_home, '/']))
 environment.filters['from_json'] = load
 environment.filters['from_yaml'] = safe_load
 environment.filters['from_yaml_all'] = safe_load_all
 
-print("Arguments:", sys.argv[1:])
 template_file = sys.argv[1]
 template = None
 is_user_input = os.path.isfile(f'{gigrunner_working_dir}/{template_file}')

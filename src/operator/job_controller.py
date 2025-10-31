@@ -27,7 +27,7 @@ def on_job_completed(meta, status, logger, **_):
         namespace=meta.namespace,
         label_selector={GIG_CONSTS.JOB_NAME_SELECTOR_LABEL: meta.name},
     )
-    gig = Gig(gig_run.spec.gigRef, namespace=gig_run.namespace)
+    gig = Gig(gig_run.spec.gigRef.name, namespace=gig_run.namespace)
 
     runState = GigRunState.SUCCEEDED if status.get(GIG_CONSTS.SUCCEEDED) else GigRunState.FAILED
     runState = GigRunState.ABORTED if (gig_run.spec.runState == GigRunState.ABORTING) else runState

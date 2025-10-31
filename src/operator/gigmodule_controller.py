@@ -12,7 +12,7 @@ from utilities.gig_types import GigModule
 RUNNER_DIR = 'runner'
 RUNNER_TEMPLATES_DIR = 'templates'
 
-STAGERUNNER_SECRET_TEMPLATE = 'gigmodule-secret.j2'
+GIG_MOD_SECRET_TEMPLATE = 'gigmodule-secret.j2'
 
 COMMAND = 'command'
 
@@ -21,8 +21,7 @@ COMMAND = 'command'
 def on_create_or_update_gigmodule(body, logger, **_):
     gig_mod: GigModule = GigModule(body)
 
-    step_interpreters = ConfigMap.get(os.environ['AHPLOS_GIGS_INTERPRETER_MAP'],
-                                       os.environ['AHPLOS_GIGS_OPERATOR_NAMESPACE'])
+    step_interpreters = ConfigMap.get(os.environ['AHPLOS_GIGS_INTERPRETER_MAP'], os.environ['AHPLOS_GIGS_OPERATOR_NAMESPACE'])
 
     for stage in gig_mod.spec.stages: # type: ignore
         if (not stage.stageRef):
@@ -36,13 +35,13 @@ def on_create_or_update_gigmodule(body, logger, **_):
         'gig_mod': gig_mod,
     }
 
-    template = env.get_template(STAGERUNNER_SECRET_TEMPLATE)
+    template = env.get_template(GIG_MOD_SECRET_TEMPLATE)
     output = template.render(template_data)
     logger.debug(f'{output}')
 
     secret = Secret(yaml.safe_load(output))
     if (secret.exists()):
-        secret.patch(secret.to_dict(), type='merge')
+        secret.patch({'stringData': secret.raw.stringData.to_dict()}, type='merge')
     else:
         secret.create()
 

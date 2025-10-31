@@ -8,19 +8,39 @@ import {
 } from '@patternfly/react-core';
 
 import {
+    ResourceLink,
+} from '@openshift-console/dynamic-plugin-sdk';
+
+import {
     GigModule,
+    GIG_MODULE_GVK,
 } from '../../utilities/objectDefs';
+
+function getStageListItem(stage, gigMod) {
+    if (stage.steps) {
+        return <ListItem><b>{stage.name}</b><br/>STEPS: {stage.steps.length}</ListItem>
+    }
+    else {
+        let namespace = stage.stageRef.gigModuleRef.namespace ?? gigMod.metadata.namespace;
+        return <ListItem><b>{stage.name}</b><br/>
+                   FROM: <ResourceLink groupVersionKind={GIG_MODULE_GVK}
+                                       name={stage.stageRef.gigModuleRef.name}
+                                       namespace={namespace}/>
+               </ListItem>
+    }
+}
 
 
 export const GigModStagesDetail = (model) => {
-    const gigMod: GigModule = model?.obj;
+    if (model) {
+        const gigMod: GigModule = model.obj;
 
-    return (
-        <List component={ListComponent.ol} type={OrderType.number}>
-            {gigMod.spec.stages.map((stage) =>
-                <ListItem><b>{stage.name}</b> ({stage.steps?.length ?? 'REFERENCE'})</ListItem>)}
-        </List>
-    );
+        return (
+            <List component={ListComponent.ol} type={OrderType.number}>
+                {gigMod.spec.stages.map((stage) => getStageListItem(stage, gigMod))}
+            </List>
+        );
+    }
 }
 
 export default GigModStagesDetail;

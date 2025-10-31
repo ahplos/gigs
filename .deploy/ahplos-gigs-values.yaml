@@ -67,7 +67,7 @@ elCicdTemplates:
 
 - templateName: configMap
   elCicdDefs:
-    PYTHON_JINJA_COMMAND: python ${GIG_RUNNER_HOME}/jinja_stage.py %s
+    PYTHON_JINJA_COMMAND: python ${GIG_RUN_HOME}/jinja_stage.py %s
   objName: $<AHPLOS_GIGS_INTERPRETER_MAP>
   data:
     Go: go run %s
