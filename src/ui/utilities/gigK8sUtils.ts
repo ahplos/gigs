@@ -183,6 +183,6 @@ export default class GigK8sUtils {
     public static patchGigRunRunState = (gigRun: GigRun, state: GigRunState): Promise<GigRun> => {
         gigRun.spec.runState = state
 
-        return k8sUpdate({model: GigK8sUtils.gigRunModel, data: gigRun, path: 'status'})
+        return k8sUpdate({model: GigK8sUtils.gigRunModel, data: gigRun})
     };
 }

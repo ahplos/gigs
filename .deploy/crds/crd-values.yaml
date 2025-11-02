@@ -5,6 +5,8 @@ elCicdDefs:
   GIG_RUN: $<GIG>run
   GIG_TYPES: [$<GIG_MODULE>, $<GIG_FORM>, $<GIG>, $<GIG_RUN>]
 
+  STAGE_STEP_PATTERN: '[a-z]+(?:-[a-z0-9]+)*'
+
   NAME_NAMESPACE_PROPS:
     name:
       type: string
@@ -21,6 +23,7 @@ elCicdDefs:
     - Running
     - Succeeded
     - WaitingForInput
+    default: Running
 
   MODE_SPEC:
     type: string
@@ -42,6 +45,22 @@ elCicdDefs:
     properties: $<NAME_NAMESPACE_PROPS>
     required:
     - name
+
+  TITLE_SPEC:
+    type: object
+    properties:
+      title:
+        type: string
+      headingLevel:
+        type: string
+        enum:
+        - h1
+        - h2
+        - h3
+        - h4
+        - h5
+        - h6
+        default: h2
 
   FORM_SPEC:
     type: array
@@ -121,8 +140,7 @@ elCicdDefs-$<GIG_FORM>:
     required:
     - inputForm
     properties:
-      title:
-        type: string
+      formTitle: $<TITLE_SPEC>
       inputForm: $<FORM_SPEC>
 
 elCicdDefs-$<GIG_MODULE>:
@@ -130,19 +148,6 @@ elCicdDefs-$<GIG_MODULE>:
   SHORT_NAMES:
   - gigmod
   - gigmods
-  GIG_MODULE_REF:
-    type: object
-    description: |
-      Reference to another Stage or Step in a GigModule to be processed where referenced.
-    properties:
-      name:
-        type: string
-      namespace:
-        type: string
-      stage:
-        type: string
-      step:
-        type: string
   ITERATE_SPEC:
     type: array
     items:
@@ -239,6 +244,7 @@ elCicdDefs-$<GIG_MODULE>:
             mode: $<MODE_SPEC>
             name:
               type: string
+              pattern: $<STAGE_STEP_PATTERN>
             parallel:
               type: boolean
             stageRef:
@@ -252,6 +258,7 @@ elCicdDefs-$<GIG_MODULE>:
                 gigModuleRef: $<GIG_MODULE_REF>
                 name:
                   type: string
+                  pattern: $<STAGE_STEP_PATTERN>
             wait:
               type: boolean
             when:
@@ -290,7 +297,7 @@ elCicdDefs-$<GIG_MODULE>:
                   interpreter:
                     type: string
                     description: |
-                      The interpretor for the stage, either a module type or language. For 'Shell', scripts are executed directly.
+                      The interpretor for the step, either a module type or language. For 'Shell', scripts are executed directly.
                       For all other interpretors, scripts are mounted as files in the Pod and executed; i.e. in a subprocess. If not defined,
                       then 'Shell' is assumed.
                     enum:
@@ -305,10 +312,10 @@ elCicdDefs-$<GIG_MODULE>:
                   name:
                     type: string
                     description: |
-                      Name of the stage. Must start and end with an alphanumeric character, and '-' and '.' may be used.
+                      Name of the step. Must start and end with an alphanumeric character, and '-' and '.' may be used.
                       The name will reflect the name of the file used to store the sourceCode, so name appropiately;
                       e.g. <some-name>.py if the name is a Python sourceCode.
-                    pattern: '(?:^\w(?:[-\w.]{0,251}[\w])?)$'
+                    pattern: $<STAGE_STEP_PATTERN>
                   parallel:
                     type: boolean
                   sourceCode:
@@ -328,8 +335,10 @@ elCicdDefs-$<GIG_MODULE>:
                       gigModuleRef: $<GIG_MODULE_REF>
                       name:
                         type: string
+                        pattern: $<STAGE_STEP_PATTERN>
                       stage:
                         type: string
+                        pattern: $<STAGE_STEP_PATTERN>
                   secretVars:
                     type: array
                     description: |
@@ -419,6 +428,7 @@ elCicdDefs-$<GIG_RUN>:
               message: gigRef name and containerName are immutable
         required:
         - name
+      formTitle: $<TITLE_SPEC>
       inputForm: $<FORM_SPEC>
       inputReceived:
         type: boolean

@@ -1,11 +1,15 @@
 #!/usr/bin/bash -e
-# step-runner
-set -e
+# stagerunner
+set -o pipefail
 {%- set STAGE_FUNCTION_NAME = '{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
 
+_STAGE_COUNTER=${1}
 function __{{ STAGE_FUNCTION_NAME }}() {
     local _STEP_COUNTER=0
     {%- for step in stage.steps %}
+      {%- set STEP_NAME = step.name if not (step.stepRef and step.stepRef.name) else step.stepRef.name %}
+      {%- set STAGE_NAME = stage.name if not (step.stepRef and step.stepRef.stage) else step.stepRef.stage %}
+
       {%- set GIG_MODULE_NAME = gig_mod.name %}
       {%- set NAMESPACE = gig_mod.namespace %}
 
@@ -14,31 +18,28 @@ function __{{ STAGE_FUNCTION_NAME }}() {
       {%- set STEP_GIG_MOD_NAME = gig_mod.name if not step.stepRef else step.stepRef.gigModuleRef.name %}
       {%- set STEP_RUN_DIR = '{}_{}'.format(STEP_GIG_MOD_NAMESPACE, STEP_GIG_MOD_NAME) %}
 
-      {%- set STEP_STAGE_NAME = stage.name if not step.stepRef else step.stepRef.stage %}
-      {%- set STEP_NAME = step.name if not (step.stepRef and step.stepRef.name) else step.stepRef.name %}
-      {%- set STEP_RUN_NAME = '{}_{}'.format(STEP_STAGE_NAME, STEP_NAME) %}
-
       {%- set RUN_PARALLEL = '&' if step.parallel else '' %}
 
-    {%- set STEP_FUNCTION_NAME = '{}_{}'.format(STAGE_FUNCTION_NAME, step.name) %}
-
+      {%- set STEP_FUNCTION_NAME = '{}_{}'.format(STAGE_FUNCTION_NAME, step.name) %}
     function __{{ STEP_FUNCTION_NAME }}() {
-        local __STEP_COUNTER=${1}
+        local __STEP_ID=${1}
 
         __loadStageEnv
         if [[ $(__testWhen '{{ GIG_MOD_DIR_NAME }}' '{{ stage.name }}-{{ step.name }}') != 'false' ]]
         then
-            __stepHeader ${__STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' {{ HAS_SECRETS }}
-            source {{ '${{GIG_RUN_HOME}}/{}/{}-interpreter.sh'.format(STEP_RUN_DIR, STEP_RUN_NAME) }}
+            __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' {{ HAS_SECRETS }}
+            {%- set STEP_RUN_NAME = '{}_{}'.format(STAGE_NAME, STEP_NAME) %}
+            source {{ '${{GIG_RUN_HOME}}/{}/{}_interpreter.sh'.format(STEP_RUN_DIR, STEP_RUN_NAME) }}
             echo
-            echo "==> Step ${__STEP_COUNTER} complete: {{ stage.name }}:{{ step.name }} <=="
+            echo "==> Step ${__STEP_ID} complete: {{ stage.name }}:{{ step.name }} <=="
         else
-            __stepHeader ${__STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' 'SKIPPED'
+            __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' 'SKIPPED'
         fi
     }
 
     let _STEP_COUNTER+=1
-    __{{ STEP_FUNCTION_NAME }} ${_STEP_COUNTER} 2>&1 | __filterStepLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
+    local _STEP_ID="${_STAGE_COUNTER}-${_STEP_COUNTER}"
+    __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
     {%- if (step.wait) %}
 
     wait

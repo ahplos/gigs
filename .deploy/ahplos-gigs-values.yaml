@@ -67,14 +67,17 @@ elCicdTemplates:
 
 - templateName: configMap
   elCicdDefs:
-    PYTHON_JINJA_COMMAND: python ${GIG_RUN_HOME}/jinja_stage.py %s
+    PYTHON_JINJA_COMMAND: python $GIG_RUN_HOME/jinja_stage.py {FILE_NAME} {STAGE_NAME}_{STEP_NAME}
   objName: $<AHPLOS_GIGS_INTERPRETER_MAP>
   data:
-    Go: go run %s
-    Input: $<PYTHON_JINJA_COMMAND>
+    Go: go run {FILE_NAME}
+    Input: |-
+      $<PYTHON_JINJA_COMMAND>
+
+      __waitForUserInput {STAGE_NAME}_{STEP_NAME}
     JinjaTemplate: $<PYTHON_JINJA_COMMAND>
-    Python: python -m trace -t %s
-    Shell: source %s
+    Python: python -m trace -t {FILE_NAME}
+    Shell: source {FILE_NAME}
 
 - templateNames: [deployment, service, serviceAccount]
   annotations:

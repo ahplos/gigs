@@ -17,7 +17,7 @@ export const GigRunRunStateDetail = (model) => {
     let state = model.obj.spec?.runState ?? model.obj.status?.latestGigRun?.runState;
 
     let status: IconStatus = IconStatus.info;
-    let iconType: IconType = IconType.QUESTION_CIRCLE;
+    let iconType: IconType = IconType.RUNNING;
     switch (state) {
         case GigRunState.Aborting:
             iconType = IconType.ERROR_CIRCLE;

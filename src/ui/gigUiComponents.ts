@@ -26,3 +26,5 @@ export { LatestGigRunDetail } from './components/detailItems/ResourceDetailItems
 export { GigRunRunTimeDetail } from './components/detailItems/GigRunRunTimeDetail';
 export { GigRunStartedByDetail } from './components/detailItems/GigRunStartedByDetail';
 export { GigRunRunStateDetail } from './components/detailItems/GigRunRunStateDetail';
+
+export { GigTitle } from './utilities/inputComps';

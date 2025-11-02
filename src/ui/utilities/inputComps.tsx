@@ -17,10 +17,22 @@ import {
     TextArea,
     TextInput,
     TimePicker,
+    Title,
     Tooltip,
 }  from '@patternfly/react-core';
 
-interface TekRadioProps {
+interface GigTitleProps {
+    title: string;
+    headingLevel: 'h1' |  'h2' |  'h3' |  'h4' |  'h5' |  'h6';
+}
+
+export function GigTitle({title, headingLevel}: GigTitleProps) {
+    return <Title className="pf-v5-u-pb-sm" headingLevel={headingLevel}>
+               {title}
+           </Title>
+}
+
+interface GigInputProps {
     formGroup: any;
     gigDefFormState: Map<string, string|boolean>;
     setGigDefFormState: React.Dispatch<React.SetStateAction<Map<string, string|boolean>>>;
@@ -28,7 +40,7 @@ interface TekRadioProps {
     index: Number;
 }
 
-function TekRadio({formGroup, gigDefFormState, setGigDefFormState, props, index}: TekRadioProps) {
+function GigRadio({formGroup, gigDefFormState, setGigDefFormState, props, index}: GigInputProps) {
     props.onChange = (e) => {
         setGigDefFormState(prevFormValues => ({
             ...prevFormValues,
@@ -39,7 +51,7 @@ function TekRadio({formGroup, gigDefFormState, setGigDefFormState, props, index}
     return <Radio {...props} />
 }
 
-function TekCheckBox({formGroup, gigDefFormState, setGigDefFormState, props, index}: TekRadioProps) {
+function GigCheckBox({formGroup, gigDefFormState, setGigDefFormState, props, index}: GigInputProps) {
     props.onChange = (e) => {
         setGigDefFormState(prevFormValues => ({
             ...prevFormValues,
@@ -52,7 +64,7 @@ function TekCheckBox({formGroup, gigDefFormState, setGigDefFormState, props, ind
     );
 }
 
-function TekTextInput({formGroup, gigDefFormState, setGigDefFormState, props, index}: TekRadioProps) {
+function GigTextInput({formGroup, gigDefFormState, setGigDefFormState, props, index}: GigInputProps) {
     props.onChange = (e) => {
         setGigDefFormState(prevFormValues => ({
             ...prevFormValues,
@@ -67,7 +79,7 @@ function TekTextInput({formGroup, gigDefFormState, setGigDefFormState, props, in
 
 const inputComps = {
     Banner: Banner,
-    Checkbox: TekCheckBox,
+    Checkbox: GigCheckBox,
     DatePicker: DatePicker,
     Dropdown: Dropdown,
     HelperText: HelperText,
@@ -76,12 +88,12 @@ const inputComps = {
     FormGroup: FormGroup,
     FormSelect: FormSelect,
     FormSelectOption: FormSelectOption,
-    Radio: TekRadio,
+    Radio: GigRadio,
     Sidebar: Sidebar,
     SidebarContent: SidebarContent,
     SidebarPanel: SidebarPanel,
     TextArea: TextArea,
-    TextInput: TekTextInput,
+    TextInput: GigTextInput,
     TimePicker: TimePicker,
     Tooltip: Tooltip,
 };

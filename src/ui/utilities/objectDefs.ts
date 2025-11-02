@@ -79,6 +79,10 @@ export type InputCompGroupSpec = {
 
 export type GigForm = K8sResourceCommon & {
     spec: {
+        formTitle?: {
+            title: string;
+            headingLevel: 'h1' | 'h2'  | 'h3'  | 'h4'  | 'h5'  | 'h6' ;
+        }
         inputForm: InputCompGroupSpec[];
     };
 };
@@ -103,6 +107,13 @@ export type StageSpec = {
     description?: string;
     steps: StepSpec[];
     interpreter: string;
+    stageRef: {
+        name: string;
+        gigModuleRef: {
+            name: string;
+            namespace: string;
+        }
+    }
 };
 
 export type StepSpec = {
@@ -160,6 +171,10 @@ export type GigRun = K8sResourceCommon & {
             name: string;
             containerName?: string;
         };
+        formTitle?: {
+            title: string;
+            headingLevel: 'h1' | 'h2'  | 'h3'  | 'h4'  | 'h5'  | 'h6' ;
+        }
         inputForm?: InputCompGroupSpec[];
         inputReceived?: boolean;
         inputValues?: object;

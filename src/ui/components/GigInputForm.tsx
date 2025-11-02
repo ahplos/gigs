@@ -17,6 +17,7 @@ import CubesIcon from '@patternfly/react-icons/dist/esm/icons/cubes-icon';
 import inputComps from '../utilities/inputComps';
 
 const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormState) => {
+    formGroup.attributes ??= {};
     formGroup.attributes.name = formGroupId;
     formGroup.attributes.id = formGroupId;
     formGroup.attributes.fieldId = formGroupId;

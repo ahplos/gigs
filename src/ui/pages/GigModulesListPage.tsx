@@ -15,7 +15,6 @@ import {
     RowProps,
     ResourceLink,
     TableColumn,
-    Timestamp,
 } from '@openshift-console/dynamic-plugin-sdk';
 
 
@@ -51,10 +50,6 @@ const GigModulesTable: React.FC<GigModuleTableProps> = ({ data, unfilteredData, 
             id: 'mode',
         },
         {
-            title: 'Default Launch Form',
-            id: 'default-gig-form',
-        },
-        {
             title: 'Required Input Variables',
             id: 'required-input-vars',
         },
@@ -63,8 +58,8 @@ const GigModulesTable: React.FC<GigModuleTableProps> = ({ data, unfilteredData, 
             id: 'stages',
         },
         {
-            title: 'Created',
-            id: 'created',
+            title: 'Default Launch Form',
+            id: 'default-gig-form',
         },
     ];
 
@@ -74,8 +69,18 @@ const GigModulesTable: React.FC<GigModuleTableProps> = ({ data, unfilteredData, 
         const stageList = [];
         for (let stage of gigMod.spec.stages) {
             let stageName = stage.name;
-            let stepCountOrRef = stage.steps ? stage.steps.length : 'REFERENCE';
-            stageList.push(<ListItem><b>{stageName}</b> ({stepCountOrRef})</ListItem>);
+            if (stage.stageRef) {
+                stageList.push(
+                    <ListItem>
+                        <ResourceLink groupVersionKind={GIG_MODULE_GVK}
+                                      name={stage.stageRef.gigModuleRef.name}
+                                      namespace={stage.stageRef.gigModuleRef.namespace ?? obj.metadata.namespace}/>
+                        {stageName}
+                    </ListItem>);
+            }
+            else {
+                stageList.push(<ListItem><b>{stageName}</b></ListItem>);
+            }
         }
 
         return (
@@ -93,24 +98,21 @@ const GigModulesTable: React.FC<GigModuleTableProps> = ({ data, unfilteredData, 
                     <span>&nbsp;{gigMod.spec.mode}</span>
                 </TableData>
                 <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
+                    <List isPlain>
+                        {gigMod.spec.requiredInputParams?.map((param) => <ListItem><b>{param}</b></ListItem>)}
+                    </List>
+                </TableData>
+                <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
+                    <List isPlain>
+                        {...stageList}
+                    </List>
+                </TableData>
+                <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
                     { gigMod.spec.gigFormRef &&
                         <ResourceLink groupVersionKind={GIG_FORM_GVK}
                                       name={gigMod.spec.gigFormRef.name}
                                       namespace={gigMod.spec.gigFormRef.namespace ?? gigMod.metadata.namespace}/>
                     }
-                </TableData>
-                <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
-                    <List isPlain>
-                        {gigMod.spec.requiredInputParams?.map((param) => <ListItem><b>{param}</b></ListItem>)}
-                    </List>
-                </TableData>
-                <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
-                    <List isPlain>
-                        {...stageList}
-                    </List>
-                </TableData>
-                <TableData id={columns[6].id} activeColumnIDs={activeColumnIDs}>
-                    <Timestamp timestamp={obj.metadata.creationTimestamp} />
                 </TableData>
             </>
         );

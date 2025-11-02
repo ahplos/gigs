@@ -9,7 +9,15 @@ import {
 
 export const GigRunRunTimeDetail = (model) => {
     let runTime = model.obj.status?.runTime ?? model.obj.status?.latestGigRun?.runTime;
-    let gigRunRunTime = runTime ? new Date(runTime * 1000).toISOString().slice(11, 19) : null;
+    let gigRunRunTime;
+    if (runTime) {
+        gigRunRunTime = new Date(runTime * 1000).toISOString().slice(11, 19);
+    }
+    else {
+        gigRunRunTime = new Date().getTime() - new Date(model.obj.metadata.creationTimestamp).getTime();
+        gigRunRunTime = new Date(gigRunRunTime).toISOString().slice(11, 19);
+    }
+
 
     return (
         <GigDetailIcon type={IconType.STOP_WATCH} label={gigRunRunTime} status={IconStatus.custom} />

@@ -35,26 +35,39 @@ def on_job_completed(meta, status, logger, **_):
     time = status.get(GIG_CONSTS.COMPLETION_TIME, datetime.now().strftime('%Y-%m-%dT%H:%M:%S' + status[GIG_CONSTS.START_TIME][-1]))
     delta = timeparser.parse(time) - timeparser.parse(status[GIG_CONSTS.START_TIME])
 
-    status_patch_values = {
-        GIG_CONSTS.NAME: gig_run.name,
-        GIG_CONSTS.STARTED_BY: gig_run.spec.startedBy,
-        GIG_CONSTS.CREATION_TIME_STAMP: gig_run.metadata.creationTimestamp,
-        GIG_CONSTS.RUN_STATE: runState,
-        GIG_CONSTS.RUN_TIME: int(delta.total_seconds()),
-    }
-
-    gig_run.patch({GIG_CONSTS.STATUS: status_patch_values}, subresource=GIG_CONSTS.STATUS, type='merge')
-
     gig_run.patch({
-            GIG_CONSTS.STATUS: {
+            GIG_CONSTS.METADATA: {
+                GIG_CONSTS.LABELS: {
+                    GIG_CONSTS.RUN_STATE: runState
+                }
+            },
+            GIG_CONSTS.SPEC: {
                 GIG_CONSTS.RUN_STATE: runState
             }
         },
         type='merge'
     )
 
-    gig.patch(
-        {GIG_CONSTS.STATUS: {GIG_CONSTS.LATEST_GIG_RUN: status_patch_values}},
+    gig_run.patch({
+            GIG_CONSTS.STATUS: {
+                GIG_CONSTS.RUN_TIME: int(delta.total_seconds())
+            }
+        },
+        subresource=GIG_CONSTS.STATUS,
+        type='merge'
+    )
+
+    gig.patch({
+            GIG_CONSTS.STATUS: {
+                    GIG_CONSTS.LATEST_GIG_RUN: {
+                    GIG_CONSTS.NAME: gig_run.name,
+                    GIG_CONSTS.STARTED_BY: gig_run.spec.startedBy,
+                    GIG_CONSTS.CREATION_TIME_STAMP: gig_run.metadata.creationTimestamp,
+                    GIG_CONSTS.RUN_STATE: runState,
+                    GIG_CONSTS.RUN_TIME: int(delta.total_seconds()),
+                }
+            }
+        },
         subresource=GIG_CONSTS.STATUS,
         type='merge',
     )

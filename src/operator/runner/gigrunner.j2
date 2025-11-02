@@ -1,17 +1,18 @@
 #!/usr/bin/bash -e
-set -e
+# gigrunner
+set -o pipefail
 
 function __gigrunner() {
     local _STAGE_COUNTER=0
 
-    echo "$(__gigRunHeader)" | __filterStageLogOutput ${_STAGE_COUNTER}
+    echo "$(__gigRunHeader)" | __filterStageLogOutput '--'
 
     {%- for stage in gig_mod.spec.stages %}
+      {%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
       {%- set STAGE_GIG_MOD_NAMESPACE = gig_mod.namespace
         if not (stage.stageRef and stage.stageRef.gigModuleRef.namespace) else stage.stageRef.gigModuleRef.namespace %}
       {%- set STAGE_GIG_MOD_NAME = gig_mod.name if not stage.stageRef else stage.stageRef.gigModuleRef.name %}
 
-      {%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
       {%- set STAGE_FUNCTION_NAME = '{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
       {%- set RUN_PARALLEL = '&' if stage.parallel else '' %}
 
@@ -37,9 +38,7 @@ function __gigrunner() {
     wait
     {%- endif %}
     {%- endfor %}
-
-  let _STAGE_COUNTER+=1
-  __gigRunFooter | __filterStageLogOutput ${_STAGE_COUNTER}
 }
 
 __gigrunner
+echo $? > .stagerunner_exit_status

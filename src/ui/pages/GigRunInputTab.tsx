@@ -3,12 +3,13 @@ import * as React from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 
 import {
-    PageSection
+    PageSection,
 } from '@patternfly/react-core';
 
 import {
     GigInputForm,
-    GigFormType
+    GigFormType,
+    GigTitle,
 } from '../gigUiComponents';
 
 import {
@@ -37,11 +38,16 @@ export const GigRunInputTab = (model) => {
     }
 
     let formType = (gigRun?.spec?.runState == GigRunState.WaitingForInput) ? GigFormType.WAITING_FOR_INPUT : null;
+    let title = formType && gigRun.spec.formTitle ?
+        <GigTitle title={gigRun.spec.formTitle.title} headingLevel={gigRun.spec.formTitle.headingLevel}/> : <></>
 
     return (
-        <PageSection isFilled style={{ background: 'rgba(200, 54, 54, 0)' }}>
-            <GigInputForm formSpec={formSpec} submissionAction={submissionAction} formType={formType} />
-        </PageSection>
+        <>
+            <PageSection isFilled style={{ background: 'rgba(200, 54, 54, 0)' }}>
+                {title}
+                <GigInputForm formSpec={formSpec} submissionAction={submissionAction} formType={formType} />
+            </PageSection>
+        </>
     );
 };
 

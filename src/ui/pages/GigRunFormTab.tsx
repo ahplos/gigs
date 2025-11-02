@@ -5,14 +5,15 @@ import {
     Bullseye,
     Spinner,
     TabContent,
-    TabContentBody
+    TabContentBody,
 }  from '@patternfly/react-core';
 
 import { useNavigate } from 'react-router-dom-v5-compat';
 
 import {
     GigInputForm,
-    GigFormType
+    GigFormType,
+    GigTitle,
 } from '../gigUiComponents';
 
 import {
@@ -25,24 +26,24 @@ import GigK8sUtils from '../utilities/gigK8sUtils';
 
 export const GigRunFormTab = (model) => {
     let gig: Gig;
-    let gigLaunchForm: GigForm;
+    let gigForm: GigForm;
     let formSpec = [];
     let errorMessage: string;
 
     if (model.obj.kind == GIG_GVK.kind) {
         gig = model.obj
-        const [glf, _, glfLoadError] = GigK8sUtils.getGigForm({
+        const [gf, _, gfLoadError] = GigK8sUtils.getGigForm({
             name: gig.spec.gigFormRef.name,
             namespace: gig.spec.gigFormRef.namespace
         });
 
-        gigLaunchForm = glf;
-        formSpec = gigLaunchForm?.spec?.inputForm ?? [];
-        errorMessage = glfLoadError;
+        gigForm = gf;
+        formSpec = gigForm?.spec?.inputForm ?? [];
+        errorMessage = gfLoadError;
     }
     else {
-        gigLaunchForm = model.obj
-        formSpec = structuredClone(gigLaunchForm.spec.inputForm ?? []);
+        gigForm = model.obj
+        formSpec = structuredClone(gigForm.spec.inputForm ?? []);
     }
 
     const navigate = useNavigate();
@@ -59,7 +60,7 @@ export const GigRunFormTab = (model) => {
     }
 
     let bodyContent;
-    if (gigLaunchForm) {
+    if (gigForm) {
         const gigFormType = gig ? GigFormType.START : GigFormType.PREVIEW;
         bodyContent = <GigInputForm formSpec={formSpec} submissionAction={submissionAction} formType={gigFormType} />;
     }
@@ -70,9 +71,13 @@ export const GigRunFormTab = (model) => {
         bodyContent = <Bullseye><Spinner size="lg" aria-label="Rendering form..." /></Bullseye>;
     }
 
+    let title = gigForm?.spec?.formTitle ?
+        <GigTitle title={gigForm.spec.formTitle.title} headingLevel={gigForm.spec.formTitle.headingLevel}/> : <></>
+
     return (
         <TabContent id="run-job-tab">
             <TabContentBody hasPadding>
+                { title }
                 { bodyContent }
             </TabContentBody>
         </TabContent>

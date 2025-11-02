@@ -35,7 +35,8 @@ function __saveInputParamsToEnv() {
 }
 
 function __waitForUserInput() {
-    python ${GIG_RUN_HOME}/jinja_stage.py ${1}
+    export USER_INPUT_PATCH=${1}
+    python ${GIG_RUN_HOME}/jinja_stage.py ${GIG_RUN_HOME}/user_input_patch.j2 user_input_patch.yaml
 
     kubectl patch gigrun ${GIG_RUN_NAME} -n ${POD_NAMESPACE} --patch-file user_input_patch.yaml --type='merge' 2>&1 > /dev/null
 
@@ -51,12 +52,12 @@ function __waitForUserInput() {
 function __checkForAbortSignal() {
     PID=${1}
     kubectl wait gigrun/{{ gig_run.name }} -n {{ gig_run.namespace }} \
-        --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.spec.runState}'='Aborting'
+        --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.spec.runState}=Aborting' \
+        2>&1 > /dev/null
 
-    echo "ABORT RUN..." > gig.log
-    set -x
-    timeout 30s pkill -P ${PID} || pkill --signal KILL ${PID}
-    set +x
+    echo
+    echo "=> ABORT RUN REQUESTED..."
+    timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}
 }
 
 function __generateSecretFilter() {
@@ -67,39 +68,42 @@ function __generateSecretFilter() {
         SECRETS_REGEX+=${SECRETS_REGEX:+${!VAR:+|}}${!VAR}
     done
 
-    echo ${SECRETS_REGEX}
+    echo ${SECRETS_REGEX:-$(echo -e '\u2654')}
 }
 
 function __filterStageLogOutput() {
     local __DELIM=$'\x1F'
+    local _STAGE_COUNTER=$(printf "%2s" ${1} | tr ' ' 0})
     while read -r LOGS
     do
-        local NEW_LOGS="[${1}"
+        local NEW_LOGS=${_STAGE_COUNTER}
         if [[ ${LOGS} =~ ^- ]]
         then
             NEW_LOGS="${NEW_LOGS}${LOGS}"
         else
-            local GIG_RUN_TIME=$(echo $(($(date +%s) - ${GIG_RUN_START_TIME})))
-            NEW_LOGS="${NEW_LOGS}-G  $(date -d@${GIG_RUN_TIME} -u +%Hh:%Mm:%Ss)] ${LOGS}"
+            NEW_LOGS="${NEW_LOGS}-Gg|$(__gigRunTime)  ${LOGS}"
         fi
 
         __loadStageEnv
-        SECRETS_REGEX=$(__generateSecretFilter)
-        if [[ -z ${SECRETS_REGEX} ]]
-        then
-            echo "${NEW_LOGS}"
-        else
-            echo "${NEW_LOGS}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g"
-        fi
+        local SECRETS_REGEX=$(__generateSecretFilter)
+        echo "${NEW_LOGS}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g"
     done
 }
 
 function __filterStepLogOutput() {
+    local _STEP_COUNTER=$(printf "%2s" ${1} | tr ' ' 0})
     while read -r LOGS
     do
-        local GIG_RUN_TIME=$(echo $(($(date +%s) - ${GIG_RUN_START_TIME})))
-        echo "-${1}  $(date -d@${GIG_RUN_TIME} -u +%Hh:%Mm:%Ss)] ${LOGS}"
+        echo "-${_STEP_COUNTER}|$(__gigRunTime)  ${LOGS}"
     done
+}
+
+function __gigRunTime() {
+    local GIG_RUN_TIME=$(echo $(($(date +%s) - ${GIG_RUN_START_TIME})))
+    local GIG_RUN_TIME_HRS=$(printf '%02d' $((GIG_RUN_TIME/3600)))
+    local GIG_RUN_TIME_MIN=$(printf '%02d' $((GIG_RUN_TIME/60)))
+    local GIG_RUN_TIME_SEC=$(printf '%02d' $((GIG_RUN_TIME%60)))
+    echo "${GIG_RUN_TIME_HRS}:${GIG_RUN_TIME_MIN}:${GIG_RUN_TIME_SEC}"
 }
 
 function __gigRunHeader() {
@@ -126,7 +130,7 @@ function __gigRunHeader() {
 function __gigRunFooter() {
     echo
     echo "${__HEADER_FOOTER_BORDER}"
-    echo "${__HEADER_FOOTER_PREFIX} GIG COMPLETE"
+    echo "${__HEADER_FOOTER_PREFIX} GIG COMPLETE: EXIT CODE ${1}"
     echo "${__HEADER_FOOTER_PREFIX}"
     echo "** $(date)"
     echo "${__HEADER_FOOTER_BORDER}"
@@ -184,7 +188,7 @@ function __stepHeader() {
 
 function __testWhen() {
     local GIG_MOD_DIR_NAME=${1}
-    local STAGE_OR_STEP_TEST_JS="when-${2}.js"
+    local STAGE_OR_STEP_TEST_JS="when_${2}.js"
 
     if [[ -f ${GIG_RUN_HOME}/${GIG_MOD_DIR_NAME}/${STAGE_OR_STEP_TEST_JS} ]]
     then

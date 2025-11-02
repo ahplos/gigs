@@ -1,5 +1,9 @@
 #!/usr/bin/bash -e
-set -e
+# steprunner
+set -o pipefail
+
+{%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
+{%- set STEP_NAME = step.name if not (step.stepRef and step.stepRef.name) else step.stepRef.name %}
 
 {%- set HAS_SECRETS = 'HAS_SECRETS' if step.secretVars else '' %}
 {%- if HAS_SECRETS %}
@@ -8,8 +12,6 @@ echo "${ {{- secretVar }}}" >> .secrets
   {%- endfor %}
 {%- endif %}
 
-{{ step.command % '/${{GIG_RUN_HOME}}/{}/{}'.format(GIG_MOD_DIR_NAME, STEP_NAME) }}
+{%- set FILE_NAME = '$GIG_RUN_HOME/{}/{}_{}'.format(GIG_MOD_DIR_NAME, STAGE_NAME, STEP_NAME) %}
 
-{%- if step.interpreter == 'Input' %}
-__waitForUserInput {{ stage.name }}_{{ step.name }}
-{%- endif %}
+{{ step.command.format(FILE_NAME=FILE_NAME, STAGE_NAME=STAGE_NAME, STEP_NAME=STEP_NAME) }}

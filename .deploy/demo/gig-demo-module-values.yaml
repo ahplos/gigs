@@ -14,7 +14,8 @@ elCicdTemplates:
   objName: $<GIG_FORM_NAME>-$<#>
   template:
     spec:
-      title: Sign in as a cluster-admin for Gig Demonstration
+      formTitle:
+        title:  Sign in as a cluster-admin for the Gig Interpreter Demonstration
       inputForm:
       - attributes:
           label: Cluster Admin User Name
@@ -102,22 +103,23 @@ elCicdTemplates:
             echo "SOME_VAR: ${SOME_VAR}"
             JSON=$(oc get configmap ahplos-gigs-interpreters -n gigs-operator -o jsonpath='{.data}')
             LANGS=$(echo "${JSON}" | jq -r 'keys[]' | paste -sd ',' - | sed -E -e 's/([A-Z][A-Za-z.-]+)/"\1"\ /g')
-            echo "{%- set LANGS = [${LANGS}] %}" > tek_langs.j2
+            echo "{%- set LANGS = [${LANGS}] %}" > gig_interpreters.j2
             sleep 2
         - name: ask-user-what-languages-to-demo.j2
           interpreter: Input
           sourceCode: |-
-            {%- include 'tek_langs.j2' %}
-            {%- from 'tek_langs.j2' import LANGS %}
-            {%- for LANG in LANGS %}
-            {% filter indent(width=4) %}
-            - attributes:
-                label: {{ LANG }}
-              components:
-                - inputType: Checkbox
-              var: LANG_{{ LANG|upper }}
-            {%- endfilter %}
-            {%- endfor %}
+            formTitle:
+              title: 'Select the Gig Interpreter(s) to demo'
+            inputForm:
+              {%- include 'gig_interpreters.j2' %}
+              {%- from 'gig_interpreters.j2' import LANGS %}
+              {%- for LANG in LANGS %}
+              - attributes:
+                  label: {{ LANG }}
+                components:
+                  - inputType: Checkbox
+                var: LANG_{{ LANG|upper }}
+              {%- endfor %}
   elCicdDefs-$<GIG_MOD_SOURCE_DEMO>:
     GIG_MOD_SPECS:
       mode: Library

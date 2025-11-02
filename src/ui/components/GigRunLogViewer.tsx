@@ -38,6 +38,7 @@ import {
 } from '../utilities/objectDefs';
 
 import {
+    GigDetail,
     GigRunRunStateDetail,
     GigRunStartedByDetail,
     GigRunRunTimeDetail,
@@ -62,7 +63,7 @@ export function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
     const [paused, setPaused] = React.useState<boolean>(false);
     const [pauseDisabled, setPauseDisabled] = React.useState<boolean>();
 
-    const [isLinesWrppped, setLinesWrppped] = React.useState<boolean>(false);
+    const [isLinesWrppped, setLinesWrppped] = React.useState<boolean>(true);
     const [isShowLineNumbers, setShowLineNumbers] = React.useState<boolean>(true);
     const [isFullScreen, setFullScreen] = React.useState<boolean>(false);
 
@@ -136,11 +137,14 @@ export function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
                 <Flex>
                     <FlexItem>
                         <Text>
-                            {totalLines} totalLines
+                            {totalLines} Total Lines
                         </Text>
                     </FlexItem>
                 </Flex>
                 <Flex align={{ default: 'alignRight' }} spacer={{ default: 'spacerXs' }}>
+                    <FlexItem>
+                        <GigDetail obj={gigRun} />
+                    </FlexItem>
                     <FlexItem >
                         <GigRunStartedByDetail obj={gigRun} />
                     </FlexItem>
