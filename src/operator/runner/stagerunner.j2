@@ -1,4 +1,3 @@
-#!/usr/bin/bash -e
 # stagerunner
 set -o pipefail
 {%- set STAGE_FUNCTION_NAME = '{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
@@ -29,7 +28,9 @@ function __{{ STAGE_FUNCTION_NAME }}() {
         then
             __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' {{ HAS_SECRETS }}
             {%- set STEP_RUN_NAME = '{}_{}'.format(STAGE_NAME, STEP_NAME) %}
+            set -o allexport
             source {{ '${{GIG_RUN_HOME}}/{}/{}_interpreter.sh'.format(STEP_RUN_DIR, STEP_RUN_NAME) }}
+            set +o allexport
             echo
             echo "==> Step ${__STEP_ID} complete: {{ stage.name }}:{{ step.name }} <=="
         else
@@ -39,7 +40,13 @@ function __{{ STAGE_FUNCTION_NAME }}() {
 
     let _STEP_COUNTER+=1
     local _STEP_ID="${_STAGE_COUNTER}-${_STEP_COUNTER}"
-    __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
+    {%- if stage.iterator %}
+    {%- set IS_STAGE = False %}
+    {%- set ITERATOR = step.iterator %}
+    {%- include 'iterator.j2' %}
+    {%- else %}
+        __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
+    {%- endif %}
     {%- if (step.wait) %}
 
     wait

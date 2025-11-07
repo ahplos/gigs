@@ -153,22 +153,29 @@ elCicdDefs-$<GIG_MODULE>:
     items:
       type: object
       properties:
-        envVar:
+        name:
           type: string
+        envVar:
+          type: object
+          properties:
+            name:
+              type: string
+            delim:
+              type: string
         range:
           type: object
           properties:
-            start:
+            first:
               type: integer
               default: 0
-            stop:
+            last:
               type: integer
-            step:
+            incr:
               type: integer
               default: 1
           required:
-          - stop
-        values:
+          - last
+        listValues:
           type: array
           items:
             x-kubernetes-int-or-string: true
@@ -180,6 +187,8 @@ elCicdDefs-$<GIG_MODULE>:
         - range
       - required:
         - values
+      required:
+      - name
   SPEC_DEFINITION:
     type: object
     description: |
@@ -240,7 +249,7 @@ elCicdDefs-$<GIG_MODULE>:
           properties:
             description:
               type: string
-            iterate: $<ITERATE_SPEC>
+            iterations: $<ITERATE_SPEC>
             mode: $<MODE_SPEC>
             name:
               type: string
@@ -308,7 +317,7 @@ elCicdDefs-$<GIG_MODULE>:
                     - JinjaTemplate
                     - Python
                     - Shell
-                  iterate: $<ITERATE_SPEC>
+                  iterations: $<ITERATE_SPEC>
                   name:
                     type: string
                     description: |

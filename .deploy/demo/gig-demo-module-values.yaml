@@ -72,7 +72,9 @@ elCicdTemplates:
         steps:
         - name: cluster-admin-login.sh
           sourceCode: |-
-            SOME_VAR='Testing scripts run in current process'
+            SOME_VAR='Testing passing variables across stages and steps through the environment'
+            echo "SOME_VAR: ${SOME_VAR}"
+            echo "SOME_VAR='${SOME_VAR}'" >> .env
             oc login --insecure-skip-tls-verify -u ${CLUSTER_ADMIN_USER_NAME} -p ${CLUSTER_ADMIN_PASSWORD} https://kubernetes.default.svc
             sleep 2
       - name: $<CHOOSE_DEMO_SOURCE_TYPES>
@@ -88,6 +90,15 @@ elCicdTemplates:
       - name: $<DEMONSTRATE_PYTHON>
         when: |-
           env.LANG_PYTHON
+        iterations:
+        - name: INDEX
+          range:
+            last: 3
+        - name: VALS
+          listValues:
+          - foo
+          - 6
+          - bar
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
