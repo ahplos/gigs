@@ -149,46 +149,57 @@ elCicdDefs-$<GIG_MODULE>:
   - gigmod
   - gigmods
   ITERATE_SPEC:
-    type: array
-    items:
-      type: object
-      properties:
-        name:
-          type: string
-        envVar:
+    type: object
+    properties:
+      when:
+        type: string
+      loops:
+        type: array
+        description: One or more for loops.
+        items:
           type: object
           properties:
             name:
               type: string
-            delim:
-              type: string
-        range:
-          type: object
-          properties:
-            first:
-              type: integer
-              default: 0
-            last:
-              type: integer
-            incr:
-              type: integer
-              default: 1
+            envVar:
+              type: object
+              description: Environment variable with values separated by a delimeter.  The default delimeter is space(s).
+              properties:
+                name:
+                  type: string
+                delim:
+                  type: string
+            range:
+              type: object
+              description: A range of numbers to iterate over, incremented each loop by the incr.
+              properties:
+                first:
+                  x-kubernetes-int-or-string: true
+                  default: 0
+                last:
+                  x-kubernetes-int-or-string: true
+                incr:
+                  x-kubernetes-int-or-string: true
+                  default: 1
+              required:
+              - last
+            vector:
+              type: array
+              description: A list of strings and/or integers to iterate over.
+              items:
+                x-kubernetes-int-or-string: true
+              minLength: 1
+          anyOne:
+          - required:
+            - envVar
+          - required:
+            - range
+          - required:
+            - values
           required:
-          - last
-        listValues:
-          type: array
-          items:
-            x-kubernetes-int-or-string: true
-          minLength: 1
-      anyOne:
-      - required:
-        - envVar
-      - required:
-        - range
-      - required:
-        - values
-      required:
-      - name
+          - name
+    required:
+    - loops
   SPEC_DEFINITION:
     type: object
     description: |
@@ -249,7 +260,7 @@ elCicdDefs-$<GIG_MODULE>:
           properties:
             description:
               type: string
-            iterations: $<ITERATE_SPEC>
+            iterate: $<ITERATE_SPEC>
             mode: $<MODE_SPEC>
             name:
               type: string
@@ -276,6 +287,13 @@ elCicdDefs-$<GIG_MODULE>:
                 Javascript statement that must evaluate to `true` for the stage to be processed. For ease of writing expressions,
                 environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in shell can be refered
                 to as `env.FOO` in the statements.
+            interationWhen:
+              type: string
+              description: |
+                Javascript statement that must evaluate to `true` for the step to be processed. For ease of writing expressions,
+                environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in shell can be refered
+                to as `env.FOO` in the statements. Only evaluated if iterate are defined, and evaluated each time just before
+                the step is processed.
             workDir:
               type: string
             steps:
@@ -300,6 +318,9 @@ elCicdDefs-$<GIG_MODULE>:
                     descriptions: |
                       Command used to process the sourceCode. Typically will be set by the controller unless
                       the interpreter is Custom.
+                  args:
+                    type: string
+                    description: Extra arguments to be passed to each step's command.
                   description:
                     type: string
                     description: Description of name's purpose.
@@ -317,7 +338,7 @@ elCicdDefs-$<GIG_MODULE>:
                     - JinjaTemplate
                     - Python
                     - Shell
-                  iterations: $<ITERATE_SPEC>
+                  iterate: $<ITERATE_SPEC>
                   name:
                     type: string
                     description: |
@@ -367,6 +388,13 @@ elCicdDefs-$<GIG_MODULE>:
                       Javascript statement that must evaluate to `true` for the step to be processed. For ease of writing expressions,
                       environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in shell can be refered
                       to as `env.FOO` in the statements.
+                  interationWhen:
+                    type: string
+                    description: |
+                      Javascript statement that must evaluate to `true` for the step to be processed. For ease of writing expressions,
+                      environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in shell can be refered
+                      to as `env.FOO` in the statements. Only evaluated if iterate are defined, and evaluated each time just before
+                      the step is processed.
                   workDir:
                     type: string
       workDirSizeLimit:

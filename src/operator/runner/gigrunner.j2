@@ -1,6 +1,14 @@
 #!/usr/bin/bash -e
 # gigrunner
 set -o pipefail
+{%- from 'iterator-macro.j2' import realize_iterators %}
+
+{%- macro run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) %}
+    __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}'
+    ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/{{ STAGE_NAME }} ${__STAGE_COUNTER}
+    echo
+    echo "==> STAGE ${__STAGE_COUNTER} COMPLETE: {{ stage.name }} <=="
+{%- endmacro %}
 
 function __gigrunner() {
     local _STAGE_COUNTER=0
@@ -18,28 +26,41 @@ function __gigrunner() {
 
     function __{{ STAGE_FUNCTION_NAME }}() {
         local __STAGE_COUNTER=${1}
-
-        __loadStageEnv
-        if [[ "$(__testWhen '{{ GIG_MOD_DIR_NAME }}' '{{ stage.name }}')" != 'false' ]]
+        {%- if stage.iterate and stage.iterate.when %}
+        if [[ $(__testWhen '{{ stage.iterate.when }}') != 'false' ]]
         then
-            __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}'
-            set -o allexport
-            source ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/{{ STAGE_NAME }} ${__STAGE_COUNTER}
-            set +o allexport
-            echo
-            echo "==> STAGE ${__STAGE_COUNTER} COMPLETE: {{ stage.name }} <=="
+            {%- filter indent(width=8) %}
+            {{- run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) }}
+            {%- endfilter %}
         else
-            __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' 'SKIPPED'
+            echo "==> STAGE ${__STAGE_COUNTER} ITERATION SKIPPED: {{ stage.name }} <=="
         fi
+        {%- else %}
+        {%- filter indent(width=4) %}
+        {{- run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) }}
+        {%- endfilter %}
+        {%- endif %}
     }
+
     let _STAGE_COUNTER+=1
-    {%- if stage.iterations %}
-      {%- set ITERATIONS = stage.iterations %}
-      {%- set ITER_FUNCTION_NAME = STAGE_FUNCTION_NAME %}
-      {%- set ITER_FUNCTION_ARGS = '${_STAGE_COUNTER} 2>&1 | __filterStageLogOutput ${_STAGE_COUNTER}' %}
-      {%- include 'iterator.j2' %}
+    __loadEnv
+    {%- if stage.when %}
+    if [[ $(__testWhen '{{ stage.when if stage.when else '' }}') != 'false' ]]
+    then
+      {%- if stage.iterate %}
+        {{- realize_iterators(stage, STAGE_FUNCTION_NAME) }}
+      {%- else %}
+        __{{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} 2>&1 | __filterStageLogOutput ${_STAGE_COUNTER} {{ RUN_PARALLEL }}
+      {%- endif %}
+    else
+        __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' 'SKIPPED'
+    fi
     {%- else %}
-    __{{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} 2>&1 | __filterStageLogOutput ${_STAGE_COUNTER} {{ RUN_PARALLEL }}
+      {%- if stage.iterate %}
+        {{- realize_iterators(stage, STAGE_FUNCTION_NAME) }}
+      {%- else %}
+        __{{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} 2>&1 | __filterStageLogOutput ${_STAGE_COUNTER} {{ RUN_PARALLEL }}
+      {%- endif %}
     {%- endif %}
 
     {%- if stage.wait %}
@@ -51,3 +72,5 @@ function __gigrunner() {
 
 __gigrunner
 echo $? > .stagerunner_exit_status
+
+

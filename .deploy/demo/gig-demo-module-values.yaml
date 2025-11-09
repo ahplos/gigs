@@ -90,15 +90,17 @@ elCicdTemplates:
       - name: $<DEMONSTRATE_PYTHON>
         when: |-
           env.LANG_PYTHON
-        iterations:
-        - name: INDEX
-          range:
-            last: 3
-        - name: VALS
-          listValues:
-          - foo
-          - 6
-          - bar
+        iterate:
+          when: env.INDEX != 2
+          loops:
+          - name: INDEX
+            range:
+              last: 3
+          - name: VALS
+            vector:
+            - foo
+            - 6
+            - bar
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
@@ -153,6 +155,19 @@ elCicdTemplates:
               f.WriteString("\nTEST_MSG='This test msg was set using Go'")
             }
         - name: print-the-go-msg
+          when: |-
+            env.LANG_PYTHON
+          iterate:
+            when: env.INDEX != 2
+            loops:
+            - name: INDEX
+              range:
+                last: 3
+            - name: VALS
+              vector:
+              - foo
+              - 6
+              - bar
           stepRef:
             gigModuleRef:
               name: $<GIG_MOD_PRINT_MSG>

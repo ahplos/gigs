@@ -3,7 +3,7 @@
 __HEADER_FOOTER_BORDER='******************************************************************'
 __HEADER_FOOTER_PREFIX='**'
 
-function __loadStageEnv() {
+function __loadEnv() {
     set -o allexport
     source .env
     set +o allexport
@@ -84,7 +84,7 @@ function __filterStageLogOutput() {
             NEW_LOGS="${NEW_LOGS}-Gg|$(__gigRunTime)  ${LOGS}"
         fi
 
-        __loadStageEnv
+        __loadEnv
         local SECRETS_REGEX=$(__generateSecretFilter)
         echo "${NEW_LOGS}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g"
     done
@@ -187,11 +187,10 @@ function __stepHeader() {
 }
 
 function __testWhen() {
-    local GIG_MOD_DIR_NAME=${1}
-    local STAGE_OR_STEP_TEST_JS="when_${2}.js"
+    local STAGE_OR_STEP_WHEN=${1}
 
-    if [[ -f ${GIG_RUN_HOME}/${GIG_MOD_DIR_NAME}/${STAGE_OR_STEP_TEST_JS} ]]
+    if [[ ! -z ${STAGE_OR_STEP_WHEN} ]]
     then
-        node ${GIG_RUN_HOME}/${GIG_MOD_DIR_NAME}/${STAGE_OR_STEP_TEST_JS}
+        node ${GIG_RUN_HOME}/__testWhen.js ${STAGE_OR_STEP_WHEN}
     fi
 }
