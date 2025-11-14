@@ -73,7 +73,7 @@ function __generateSecretFilter() {
 
 function __filterStageLogOutput() {
     local __DELIM=$'\x1F'
-    local _STAGE_COUNTER=$(printf "%2s" ${1} | tr ' ' 0})
+    local _STAGE_COUNTER=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
     while read -r LOGS
     do
         local NEW_LOGS=${_STAGE_COUNTER}
@@ -81,7 +81,7 @@ function __filterStageLogOutput() {
         then
             NEW_LOGS="${NEW_LOGS}${LOGS}"
         else
-            NEW_LOGS="${NEW_LOGS}-Gg|$(__gigRunTime)  ${LOGS}"
+            NEW_LOGS="${NEW_LOGS}-gr|$(__gigRunTime)  ${LOGS}"
         fi
 
         __loadEnv
@@ -91,7 +91,7 @@ function __filterStageLogOutput() {
 }
 
 function __filterStepLogOutput() {
-    local _STEP_COUNTER=$(printf "%2s" ${1} | tr ' ' 0})
+    local _STEP_COUNTER=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
     while read -r LOGS
     do
         echo "-${_STEP_COUNTER}|$(__gigRunTime)  ${LOGS}"
@@ -187,10 +187,5 @@ function __stepHeader() {
 }
 
 function __testWhen() {
-    local STAGE_OR_STEP_WHEN=${1}
-
-    if [[ ! -z ${STAGE_OR_STEP_WHEN} ]]
-    then
-        node ${GIG_RUN_HOME}/__testWhen.js ${STAGE_OR_STEP_WHEN}
-    fi
+    node -e "env = {...process.env}; result = Boolean(${1}); console.log(result)"
 }

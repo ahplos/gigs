@@ -82,14 +82,12 @@ elCicdTemplates:
           gigModuleRef:
             name: $<GIG_MOD_ASK_USER>
       - name: $<DEMONSTRATE_GO>
-        when: |-
-          env.LANG_GO
+        when: env.LANG_GO
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
       - name: $<DEMONSTRATE_PYTHON>
-        when: |-
-          env.LANG_PYTHON
+        when: env.LANG_PYTHON
         iterate:
           when: env.INDEX != 2
           loops:
@@ -155,8 +153,6 @@ elCicdTemplates:
               f.WriteString("\nTEST_MSG='This test msg was set using Go'")
             }
         - name: print-the-go-msg
-          when: |-
-            env.LANG_PYTHON
           iterate:
             when: env.INDEX != 2
             loops:
@@ -181,16 +177,12 @@ elCicdTemplates:
           sourceCode: |-
             with open('.env', 'a') as env_file:
               env_file.write("\nTEST_MSG='This test msg was set using Python'")
-          when: |-
-            env.LANG_PYTHON
         - name: print-the-python-msg
           stepRef:
             gigModuleRef:
               name: $<GIG_MOD_PRINT_MSG>
             stage: $<PRINT_THE_DEMO_MSG>
             name: $<PRINT_THE_DEMO_MSG>
-          when: |-
-            env.LANG_PYTHON
   elCicdDefs-$<GIG_MOD_PRINT_MSG>:
     GIG_MOD_SPECS:
       mode: Library

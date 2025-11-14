@@ -1,3 +1,4 @@
+#!/usr/bin/bash -e
 # stagerunner
 set -o pipefail
 {%- from 'iterator-macro.j2' import realize_iterators %}
@@ -52,18 +53,26 @@ function __{{ STAGE_FUNCTION_NAME }}() {
     let _STEP_COUNTER+=1
     local _STEP_ID="${_STAGE_COUNTER}-${_STEP_COUNTER}"
     __loadEnv
-    if [[ $(__testWhen '{{ step.when if stage.when else '' }}') != 'false' ]]
+      {%- if step.when %}
+    if [[ $(__testWhen '{{ step.when }}') != 'false' ]]
     then
       {%- if step.iterate %}
-        {{- realize_iterators(step, STEP_FUNCTION_NAME, stage.name) }}
+        {{- realize_iterators(step, STEP_FUNCTION_NAME, RUN_PARALLEL, STAGE_NAME) }}
       {%- else %}
-        __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStageLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
+        __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' 'SKIPPED'
+        __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' 'SKIPPED' | \
+            __filterStepLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
     fi
+      {%- else %}
+        {%- if step.iterate %}
+    {{- realize_iterators(step, STEP_FUNCTION_NAME, RUN_PARALLEL, STAGE_NAME) }}
+        {%- else %}
+    __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
+        {%- endif %}
+      {%- endif %}
     {%- if stage.wait %}
-
     wait
     {%- endif %}
     {%- endfor %}
