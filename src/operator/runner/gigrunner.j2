@@ -4,10 +4,9 @@ set -o pipefail
 {%- from 'iterator-macro.j2' import realize_iterators %}
 
 {%- macro run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) %}
-    __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}'
+    __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' | __filterStageLogOutput ${_STAGE_COUNTER}
     ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/{{ STAGE_NAME }} ${__STAGE_COUNTER}
-    echo
-    echo "==> STAGE ${__STAGE_COUNTER} COMPLETE: {{ stage.name }} <=="
+    (echo && echo "==> STAGE ${__STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") | __filterStageLogOutput ${_STAGE_COUNTER}
 {%- endmacro %}
 
 function __gigrunner() {
@@ -39,16 +38,16 @@ function __gigrunner() {
       {%- if stage.iterate %}
         {{- realize_iterators(stage, STAGE_FUNCTION_NAME, RUN_PARALLEL) }}
       {%- else %}
-        __{{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} 2>&1 | __filterStageLogOutput ${_STAGE_COUNTER} {{ RUN_PARALLEL }}
+        __{{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} 2>&1 {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' 'SKIPPED' | __filterStageLogOutput ${_STAGE_COUNTER} {{ RUN_PARALLEL }}
+        __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' 'SKIPPED' | __filterStageLogOutput ${_STAGE_COUNTER}
     fi
     {%- else %}
       {%- if stage.iterate %}
     {{- realize_iterators(stage, STAGE_FUNCTION_NAME, RUN_PARALLEL) }}
       {%- else %}
-    __{{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} 2>&1 | __filterStageLogOutput ${_STAGE_COUNTER} {{ RUN_PARALLEL }}
+    __{{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} 2>&1 {{ RUN_PARALLEL }}
       {%- endif %}
     {%- endif %}
 

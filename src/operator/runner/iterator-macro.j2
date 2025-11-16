@@ -1,9 +1,9 @@
 {%- macro step_or_stage_exec(FUNCTION_NAME, ITER_ID, INDENT, RUN_PARALLEL, STAGE_NAME=None) %}
     {%- filter indent(width=INDENT) %}
     {%- if not STAGE_NAME %}
-    __{{ FUNCTION_NAME }} "${_STAGE_COUNTER}({{ ITER_ID }})" 2>&1 | __filterStageLogOutput "${_STAGE_COUNTER}({{ ITER_ID }})" {{ RUN_PARALLEL }}
+    __{{ FUNCTION_NAME }} "${_STAGE_COUNTER}({{ ITER_ID }})" 2>&1 {{ RUN_PARALLEL }}
     {%- else %}
-    __{{ FUNCTION_NAME }} "${_STEP_ID}({{ ITER_ID }})" 2>&1 | __filterStepLogOutput "${_STEP_COUNTER}({{ ITER_ID }})" {{ RUN_PARALLEL }}
+    __{{ FUNCTION_NAME }} "${_STEP_ID}({{ ITER_ID }})" 2>&1 | __filterStepLogOutput "${_STEP_ID}({{ ITER_ID }})" {{ RUN_PARALLEL }}
     {%- endif %}
     {%- endfilter %}
 {%- endmacro %}
@@ -49,7 +49,7 @@
                 __filterStageLogOutput "${_STAGE_COUNTER}({{ ITERATOR_ID.ID }})"
             {%- else %}
             __stepHeader "${__STEP_ID}({{ ITERATOR_ID.ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.interpreter }}' 'SKIPPED' | \
-                __filterStepLogOutput "${_STEP_COUNTER}({{ ITERATOR_ID.ID }})"
+                __filterStepLogOutput "${_STEP_ID}({{ ITERATOR_ID.ID }})"
             {%- endif %}
         fi
         {%- else %}

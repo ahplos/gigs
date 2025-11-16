@@ -27,7 +27,7 @@ function __saveInputParamsToEnv() {
         echo "${__HEADER_FOOTER_BORDER}"
         echo "${__HEADER_FOOTER_PREFIX} INPUT PARAMS RECEIVED:"
         echo "${__HEADER_FOOTER_PREFIX}"
-        echo "${INPUT_PARAMS}" | awk -v PREFIX="${__HEADER_FOOTER_PREFIX}" '{ print PREFIX "    " $0 }'
+        echo "${INPUT_PARAMS}" | sed "s/^/${__HEADER_FOOTER_PREFIX} /g"
         echo "${__HEADER_FOOTER_BORDER}"
 
         kubectl patch secret -n {{ gig_run.namespace }} {{ gig_run.name }} --patch 'data:' 2>&1 > /dev/null
@@ -74,36 +74,28 @@ function __generateSecretFilter() {
 function __filterStageLogOutput() {
     local __DELIM=$'\x1F'
     local _STAGE_COUNTER=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
-    while read -r LOGS
-    do
-        local NEW_LOGS=${_STAGE_COUNTER}
-        if [[ ${LOGS} =~ ^- ]]
-        then
-            NEW_LOGS="${NEW_LOGS}${LOGS}"
-        else
-            NEW_LOGS="${NEW_LOGS}-gr|$(__gigRunTime)  ${LOGS}"
-        fi
 
-        __loadEnv
-        local SECRETS_REGEX=$(__generateSecretFilter)
-        echo "${NEW_LOGS}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g"
-    done
+    LOGGING="$(cat)"
+    echo "$(__filterSecrets "${LOGGING}" | sed -e "/^${_STAGE_COUNTER}/! s/^/${_STAGE_COUNTER}-gr $(__gigRunTime) /")"
 }
 
 function __filterStepLogOutput() {
-    local _STEP_COUNTER=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
-    while read -r LOGS
-    do
-        echo "-${_STEP_COUNTER}|$(__gigRunTime)  ${LOGS}"
-    done
+    local __DELIM=$'\x1F'
+    local _STEP_ID=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
+
+    LOGGING="$(cat)"
+    echo "$(__filterSecrets "${LOGGING}" | sed "s/^/${_STEP_ID} $(__gigRunTime) /g")"
+}
+
+function __filterSecrets() {
+    __loadEnv
+    local SECRETS_REGEX=$(__generateSecretFilter)
+    echo "$(echo "${1}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g")"
 }
 
 function __gigRunTime() {
     local GIG_RUN_TIME=$(echo $(($(date +%s) - ${GIG_RUN_START_TIME})))
-    local GIG_RUN_TIME_HRS=$(printf '%02d' $((GIG_RUN_TIME/3600)))
-    local GIG_RUN_TIME_MIN=$(printf '%02d' $((GIG_RUN_TIME/60)))
-    local GIG_RUN_TIME_SEC=$(printf '%02d' $((GIG_RUN_TIME%60)))
-    echo "${GIG_RUN_TIME_HRS}:${GIG_RUN_TIME_MIN}:${GIG_RUN_TIME_SEC}"
+    echo $(printf '%02d:%02d:%02d' $((GIG_RUN_TIME/3600)) $((GIG_RUN_TIME/60)) $((GIG_RUN_TIME%60)) )
 }
 
 function __gigRunHeader() {
@@ -145,6 +137,7 @@ function __stageHeader() {
         echo
         echo "${__HEADER_FOOTER_BORDER}"
         echo "${__HEADER_FOOTER_PREFIX} STAGE ${STAGE_ID}: ${STAGE_NAME}"
+        echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: $$"
         echo "${__HEADER_FOOTER_PREFIX}       $(date)"
 
         if [[ ${STAGE_TYPE} == 'SKIPPED' ]]
@@ -170,7 +163,8 @@ function __stepHeader() {
         echo
         echo "${__HEADER_FOOTER_BORDER}"
         echo "${__HEADER_FOOTER_PREFIX} Step ${STEP_ID}: ${STAGE_NAME}:${STEP_NAME}"
-        echo "${__HEADER_FOOTER_PREFIX} Interpreter: ${STEP_INTERPRETER}"
+        echo "${__HEADER_FOOTER_PREFIX}       Interpreter: ${STEP_INTERPRETER}"
+        echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: ${BASHPID}"
 
         if [[ ${STAGE_TYPE} == 'HAS_SECRETS' ]]
         then

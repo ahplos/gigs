@@ -88,6 +88,7 @@ elCicdTemplates:
             name: $<GIG_MOD_SOURCE_DEMO>
       - name: $<DEMONSTRATE_PYTHON>
         when: env.LANG_PYTHON
+        parallel: true
         iterate:
           when: env.INDEX != 2
           loops:
@@ -153,6 +154,7 @@ elCicdTemplates:
               f.WriteString("\nTEST_MSG='This test msg was set using Go'")
             }
         - name: print-the-go-msg
+          parallel: true
           iterate:
             when: env.INDEX != 2
             loops:

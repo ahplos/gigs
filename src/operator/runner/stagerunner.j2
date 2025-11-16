@@ -59,17 +59,17 @@ function __{{ STAGE_FUNCTION_NAME }}() {
       {%- if step.iterate %}
         {{- realize_iterators(step, STEP_FUNCTION_NAME, RUN_PARALLEL, STAGE_NAME) }}
       {%- else %}
-        __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
+        __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_ID} {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' 'SKIPPED' | \
-            __filterStepLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
+        __stepHeader ${_STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' 'SKIPPED' | \
+            __filterStepLogOutput ${_STEP_ID}
     fi
       {%- else %}
         {%- if step.iterate %}
     {{- realize_iterators(step, STEP_FUNCTION_NAME, RUN_PARALLEL, STAGE_NAME) }}
         {%- else %}
-    __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_COUNTER} {{ RUN_PARALLEL }}
+    __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_ID} {{ RUN_PARALLEL }}
         {%- endif %}
       {%- endif %}
     {%- if stage.wait %}
