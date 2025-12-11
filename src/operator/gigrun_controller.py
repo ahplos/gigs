@@ -88,6 +88,9 @@ def on_create_gigrun(body, meta, patch, logger, **_):
 
     create_or_patch_inputValues_secret(gig_run)
 
+    if (gig.spec.maxThreadCount):
+        patch.spec.maxThreadCount = gig.spec.maxThreadCount
+
     patch.metadata[GIG_CONSTS.LABELS] = {
         GIG_CONSTS.JOB_NAME_SELECTOR_LABEL: job.name,
         GIG_CONSTS.RUN_STATE: GigRunState.RUNNING
@@ -186,7 +189,7 @@ def create_job(cron_job: CronJob, gig_run: GigRun, gig_mod: GigModule, gigrunner
     job.spec[GIG_CONSTS.BACKOFF_LIMIT] = 0
 
     container = get_container(job, cron_job.annotations.get(GigRun.CONTAINER_NAME_ANNOTATION, None))
-    configure_container(job, container, gig_run.name, gigrunner_secret, gig_def_secrets_map, gig_mod.spec.workDirSizeLimit)
+    configure_container(job, container, gig_run, gigrunner_secret, gig_def_secrets_map, gig_mod.spec.workDirSizeLimit)
 
     job.create()
     job.set_owner(cron_job)
@@ -205,7 +208,7 @@ def get_container(job: Job, name: str) -> Box:
 
     return containers[0]
 
-def configure_container(job: Job, container: Box, gig_run_name: str, gigrunner_secret: Secret, gig_def_secrets_map: dict, working_dir_size_limit: str):
+def configure_container(job: Job, container: Box, gig_run: GigRun, gigrunner_secret: Secret, gig_def_secrets_map: dict, working_dir_size_limit: str):
     mounted_volume = Box(name = GIG_RUN, emptyDir = Box(medium = 'Memory', sizeLimit = '50M'))
     job.spec.template.spec.setdefault(GIG_CONSTS.VOLUMES, BoxList()).append(mounted_volume)
 
@@ -229,7 +232,7 @@ def configure_container(job: Job, container: Box, gig_run_name: str, gigrunner_s
         secret_volume_mount = Box(name = secret_vol_name, mountPath = f'{mountedDirectory}/{secret_dir_name}')
         container[GIG_CONSTS.VOLUME_MOUNTS].append(secret_volume_mount)
 
-    create_env_vars(container, gig_run_name)
+    create_env_vars(container, gig_run)
 
     container['imagePullPolicy'] = 'Always'
     set_job_working_dir(container, job, working_dir_size_limit)
@@ -237,14 +240,13 @@ def configure_container(job: Job, container: Box, gig_run_name: str, gigrunner_s
     container.command = BoxList(['bash', '-ce'])
     container.args = BoxList([f'cp -rL {mountedDirectory}/. {GIG_RUN_HOME}/; {GIG_RUN_HOME}/{GIG_START_SH}'])
 
-def create_env_vars(container: Box, gig_run_name: str):
+def create_env_vars(container: Box, gig_run: GigRun):
     env = BoxList()
     env.append(Box(name = 'GIG_RUN_HOME', value = GIG_RUN_HOME))
     env.append(Box(name = 'GIG_RUN_WORKING_DIR', value = GIG_RUN_WORKING_DIR))
-    env.append(Box(name = 'GIG_RUN_NAME', value = gig_run_name))
-    env.append(Box(name = 'POD_NAME', valueFrom = Box(fieldRef = Box(fieldPath = f'{GIG_CONSTS.METADATA}.{GIG_CONSTS.NAME}'))))
-    env.append(Box(name = 'GIG_RUN_NAMESPACE', valueFrom = Box(fieldRef = Box(fieldPath = f'{GIG_CONSTS.METADATA}.{GIG_CONSTS.NAMESPACE}'))))
-    env.append(Box(name = 'POD_NAMESPACE', valueFrom = Box(fieldRef = Box(fieldPath = f'{GIG_CONSTS.METADATA}.{GIG_CONSTS.NAMESPACE}'))))
+    env.append(Box(name = 'GIG_RUN_NAME', value = gig_run.name))
+    env.append(Box(name = 'GIG_RUN_NAMESPACE', value = gig_run.namespace))
+    env.append(Box(name = 'GIG_MAX_THREAD_COUNT', value = str(gig_run.spec.maxThreadCount)))
     container.setdefault(GIG_CONSTS.ENV, env)
 
 def set_job_working_dir(container: Box, job: Job, working_dir_size_limit):

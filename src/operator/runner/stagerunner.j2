@@ -2,10 +2,10 @@
 # stagerunner
 set -o pipefail
 {%- from 'iterator-macro.j2' import realize_iterators %}
-{%- set STAGE_FUNCTION_NAME = '{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
+{%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
 
 {%- macro run_step(stage, step, HAS_SECRETS, STAGE_NAME, STEP_NAME, STEP_RUN_DIR, STEP_RUN_NAME) %}
-    __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' {{ HAS_SECRETS }}
+    __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' ${BASHPID} {{ HAS_SECRETS }}
     {%- set STEP_RUN_NAME = '{}_{}'.format(STAGE_NAME, STEP_NAME) %}
     {{ '${{GIG_RUN_HOME}}/{}/{}_interpreter.sh'.format(STEP_RUN_DIR, STEP_RUN_NAME) }}
     echo
@@ -13,7 +13,7 @@ set -o pipefail
 {%- endmacro %}
 
 _STAGE_COUNTER=${1}
-function __{{ STAGE_FUNCTION_NAME }}() {
+function {{ STAGE_FUNCTION_NAME }}() {
     local _STEP_COUNTER=0
     {%- for step in stage.steps %}
       {%- set STEP_NAME = step.name if not (step.stepRef and step.stepRef.name) else step.stepRef.name %}
@@ -28,10 +28,12 @@ function __{{ STAGE_FUNCTION_NAME }}() {
       {%- set STEP_GIG_MOD_NAME = gig_mod.name if not step.stepRef else step.stepRef.gigModuleRef.name %}
       {%- set STEP_RUN_DIR = '{}_{}'.format(STEP_GIG_MOD_NAMESPACE, STEP_GIG_MOD_NAME) %}
 
-      {%- set RUN_PARALLEL = '&' if step.parallel else '' %}
+      {%- set RUN_PARALLEL = 'parallel --bg --halt-on-error now,fail=1 --env __EXP_STEP_ID -j${GIG_MAX_THREAD_COUNT} ' if step.parallel else '' %}
+      {%- set SINGLE_QUOTE = "'" if RUN_PARALLEL else '' %}
 
       {%- set STEP_FUNCTION_NAME = '{}_{}'.format(STAGE_FUNCTION_NAME, step.name) %}
-    function __{{ STEP_FUNCTION_NAME }}() {
+
+    function {{ STEP_FUNCTION_NAME }}() {
         local __STEP_ID=${1}
 
         {%- if step.iterate and step.iterate.when %}
@@ -41,7 +43,7 @@ function __{{ STAGE_FUNCTION_NAME }}() {
             {{- run_step(stage, step, HAS_SECRETS, STAGE_NAME, STEP_NAME, STEP_RUN_DIR, STEP_RUN_NAME) }}
             {%- endfilter %}
         else
-            echo "==> STAGE ${__STAGE_COUNTER} ITERATION SKIPPED: {{ stage.name }} <=="
+            echo "==> STAGE ${_STAGE_COUNTER} ITERATION SKIPPED: {{ stage.name }} <=="
         fi
         {%- else %}
         {%- filter indent(width=4) %}
@@ -53,13 +55,15 @@ function __{{ STAGE_FUNCTION_NAME }}() {
     let _STEP_COUNTER+=1
     local _STEP_ID="${_STAGE_COUNTER}-${_STEP_COUNTER}"
     __loadEnv
+    export -f {{ STEP_FUNCTION_NAME }}
+    export __EXP_STEP_ID="${_STEP_ID}"
       {%- if step.when %}
     if [[ $(__testWhen '{{ step.when }}') != 'false' ]]
     then
       {%- if step.iterate %}
         {{- realize_iterators(step, STEP_FUNCTION_NAME, RUN_PARALLEL, STAGE_NAME) }}
       {%- else %}
-        __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_ID} {{ RUN_PARALLEL }}
+        {{ RUN_PARALLEL }}{{ SINGLE_QUOTE }}{{ STEP_FUNCTION_NAME }} ${__EXP_STEP_ID} 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}{{ SINGLE_QUOTE }}
       {%- endif %}
     else
         __stepHeader ${_STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' 'SKIPPED' | \
@@ -69,13 +73,15 @@ function __{{ STAGE_FUNCTION_NAME }}() {
         {%- if step.iterate %}
     {{- realize_iterators(step, STEP_FUNCTION_NAME, RUN_PARALLEL, STAGE_NAME) }}
         {%- else %}
-    __{{ STEP_FUNCTION_NAME }} ${_STEP_ID} 2>&1 | __filterStepLogOutput ${_STEP_ID} {{ RUN_PARALLEL }}
+    {{ RUN_PARALLEL }}{{ SINGLE_QUOTE }}{{ STEP_FUNCTION_NAME }} ${__EXP_STEP_ID} 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}{{ SINGLE_QUOTE }}
         {%- endif %}
       {%- endif %}
-    {%- if stage.wait %}
-    wait
+
+    {%- if step.wait %}
+
+    parallel --wait
     {%- endif %}
     {%- endfor %}
 }
 
-__{{ STAGE_FUNCTION_NAME }}
+{{ STAGE_FUNCTION_NAME }}

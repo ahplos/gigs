@@ -1,22 +1,24 @@
-{%- macro step_or_stage_exec(FUNCTION_NAME, ITER_ID, INDENT, RUN_PARALLEL, STAGE_NAME=None) %}
-    {%- filter indent(width=INDENT) %}
+{%- macro step_or_stage_exec(FUNCTION_NAME, ITER_ID, RUN_PARALLEL, STAGE_NAME=None) %}
+    {%- set SINGLE_QUOTE = "'" if RUN_PARALLEL else '' %}
     {%- if not STAGE_NAME %}
-    __{{ FUNCTION_NAME }} "${_STAGE_COUNTER}({{ ITER_ID }})" 2>&1 {{ RUN_PARALLEL }}
+    export __EXP_STAGE_ID="${_STAGE_COUNTER}({{ ITER_ID }})"
+    {{ RUN_PARALLEL }}{{ SINGLE_QUOTE }}{{ FUNCTION_NAME }} "${__EXP_STAGE_ID}" 2>&1{{ SINGLE_QUOTE }}
     {%- else %}
-    __{{ FUNCTION_NAME }} "${_STEP_ID}({{ ITER_ID }})" 2>&1 | __filterStepLogOutput "${_STEP_ID}({{ ITER_ID }})" {{ RUN_PARALLEL }}
+    export __EXP_STEP_ID="${_STEP_ID}({{ ITER_ID }})"
+    {{ RUN_PARALLEL }}{{ SINGLE_QUOTE }}{{ FUNCTION_NAME }} "${__EXP_STEP_ID}" 2>&1 | __filterStepLogOutput "${__EXP_STEP_ID}"{{ SINGLE_QUOTE }}
     {%- endif %}
-    {%- endfilter %}
 {%- endmacro %}
 
 {%- macro realize_iterators(stage_or_step, FUNCTION_NAME, RUN_PARALLEL, STAGE_NAME=None) %}
 {%- set INDENT = 4 %}
+{%- set INDENT_MOD = 0 if stage_or_step.when else 1 %}
 {%- set ITERATOR_ID = namespace(ID=[]) %}
 {%- for iter in stage_or_step.iterate.loops %}
     {%- set ITERATOR_ID.ID = ITERATOR_ID.ID + ['${{{}_COUNTER}}'.format(iter.name)] %}
 {%- endfor %}
 {%- set ITERATOR_ID = namespace(ID=ITERATOR_ID.ID|join('-')) %}
 {%- for iter in stage_or_step.iterate.loops %}
-    {%- filter indent(width=((loop.index) * INDENT)) %}
+    {%- filter indent(width=(loop.index - INDENT_MOD)* INDENT ) %}
     {%- if iter.envVar %}
     OLD_IFS=${IFS}
     IFS='{{ iter.envVar.delim }}' read -ra {{ iter.name }}_ARRAY <<< "${{ iter.envVar.name}}"
@@ -35,14 +37,16 @@
     for {{ iter.name }} in {{ VALUES }}
     do
     {%- endfilter %}
-    {%- set INDENT = INDENT + 4 %}
 {%- endfor %}
-{%- set FUNCTION_INDENT = (stage_or_step.iterate|length) * INDENT %}
-{%- filter indent(width=FUNCTION_INDENT) %}
-        {%- if stage_or_step.iterate.when %}
+
+{%- set FUNCTION_INDENT = (stage_or_step.iterate|length - INDENT_MOD) * INDENT %}
+{%- if stage_or_step.iterate.when %}
+  {%- filter indent(width=FUNCTION_INDENT) %}
         if [[ $(__testWhen '{{ stage_or_step.iterate.when }}') != 'false' ]]
         then
-            {{- step_or_stage_exec(FUNCTION_NAME, ITERATOR_ID.ID, FUNCTION_INDENT, RUN_PARALLEL, STAGE_NAME) }}
+            {%- filter indent(width=FUNCTION_INDENT + INDENT) %}
+            {{- step_or_stage_exec(FUNCTION_NAME, ITERATOR_ID.ID, RUN_PARALLEL, STAGE_NAME) }}
+            {%- endfilter %}
         else
             {%- if not STAGE_NAME %}
             __stageHeader "${__STAGE_COUNTER}({{ ITERATOR_ID.ID }})" '{{ stage_or_step.name }}' 'SKIPPED' 2>&1 | \
@@ -52,15 +56,18 @@
                 __filterStepLogOutput "${_STEP_ID}({{ ITERATOR_ID.ID }})"
             {%- endif %}
         fi
-        {%- else %}
-            {{- step_or_stage_exec(FUNCTION_NAME, ITERATOR_ID.ID, FUNCTION_INDENT, RUN_PARALLEL, STAGE_NAME) }}
-        {%- endif %}
-{%- endfilter %}
+  {%- endfilter %}
+{%- else %}
+  {%- filter indent(width=FUNCTION_INDENT + INDENT) %}
+    {{- step_or_stage_exec(FUNCTION_NAME, ITERATOR_ID.ID, RUN_PARALLEL, STAGE_NAME) }}
+  {%- endfilter %}
+{%- endif %}
+
+{%- set INDENT_MOD = 1 if stage_or_step.when else 0 %}
 {%- for iter in (stage_or_step.iterate.loops|reverse) %}
-    {%- filter indent(width=(((loop.length + 1) - loop.index) * INDENT)) %}
+    {%- filter indent(width=(((loop.length + INDENT_MOD) - loop.index) * INDENT)) %}
         let {{ '{}_COUNTER'.format(iter.name) }}+=1
     done
     {%- endfilter %}
-    {%- set INDENT = INDENT - 4 %}
 {%- endfor %}
 {%- endmacro %}

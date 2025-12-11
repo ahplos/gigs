@@ -1,5 +1,5 @@
 # TEMPLATE FOR A DEFAULT GIG RUNNER
-FROM registry.access.redhat.com/ubi9-minimal:latest
+FROM registry.access.redhat.com/ubi9/python-312-minimal:latest
 USER root
 
 ARG OC_TAR_GZ_FILE=openshift-client-linux.tar.gz
@@ -7,7 +7,9 @@ ARG OC_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/
 
 RUN <<EOF
     set -ex
-    microdnf install --assumeyes --nodocs jq go nodejs python3.12 pip tar gzip procps-ng
+    rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    microdnf install --assumeyes --nodocs jq go nodejs tar gzip parallel
+    yes 'will cite' | parallel --citation
     microdnf clean all
     curl -fsSLo /tmp/${OC_TAR_GZ_FILE} ${OC_CLI_URL}
     tar -C /usr/local/bin/ -xf /tmp/${OC_TAR_GZ_FILE} 'oc' 'kubectl'

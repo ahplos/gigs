@@ -57,6 +57,7 @@ elCicdTemplates:
     DEMONSTRATE_GO: demonstrate-go
     DEMONSTRATE_PYTHON: demonstrate-python
     PRINT_THE_DEMO_MSG: print-the-demo-msg
+
   elCicdDefs-$<GIG_MOD_DEMO>:
     GIG_MOD_SPECS:
       gigFormRef:
@@ -67,9 +68,24 @@ elCicdTemplates:
       secretVars:
       - CLUSTER_ADMIN_PASSWORD
       stages:
+      - name: prove-parallel-stage
+        description: Prove parallel processing works by making this step take longer than the rest of the Gig.
+        parallel: true
+        steps:
+        - name: sleep-in-the-background-in-first-stage
+          sourceCode: |-
+            sleep 40
+        - name: print-message-from-first-stage
+          sourceCode: |-
+            echo 'PROVING PARALLEL PROCESSING BY STAGE WORKS BY PRINTING SECOOND STEP OF FIRST STAGE AT THE END'
       - name: login
         description: Login into cluster as cluster admin, and retrieve Gig supported Step interpreters.
         steps:
+        - name: prove-parallel-step
+          parallel: true
+          sourceCode: |-
+            sleep 45
+            echo 'PROVING PARALLEL PROCESSING BY STEP WORKS BY PRINTING SECOOND STEP OF FIRST STAGE AT THE END'
         - name: cluster-admin-login.sh
           sourceCode: |-
             SOME_VAR='Testing passing variables across stages and steps through the environment'
@@ -103,6 +119,7 @@ elCicdTemplates:
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
+
   elCicdDefs-$<GIG_MOD_ASK_USER>:
     GIG_MOD_SPECS:
       mode: Library
@@ -132,6 +149,7 @@ elCicdTemplates:
                   - inputType: Checkbox
                 var: LANG_{{ LANG|upper }}
               {%- endfor %}
+
   elCicdDefs-$<GIG_MOD_SOURCE_DEMO>:
     GIG_MOD_SPECS:
       mode: Library
@@ -185,6 +203,7 @@ elCicdTemplates:
               name: $<GIG_MOD_PRINT_MSG>
             stage: $<PRINT_THE_DEMO_MSG>
             name: $<PRINT_THE_DEMO_MSG>
+
   elCicdDefs-$<GIG_MOD_PRINT_MSG>:
     GIG_MOD_SPECS:
       mode: Library

@@ -397,6 +397,8 @@ elCicdDefs-$<GIG_MODULE>:
                       the step is processed.
                   workDir:
                     type: string
+      maxThreadCount:
+        type: integer
       workDirSizeLimit:
         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
         x-kubernetes-int-or-string: true
@@ -424,6 +426,8 @@ elCicdDefs-$<GIG>:
         required:
         - name
       gigFormRef: $<GIG_FORM_REF>
+      maxThreadCount:
+        type: integer
     required:
     - cronJobRef
     - gigModuleRef
@@ -480,6 +484,9 @@ elCicdDefs-$<GIG_RUN>:
         properties:
           additionalProperties:
             type: string
+      maxThreadCount:
+        type: integer
+        default: 5
       runState: $<RUN_STATE>
       startedBy:
         type: string
@@ -490,6 +497,7 @@ elCicdDefs-$<GIG_RUN>:
           message: startedBy is immutable
     required:
     - gigRef
+    - maxThreadCount
   STATUS_DEFINITION:
     type: object
     properties:

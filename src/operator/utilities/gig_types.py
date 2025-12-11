@@ -17,6 +17,8 @@ class GigModule(new_class('GigModule', version=f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/{
 
     GIG_MODULE_ANNOTATION: str = f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/gigmodule'
 
+    GIG_MAX_THREAD_COUNT_ANNOTATION: str = f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/gigmodule'
+
     group: str = GIG_CONSTS.BATCH_AHPLOS_ORG
 
     def __create_box(self, value: Any = {}):
@@ -59,6 +61,8 @@ class GigForm(new_class('GigForm', version=f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/{GIG_
         self._raw = Box(value, default_box=True, default_box_attr=None)
 
 class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
+
+    MAX_THREAD_COUNT_ANNOTATION = f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/maxThreadCount'
 
     group: str = GIG_CONSTS.BATCH_AHPLOS_ORG
 

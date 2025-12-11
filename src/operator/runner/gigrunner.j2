@@ -5,7 +5,7 @@ set -o pipefail
 
 {%- macro run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) %}
     __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' | __filterStageLogOutput ${_STAGE_COUNTER}
-    ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/{{ STAGE_NAME }} ${__STAGE_COUNTER}
+    . ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/{{ STAGE_NAME }} ${__STAGE_COUNTER}
     (echo && echo "==> STAGE ${__STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") | __filterStageLogOutput ${_STAGE_COUNTER}
 {%- endmacro %}
 
@@ -20,10 +20,12 @@ function __gigrunner() {
         if not (stage.stageRef and stage.stageRef.gigModuleRef.namespace) else stage.stageRef.gigModuleRef.namespace %}
       {%- set STAGE_GIG_MOD_NAME = gig_mod.name if not stage.stageRef else stage.stageRef.gigModuleRef.name %}
 
-      {%- set STAGE_FUNCTION_NAME = '{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
-      {%- set RUN_PARALLEL = '&' if stage.parallel else '' %}
+      {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
 
-    function __{{ STAGE_FUNCTION_NAME }}() {
+      {%- set RUN_PARALLEL = 'parallel --bg --halt-on-error now,fail=1 --env __EXP_STAGE_ID -j${GIG_MAX_THREAD_COUNT} ' if stage.parallel else '' %}
+      {%- set SINGLE_QUOTE = "'" if RUN_PARALLEL else '' %}
+
+    function {{ STAGE_FUNCTION_NAME }}() {
         local __STAGE_COUNTER=${1}
         {%- filter indent(width=4) %}
         {{- run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) }}
@@ -32,28 +34,30 @@ function __gigrunner() {
 
     let _STAGE_COUNTER+=1
     __loadEnv
+    export -f {{ STAGE_FUNCTION_NAME }}
+    export __EXP_STAGE_ID="${_STAGE_COUNTER}"
     {%- if stage.when %}
     if [[ $(__testWhen '{{ stage.when if stage.when else '' }}') != 'false' ]]
     then
       {%- if stage.iterate %}
         {{- realize_iterators(stage, STAGE_FUNCTION_NAME, RUN_PARALLEL) }}
       {%- else %}
-        __{{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} 2>&1 {{ RUN_PARALLEL }}
+         {{ RUN_PARALLEL }}{{ SINGLE_QUOTE }}{{ STAGE_FUNCTION_NAME }} ${__EXP_STAGE_ID} 2>&1{{ SINGLE_QUOTE }}
       {%- endif %}
     else
-        __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' 'SKIPPED' | __filterStageLogOutput ${_STAGE_COUNTER}
+        __stageHeader ${__EXP_STAGE_ID} '{{ stage.name }}' 'SKIPPED' | __filterStageLogOutput ${__EXP_STAGE_ID}
     fi
     {%- else %}
       {%- if stage.iterate %}
     {{- realize_iterators(stage, STAGE_FUNCTION_NAME, RUN_PARALLEL) }}
       {%- else %}
-    __{{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} 2>&1 {{ RUN_PARALLEL }}
+    {{ RUN_PARALLEL }}{{ SINGLE_QUOTE }}{{ STAGE_FUNCTION_NAME }} ${__EXP_STAGE_ID} 2>&1{{ SINGLE_QUOTE }}
       {%- endif %}
     {%- endif %}
 
-    {%- if stage.wait %}
+    {%- if stage.wait or loop.index == gig_mod.spec.stages|length %}
 
-    wait
+    parallel --wait
     {%- endif %}
     {%- endfor %}
 }

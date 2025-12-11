@@ -38,7 +38,7 @@ function __waitForUserInput() {
     export USER_INPUT_PATCH=${1}
     python ${GIG_RUN_HOME}/jinja_stage.py ${GIG_RUN_HOME}/user_input_patch.j2 user_input_patch.yaml
 
-    kubectl patch gigrun ${GIG_RUN_NAME} -n ${POD_NAMESPACE} --patch-file user_input_patch.yaml --type='merge' 2>&1 > /dev/null
+    kubectl patch gigrun ${GIG_RUN_NAME} -n ${GIG_RUN_NAMESPACE} --patch-file user_input_patch.yaml --type='merge' 2>&1 > /dev/null
 
     echo 'Waiting for user input...'
 
@@ -133,11 +133,12 @@ function __stageHeader() {
     local STAGE_NAME=${2}
     local STAGE_TYPE="${3}"
 
+    CURRENT_PID=$$
     local STAGE_HEADER=$(
         echo
         echo "${__HEADER_FOOTER_BORDER}"
         echo "${__HEADER_FOOTER_PREFIX} STAGE ${STAGE_ID}: ${STAGE_NAME}"
-        echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: $$"
+        echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: ${CURRENT_PID}"
         echo "${__HEADER_FOOTER_PREFIX}       $(date)"
 
         if [[ ${STAGE_TYPE} == 'SKIPPED' ]]
@@ -159,12 +160,14 @@ function __stepHeader() {
     local STEP_INTERPRETER=${4}
     local STAGE_TYPE=${5}
 
+    CURRENT_PID=$$
     local STEP_HEADER=$(
         echo
         echo "${__HEADER_FOOTER_BORDER}"
         echo "${__HEADER_FOOTER_PREFIX} Step ${STEP_ID}: ${STAGE_NAME}:${STEP_NAME}"
         echo "${__HEADER_FOOTER_PREFIX}       Interpreter: ${STEP_INTERPRETER}"
-        echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: ${BASHPID}"
+        echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: ${CURRENT_PID}"
+        echo "${__HEADER_FOOTER_PREFIX}       $(date)"
 
         if [[ ${STAGE_TYPE} == 'HAS_SECRETS' ]]
         then

@@ -62,6 +62,10 @@ def on_create_cronjob(body, meta, annotations, logger, **_):
     gig.spec.gigModuleRef.name = gig_mod.name
     gig.spec.gigModuleRef.namespace = gig_mod.namespace
 
+    maxThreadCount = annotations[Gig.MAX_THREAD_COUNT_ANNOTATION]
+    maxThreadCount = gig_mod.spec.maxThreadCount  if gig_mod.spec.maxThreadCount else maxThreadCount
+    gig.spec.maxThreadCount = int(maxThreadCount) if maxThreadCount else None
+
     gig_form_ref = get_name_namespace_from_anno(annotations.get(GigForm.GIG_LAUNCHFORM_ANNOTATION))
     if (gig_form_ref or gig_mod.spec.gigFormRef):
         gig.spec.gigFormRef.name = gig_form_ref.name if gig_form_ref else gig_mod.spec.gigFormRef
