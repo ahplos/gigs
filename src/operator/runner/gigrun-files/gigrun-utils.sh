@@ -49,6 +49,13 @@ function __waitForUserInput() {
     echo 'User input received; continuing...'
 }
 
+function __checkMaxThreads() {
+    local MAX_THREADS=${1}
+    while [[ $(jobs -r | wc -l) -ge ${MAX_THREADS} ]]; do
+        sleep 0.1
+    done
+}
+
 function __checkForAbortSignal() {
     PID=${1}
     kubectl wait gigrun/{{ gig_run.name }} -n {{ gig_run.namespace }} \
@@ -131,9 +138,9 @@ function __gigRunFooter() {
 function __stageHeader() {
     local STAGE_ID=${1}
     local STAGE_NAME=${2}
-    local STAGE_TYPE="${3}"
+    local CURRENT_PID="${3}"
+    local STAGE_TYPE="${4}"
 
-    CURRENT_PID=$$
     local STAGE_HEADER=$(
         echo
         echo "${__HEADER_FOOTER_BORDER}"
@@ -158,9 +165,9 @@ function __stepHeader() {
     local STAGE_NAME=${2}
     local STEP_NAME=${3}
     local STEP_INTERPRETER=${4}
-    local STAGE_TYPE=${5}
+    local CURRENT_PID=${5}
+    local STAGE_TYPE=${6}
 
-    CURRENT_PID=$$
     local STEP_HEADER=$(
         echo
         echo "${__HEADER_FOOTER_BORDER}"

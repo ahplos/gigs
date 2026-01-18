@@ -5,7 +5,7 @@ elCicdDefs:
 
   AHPLOS_GIGS_OPERATOR: ahplos-gigs-operator
 
-  AHPLOS_GIGS_IMAGE_PULL_SECRET: gig-demo-registry-credentials
+  AHPLOS_GIGS_IMAGE_PULL_SECRET: gig-registry-credentials
 
   IMAGE: dev-demo-image-registry.apps-crc.testing/ahplos-gigs-test-runner:latest
 

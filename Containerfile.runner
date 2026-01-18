@@ -7,9 +7,7 @@ ARG OC_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/
 
 RUN <<EOF
     set -ex
-    rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-    microdnf install --assumeyes --nodocs jq go nodejs tar gzip parallel
-    yes 'will cite' | parallel --citation
+    microdnf install --assumeyes --nodocs jq go nodejs tar gzip
     microdnf clean all
     curl -fsSLo /tmp/${OC_TAR_GZ_FILE} ${OC_CLI_URL}
     tar -C /usr/local/bin/ -xf /tmp/${OC_TAR_GZ_FILE} 'oc' 'kubectl'

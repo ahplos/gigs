@@ -22,8 +22,8 @@ fi
 
 ${GIG_RUN_HOME}/{{ gig_mod.namespace }}_{{ gig_mod.name }}/gigrunner.sh >> gig.log &
 PID=$!
+echo ${PID} > .__ROOT_PID
 __checkForAbortSignal ${PID} | __filterStageLogOutput ${LOGGING_END_CHAR} | tee gig.log &
 tail -q --pid ${PID} -f gig.log -n +1 2> /dev/null
 
-exit $([ -f .stagerunner_exit_status ] && cat .stagerunner_exit_status)
-
+exit $(cat .stagerunner_exit_status 2>/dev/null || echo 1)

@@ -62,8 +62,6 @@ class GigForm(new_class('GigForm', version=f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/{GIG_
 
 class Gig(new_class('Gig', version=f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
 
-    MAX_THREAD_COUNT_ANNOTATION = f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/maxThreadCount'
-
     group: str = GIG_CONSTS.BATCH_AHPLOS_ORG
 
     def __create_box(self, value: Any = {}):

@@ -1,15 +1,24 @@
-{%- macro step_or_stage_exec(FUNCTION_NAME, ITER_ID, RUN_PARALLEL, STAGE_NAME=None) %}
-    {%- set SINGLE_QUOTE = "'" if RUN_PARALLEL else '' %}
+{%- macro check_max_threads(MAX_THREADS) %}
+  {%- if RUN_PARALLEL %}
+__checkMaxThreads ${MAX_THREADS}
+  {%- endif %}
+{%- endmacro %}
+
+{%- macro step_or_stage_exec(stage_or_step, FUNCTION_NAME, ITER_ID, STAGE_NAME=None) %}
+    {%- set RUN_PARALLEL = '&' if (stage_or_step.maxParallel and stage_or_step.maxParallel > 0) else '' %}
+    {%- if stage_or_step.maxParallel and stage_or_step.maxParallel > 0 %}
+    {{ check_max_threads(stage_or_step.maxParallel) }}
+    {%- endif %}
     {%- if not STAGE_NAME %}
     export __EXP_STAGE_ID="${_STAGE_COUNTER}({{ ITER_ID }})"
-    {{ RUN_PARALLEL }}{{ SINGLE_QUOTE }}{{ FUNCTION_NAME }} "${__EXP_STAGE_ID}" 2>&1{{ SINGLE_QUOTE }}
+    {{ FUNCTION_NAME }} "${__EXP_STAGE_ID}" 2>&1 {{ RUN_PARALLEL }}
     {%- else %}
     export __EXP_STEP_ID="${_STEP_ID}({{ ITER_ID }})"
-    {{ RUN_PARALLEL }}{{ SINGLE_QUOTE }}{{ FUNCTION_NAME }} "${__EXP_STEP_ID}" 2>&1 | __filterStepLogOutput "${__EXP_STEP_ID}"{{ SINGLE_QUOTE }}
+    {{ FUNCTION_NAME }} "${__EXP_STEP_ID}" 2>&1 | __filterStepLogOutput "${__EXP_STEP_ID}" {{ RUN_PARALLEL }}
     {%- endif %}
 {%- endmacro %}
 
-{%- macro realize_iterators(stage_or_step, FUNCTION_NAME, RUN_PARALLEL, STAGE_NAME=None) %}
+{%- macro realize_iterators(stage_or_step, FUNCTION_NAME, STAGE_NAME=None) %}
 {%- set INDENT = 4 %}
 {%- set INDENT_MOD = 0 if stage_or_step.when else 1 %}
 {%- set ITERATOR_ID = namespace(ID=[]) %}
@@ -45,7 +54,7 @@
         if [[ $(__testWhen '{{ stage_or_step.iterate.when }}') != 'false' ]]
         then
             {%- filter indent(width=FUNCTION_INDENT + INDENT) %}
-            {{- step_or_stage_exec(FUNCTION_NAME, ITERATOR_ID.ID, RUN_PARALLEL, STAGE_NAME) }}
+            {{- step_or_stage_exec(stage_or_step, FUNCTION_NAME, ITERATOR_ID.ID, STAGE_NAME) }}
             {%- endfilter %}
         else
             {%- if not STAGE_NAME %}
@@ -59,7 +68,7 @@
   {%- endfilter %}
 {%- else %}
   {%- filter indent(width=FUNCTION_INDENT + INDENT) %}
-    {{- step_or_stage_exec(FUNCTION_NAME, ITERATOR_ID.ID, RUN_PARALLEL, STAGE_NAME) }}
+    {{- step_or_stage_exec(stage_or_step, FUNCTION_NAME, ITERATOR_ID.ID, STAGE_NAME) }}
   {%- endfilter %}
 {%- endif %}
 

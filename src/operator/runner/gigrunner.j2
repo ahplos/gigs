@@ -1,11 +1,12 @@
 #!/usr/bin/bash -e
 # gigrunner
 set -o pipefail
-{%- from 'iterator-macro.j2' import realize_iterators %}
+{%- import 'iterator-macro.j2' as iter_macros %}
 
 {%- macro run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) %}
-    __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' | __filterStageLogOutput ${_STAGE_COUNTER}
-    . ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/{{ STAGE_NAME }} ${__STAGE_COUNTER}
+    local CURRENT_PID=${BASHPID}
+    __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' ${CURRENT_PID} | __filterStageLogOutput ${_STAGE_COUNTER}
+    . ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stage__{{ STAGE_NAME }} ${__STAGE_COUNTER}
     (echo && echo "==> STAGE ${__STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") | __filterStageLogOutput ${_STAGE_COUNTER}
 {%- endmacro %}
 
@@ -22,8 +23,7 @@ function __gigrunner() {
 
       {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
 
-      {%- set RUN_PARALLEL = 'parallel --bg --halt-on-error now,fail=1 --env __EXP_STAGE_ID -j${GIG_MAX_THREAD_COUNT} ' if stage.parallel else '' %}
-      {%- set SINGLE_QUOTE = "'" if RUN_PARALLEL else '' %}
+      {%- set RUN_PARALLEL = '&' if (stage.maxParallel and stage.maxParallel > 0) else '' %}
 
     function {{ STAGE_FUNCTION_NAME }}() {
         local __STAGE_COUNTER=${1}
@@ -40,24 +40,26 @@ function __gigrunner() {
     if [[ $(__testWhen '{{ stage.when if stage.when else '' }}') != 'false' ]]
     then
       {%- if stage.iterate %}
-        {{- realize_iterators(stage, STAGE_FUNCTION_NAME, RUN_PARALLEL) }}
+        {{- iter_macros.realize_iterators(stage, STAGE_FUNCTION_NAME) }}
       {%- else %}
-         {{ RUN_PARALLEL }}{{ SINGLE_QUOTE }}{{ STAGE_FUNCTION_NAME }} ${__EXP_STAGE_ID} 2>&1{{ SINGLE_QUOTE }}
+        {{ iter_macros.check_max_threads(stage.maxParallel) }}
+        {{ STAGE_FUNCTION_NAME }} ${__EXP_STAGE_ID} 2>&1 {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stageHeader ${__EXP_STAGE_ID} '{{ stage.name }}' 'SKIPPED' | __filterStageLogOutput ${__EXP_STAGE_ID}
+        __stageHeader ${__EXP_STAGE_ID} '{{ stage.name }}' ${BASHPID} 'SKIPPED' | __filterStageLogOutput ${__EXP_STAGE_ID}
     fi
     {%- else %}
       {%- if stage.iterate %}
-    {{- realize_iterators(stage, STAGE_FUNCTION_NAME, RUN_PARALLEL) }}
+    {{- iter_macros.realize_iterators(stage, STAGE_FUNCTION_NAME) }}
       {%- else %}
-    {{ RUN_PARALLEL }}{{ SINGLE_QUOTE }}{{ STAGE_FUNCTION_NAME }} ${__EXP_STAGE_ID} 2>&1{{ SINGLE_QUOTE }}
+    {{ iter_macros.check_max_threads(stage.maxParallel) }}
+    {{ STAGE_FUNCTION_NAME }} ${__EXP_STAGE_ID} 2>&1 {{ RUN_PARALLEL }}
       {%- endif %}
     {%- endif %}
 
     {%- if stage.wait or loop.index == gig_mod.spec.stages|length %}
 
-    parallel --wait
+    wait
     {%- endif %}
     {%- endfor %}
 }

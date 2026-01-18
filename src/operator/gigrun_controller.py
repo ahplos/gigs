@@ -88,9 +88,6 @@ def on_create_gigrun(body, meta, patch, logger, **_):
 
     create_or_patch_inputValues_secret(gig_run)
 
-    if (gig.spec.maxThreadCount):
-        patch.spec.maxThreadCount = gig.spec.maxThreadCount
-
     patch.metadata[GIG_CONSTS.LABELS] = {
         GIG_CONSTS.JOB_NAME_SELECTOR_LABEL: job.name,
         GIG_CONSTS.RUN_STATE: GigRunState.RUNNING
@@ -246,7 +243,6 @@ def create_env_vars(container: Box, gig_run: GigRun):
     env.append(Box(name = 'GIG_RUN_WORKING_DIR', value = GIG_RUN_WORKING_DIR))
     env.append(Box(name = 'GIG_RUN_NAME', value = gig_run.name))
     env.append(Box(name = 'GIG_RUN_NAMESPACE', value = gig_run.namespace))
-    env.append(Box(name = 'GIG_MAX_THREAD_COUNT', value = str(gig_run.spec.maxThreadCount)))
     container.setdefault(GIG_CONSTS.ENV, env)
 
 def set_job_working_dir(container: Box, job: Job, working_dir_size_limit):

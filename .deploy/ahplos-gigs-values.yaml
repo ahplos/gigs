@@ -6,7 +6,7 @@ elCicdDefs:
   AHPLOS_GIGS_PLUGIN_IMAGE: $<IMAGE_REGISTRY>/$<PLUGIN_NAME>:latest
   AHPLOS_GIGS_OPERATOR_IMAGE: $<IMAGE_REGISTRY>/$<OPERATOR_NAME>:latest
 
-  AHPLOS_GIGS_IMAGE_PULL_SECRET: gig-demo-registry-credentials
+  AHPLOS_GIGS_IMAGE_PULL_SECRET: gig-registry-credentials
 
   PORT: 8443
 

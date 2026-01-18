@@ -19,6 +19,8 @@ elCicdTemplates:
       inputForm:
       - attributes:
           label: Cluster Admin User Name
+        booleans:
+        - isRequired
         components:
           - inputType: TextInput
             booleans:
@@ -26,6 +28,8 @@ elCicdTemplates:
         var: CLUSTER_ADMIN_USER_NAME
       - attributes:
           label: Cluster Admin Password
+        booleans:
+        - isRequired
         components:
           - attributes:
               type: password
@@ -70,7 +74,7 @@ elCicdTemplates:
       stages:
       - name: prove-parallel-stage
         description: Prove parallel processing works by making this step take longer than the rest of the Gig.
-        parallel: true
+        maxParallel: 3
         steps:
         - name: sleep-in-the-background-in-first-stage
           sourceCode: |-
@@ -82,9 +86,9 @@ elCicdTemplates:
         description: Login into cluster as cluster admin, and retrieve Gig supported Step interpreters.
         steps:
         - name: prove-parallel-step
-          parallel: true
+          maxParallel: 3
           sourceCode: |-
-            sleep 45
+            sleep 25
             echo 'PROVING PARALLEL PROCESSING BY STEP WORKS BY PRINTING SECOOND STEP OF FIRST STAGE AT THE END'
         - name: cluster-admin-login.sh
           sourceCode: |-
@@ -104,7 +108,7 @@ elCicdTemplates:
             name: $<GIG_MOD_SOURCE_DEMO>
       - name: $<DEMONSTRATE_PYTHON>
         when: env.LANG_PYTHON
-        parallel: true
+        maxParallel: 5
         iterate:
           when: env.INDEX != 2
           loops:
@@ -172,7 +176,7 @@ elCicdTemplates:
               f.WriteString("\nTEST_MSG='This test msg was set using Go'")
             }
         - name: print-the-go-msg
-          parallel: true
+          maxParallel: 5
           iterate:
             when: env.INDEX != 2
             loops:

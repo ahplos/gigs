@@ -21,6 +21,10 @@ const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormS
     formGroup.attributes.name = formGroupId;
     formGroup.attributes.id = formGroupId;
     formGroup.attributes.fieldId = formGroupId;
+    formGroup.booleans ??= [];
+    formGroup.booleans.forEach ((boolAttr) => {
+        formGroup.attributes[boolAttr] = true;
+    });
     let widgets = formGroup.components.map( (component, index) => {
         component.attributes ??= {};
         component.attributes.id = `${formGroup.attributes.id}-${index}`;
@@ -76,18 +80,16 @@ export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFo
         (formType == GigFormType.PREVIEW && formSpec)
     if (showForm) {
         return (
-            <Form id={formName} name={formName}>
+            <Form id={formName} name={formName} onSubmit={ (e) => {
+                    e.preventDefault();
+                    const target = e.target as HTMLFormElement;
+                    target.checkValidity() && submissionAction(gigDefFormState);
+                }}
+            >
                 {formSpecGroups.length ? <>{formSpecGroups}<Divider/></> : <></> }
                 <ActionGroup>
                     {!(formType == GigFormType.PREVIEW) &&
-                        <Button
-                            type={ButtonType.submit}
-                            variant='primary'
-                            onClick={(e) => {
-                                e.preventDefault();
-                                submissionAction(gigDefFormState);
-                            }}
-                        >
+                        <Button type={ButtonType.submit} variant='primary' >
                             {(formType == GigFormType.WAITING_FOR_INPUT) ? (formSpec ? 'Submit' : 'Approve') : 'Start'}
                         </Button>
                     }
@@ -98,7 +100,6 @@ export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFo
                             onClick={(e) => {
                                 e.preventDefault();
                                 gigDefFormState['__ABORT_ABORT_ABORT'] = '__ABORT_ABORT_ABORT'
-                                submissionAction(gigDefFormState);
                             }}
                         >
                             {'Abort'}

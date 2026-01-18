@@ -81,6 +81,13 @@ elCicdDefs:
             A map of key/value pairs that optionally configure a group of components.
           additionalProperties:
             type: string
+        booleans:
+          type: array
+          description: |-
+            String only attributes for configuring a component; isVisible (vs isVisible="true").
+          items:
+            type: string
+          x-kubernetes-list-type: set
         components:
           type: array
           items:
@@ -261,12 +268,16 @@ elCicdDefs-$<GIG_MODULE>:
             description:
               type: string
             iterate: $<ITERATE_SPEC>
+            maxParallel:
+              type: integer
+              description: |
+                Number of maximum background processes the stage should run in.  If greater than 0, then stage will spawn
+                in the background up the to number given; e.g. if the stage is iterated over 5 times, but maxParallel
+                is 3, at most 3 active stages will execute simultaneously until all 5 are run.
             mode: $<MODE_SPEC>
             name:
               type: string
               pattern: $<STAGE_STEP_PATTERN>
-            parallel:
-              type: boolean
             stageRef:
               type: object
               description: |
@@ -316,8 +327,8 @@ elCicdDefs-$<GIG_MODULE>:
                   command:
                     type: string
                     descriptions: |
-                      Command used to process the sourceCode. Typically will be set by the controller unless
-                      the interpreter is Custom.
+                      Command used to process the sourceCode. The 'command' is defined by the 'interpreter' and set by the gigs controller
+                      unless the 'interpreter' is set to 'Custom'.
                   args:
                     type: string
                     description: Extra arguments to be passed to each step's command.
@@ -327,9 +338,8 @@ elCicdDefs-$<GIG_MODULE>:
                   interpreter:
                     type: string
                     description: |
-                      The interpretor for the step, either a module type or language. For 'Shell', scripts are executed directly.
-                      For all other interpretors, scripts are mounted as files in the Pod and executed; i.e. in a subprocess. If not defined,
-                      then 'Shell' is assumed.
+                      The interpretor for the step, either a module type or language. Scripts are mounted as files in the Pod and executed
+                      using the declared interpreter; i.e. in a subprocess. The 'Shell' (Bash) interpreter is the default.
                     enum:
                     - Custom
                     - GigModule
@@ -338,7 +348,14 @@ elCicdDefs-$<GIG_MODULE>:
                     - JinjaTemplate
                     - Python
                     - Shell
+                    default: Shell
                   iterate: $<ITERATE_SPEC>
+                  maxParallel:
+                    type: integer
+                    description: |
+                      Number of maximum background processes the step should run in.  If greater than 0, then step will spawn
+                      in the background up the to number given; e.g. if the step is iterated over 5 times, but maxParallel
+                      is 3, at most 3 active steps will execute simultaneously until all 5 are run.
                   name:
                     type: string
                     description: |
@@ -346,8 +363,6 @@ elCicdDefs-$<GIG_MODULE>:
                       The name will reflect the name of the file used to store the sourceCode, so name appropiately;
                       e.g. <some-name>.py if the name is a Python sourceCode.
                     pattern: $<STAGE_STEP_PATTERN>
-                  parallel:
-                    type: boolean
                   sourceCode:
                     type: string
                     description: |
@@ -397,8 +412,6 @@ elCicdDefs-$<GIG_MODULE>:
                       the step is processed.
                   workDir:
                     type: string
-      maxThreadCount:
-        type: integer
       workDirSizeLimit:
         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
         x-kubernetes-int-or-string: true
@@ -426,8 +439,6 @@ elCicdDefs-$<GIG>:
         required:
         - name
       gigFormRef: $<GIG_FORM_REF>
-      maxThreadCount:
-        type: integer
     required:
     - cronJobRef
     - gigModuleRef
@@ -484,9 +495,6 @@ elCicdDefs-$<GIG_RUN>:
         properties:
           additionalProperties:
             type: string
-      maxThreadCount:
-        type: integer
-        default: 5
       runState: $<RUN_STATE>
       startedBy:
         type: string
@@ -497,7 +505,6 @@ elCicdDefs-$<GIG_RUN>:
           message: startedBy is immutable
     required:
     - gigRef
-    - maxThreadCount
   STATUS_DEFINITION:
     type: object
     properties:
