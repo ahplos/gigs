@@ -5,12 +5,13 @@ set -o pipefail
 {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
 
 {%- macro run_step(stage, step, HAS_SECRETS, STAGE_NAME, STEP_NAME, STEP_RUN_DIR, STEP_RUN_NAME) %}
-    local CURRENT_PID=${BASHPID}
-    __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' ${CURRENT_PID} {{ HAS_SECRETS }} 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}
-    {%- set STEP_RUN_NAME = '{}_{}'.format(STAGE_NAME, STEP_NAME) %}
-    {{ '${{GIG_RUN_HOME}}/{}/interpreter__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_NAME) }} 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}
-    echo
-    echo "==> Step ${__STEP_ID} complete: {{ stage.name }}:{{ step.name }} <==" 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}
+    {
+      local CURRENT_PID=${BASHPID}
+      __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' ${CURRENT_PID} {{ HAS_SECRETS }} 2>&1 && \
+      {%- set STEP_RUN_NAME = '{}_{}'.format(STAGE_NAME, STEP_NAME) %}
+      {{ '${{GIG_RUN_HOME}}/{}/interpreter__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_NAME) }} 2>&1 && \
+      echo "==> Step ${__STEP_ID} complete: {{ stage.name }}:{{ step.name }} <==" 2>&1
+    } | __filterStepLogOutput ${__EXP_STEP_ID}
 {%- endmacro %}
 
 _STAGE_COUNTER=${1}

@@ -1,21 +1,20 @@
 {%- macro check_max_threads(MAX_THREADS) %}
-  {%- if RUN_PARALLEL %}
-__checkMaxThreads ${MAX_THREADS}
+  {%- if MAX_THREADS and (MAX_THREADS > 0) %}
+__checkMaxThreads {{ MAX_THREADS }}
   {%- endif %}
 {%- endmacro %}
 
 {%- macro step_or_stage_exec(stage_or_step, FUNCTION_NAME, ITER_ID, STAGE_NAME=None) %}
-    {%- set RUN_PARALLEL = '&' if (stage_or_step.maxParallel and stage_or_step.maxParallel > 0) else '' %}
     {%- if stage_or_step.maxParallel and stage_or_step.maxParallel > 0 %}
     {{ check_max_threads(stage_or_step.maxParallel) }}
     {%- endif %}
     {%- if not STAGE_NAME %}
-    export __EXP_STAGE_ID="${_STAGE_COUNTER}({{ ITER_ID }})"
-    {{ FUNCTION_NAME }} "${__EXP_STAGE_ID}" 2>&1 {{ RUN_PARALLEL }}
+    export __EXP_STAGE_OR_STEP_ID="${_STAGE_COUNTER}({{ ITER_ID }})"
     {%- else %}
-    export __EXP_STEP_ID="${_STEP_ID}({{ ITER_ID }})"
-    {{ FUNCTION_NAME }} "${__EXP_STEP_ID}" 2>&1 | __filterStepLogOutput "${__EXP_STEP_ID}" {{ RUN_PARALLEL }}
+    export __EXP_STAGE_OR_STEP_ID="${_STEP_ID}({{ ITER_ID }})"
     {%- endif %}
+    {%- set RUN_PARALLEL = '&' if (stage_or_step.maxParallel and stage_or_step.maxParallel > 0) else '' %}
+    {{ FUNCTION_NAME }} "${__EXP_STAGE_OR_STEP_ID}" 2>&1 {{ RUN_PARALLEL }}
 {%- endmacro %}
 
 {%- macro realize_iterators(stage_or_step, FUNCTION_NAME, STAGE_NAME=None) %}

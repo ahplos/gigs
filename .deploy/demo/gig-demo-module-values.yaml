@@ -74,7 +74,7 @@ elCicdTemplates:
       stages:
       - name: prove-parallel-stage
         description: Prove parallel processing works by making this step take longer than the rest of the Gig.
-        maxParallel: 3
+        maxParallel: 2
         steps:
         - name: sleep-in-the-background-in-first-stage
           sourceCode: |-
@@ -86,7 +86,7 @@ elCicdTemplates:
         description: Login into cluster as cluster admin, and retrieve Gig supported Step interpreters.
         steps:
         - name: prove-parallel-step
-          maxParallel: 3
+          maxParallel: 2
           sourceCode: |-
             sleep 25
             echo 'PROVING PARALLEL PROCESSING BY STEP WORKS BY PRINTING SECOOND STEP OF FIRST STAGE AT THE END'
@@ -108,7 +108,7 @@ elCicdTemplates:
             name: $<GIG_MOD_SOURCE_DEMO>
       - name: $<DEMONSTRATE_PYTHON>
         when: env.LANG_PYTHON
-        maxParallel: 5
+        maxParallel: 2
         iterate:
           when: env.INDEX != 2
           loops:
@@ -120,6 +120,8 @@ elCicdTemplates:
             - foo
             - 6
             - bar
+            - baz
+            - howdy
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
@@ -176,7 +178,7 @@ elCicdTemplates:
               f.WriteString("\nTEST_MSG='This test msg was set using Go'")
             }
         - name: print-the-go-msg
-          maxParallel: 5
+          maxParallel: 2
           iterate:
             when: env.INDEX != 2
             loops:
@@ -188,6 +190,8 @@ elCicdTemplates:
               - foo
               - 6
               - bar
+              - baz
+              - howdy
           stepRef:
             gigModuleRef:
               name: $<GIG_MOD_PRINT_MSG>
@@ -219,5 +223,6 @@ elCicdTemplates:
         - name: $<PRINT_THE_DEMO_MSG>
           sourceCode: |-
             echo ${TEST_MSG}
+            sleep 3
   template:
     spec: $<GIG_MOD_SPECS>

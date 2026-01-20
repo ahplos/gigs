@@ -51,7 +51,8 @@ function __waitForUserInput() {
 
 function __checkMaxThreads() {
     local MAX_THREADS=${1}
-    while [[ $(jobs -r | wc -l) -ge ${MAX_THREADS} ]]; do
+    while [[ $(jobs -r | wc -l) -ge ${MAX_THREADS} ]]
+    do
         sleep 0.1
     done
 }
@@ -64,6 +65,11 @@ function __checkForAbortSignal() {
 
     echo
     echo "=> ABORT RUN REQUESTED..."
+    __killGigRun
+}
+
+function __killGigRun() {
+    PID=$(cat .__ROOT_PID)
     timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}
 }
 

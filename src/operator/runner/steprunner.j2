@@ -15,4 +15,4 @@ echo "${ {{- secretVar }}}" >> .secrets
 {%- set FILE_NAME = '$GIG_RUN_HOME/{}/step__{}_{}'.format(GIG_MOD_DIR_NAME, STAGE_NAME, STEP_NAME) %}
 
 {%- set ARGS = step.args if step.args else '' %}
-{{ step.command.format(FILE_NAME=FILE_NAME, STAGE_NAME=STAGE_NAME, STEP_NAME=STEP_NAME, CLI_ARGS=step.args) }} || kill -9 $(cat .__ROOT_PID)
+{{ step.command.format(FILE_NAME=FILE_NAME, STAGE_NAME=STAGE_NAME, STEP_NAME=STEP_NAME, CLI_ARGS=step.args) }} || __killGigRun
