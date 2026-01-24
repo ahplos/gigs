@@ -84,7 +84,7 @@ elCicdDefs:
         booleans:
           type: array
           description: |-
-            String only attributes for configuring a component; isVisible (vs isVisible="true").
+            String only attributes for configuring a component; e.g. isVisible (vs isVisible="true").
           items:
             type: string
           x-kubernetes-list-type: set
@@ -99,6 +99,12 @@ elCicdDefs:
                   attributes:
                     label: Option 1
             properties:
+              attributes:
+                type: object
+                description: |-
+                  Attributes are a map of {key,value} pairs for configuring a component.
+                additionalProperties:
+                  type: string
               booleans:
                 type: array
                 description: |-
@@ -115,29 +121,29 @@ elCicdDefs:
                 - Radio
                 - TextArea
                 - TextInput
-              attributes:
-                type: object
-                description: |-
-                  Attributes are a map of {key,value} pairs for configuring a component.
-                additionalProperties:
-                  type: string
-              tooltip:
-                type: string
-                description: |-
-                  Tooltip for the component.
             required:
             - inputType
+        helperText:
+          type: string
+          description: |-
+            Short, descriptive help that will be displayed alongside component(s) for users.
+        validationRegex:
+          type: string
         var:
           type: string
           description: |-
             Variable that will be assigned from the value of component(s) in the group.
           pattern: '^\w+$'
+        defaultValue:
+          x-kubernetes-preserve-unknown-fields: true
+          type: object
+          description: |-
+            Should hold a single key/value pair of "var: <value>"; e.g. given var's value is MY_INPUT_VAR, then MY_INPUT_VAR: myDefaultValue.
+            The values can be any valid YAML value.  All other additional fields will be ignored.
 
 elCicdDefs-$<GIG_FORM>:
   TITLE_CASE_NAME: GigForm
   SHORT_NAMES:
-  - glf
-  - glfs
   - gigform
   - gigforms
   SPEC_DEFINITION:
@@ -415,7 +421,7 @@ elCicdDefs-$<GIG_MODULE>:
       workDirSizeLimit:
         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
         x-kubernetes-int-or-string: true
-        default: 10Mi
+        default: 100Mi
 
 elCicdDefs-$<GIG>:
   TITLE_CASE_NAME: Gig

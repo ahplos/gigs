@@ -5,16 +5,14 @@ __checkMaxThreads {{ MAX_THREADS }}
 {%- endmacro %}
 
 {%- macro step_or_stage_exec(stage_or_step, FUNCTION_NAME, ITER_ID, STAGE_NAME=None) %}
-    {%- if stage_or_step.maxParallel and stage_or_step.maxParallel > 0 %}
-    {{ check_max_threads(stage_or_step.maxParallel) }}
-    {%- endif %}
-    {%- if not STAGE_NAME %}
-    export __EXP_STAGE_OR_STEP_ID="${_STAGE_COUNTER}({{ ITER_ID }})"
-    {%- else %}
-    export __EXP_STAGE_OR_STEP_ID="${_STEP_ID}({{ ITER_ID }})"
-    {%- endif %}
-    {%- set RUN_PARALLEL = '&' if (stage_or_step.maxParallel and stage_or_step.maxParallel > 0) else '' %}
-    {{ FUNCTION_NAME }} "${__EXP_STAGE_OR_STEP_ID}" 2>&1 {{ RUN_PARALLEL }}
+{{- check_max_threads(stage_or_step.maxParallel) }}
+  {%- if not STAGE_NAME %}
+export __EXP_STAGE_OR_STEP_ID="${_STAGE_COUNTER}({{ ITER_ID }})"
+  {%- else %}
+export __EXP_STAGE_OR_STEP_ID="${_STEP_ID}({{ ITER_ID }})"
+  {%- endif %}
+  {%- set RUN_PARALLEL = '&' if (stage_or_step.maxParallel and stage_or_step.maxParallel > 0) else '' %}
+{{ FUNCTION_NAME }} "${__EXP_STAGE_OR_STEP_ID}" 2>&1 {{ RUN_PARALLEL }}
 {%- endmacro %}
 
 {%- macro realize_iterators(stage_or_step, FUNCTION_NAME, STAGE_NAME=None) %}
@@ -41,7 +39,7 @@ __checkMaxThreads {{ MAX_THREADS }}
     )
       {%- set VALUES = '${{{}_ARRAY[@]}}'.format(iter.name) %}
     {%- endif %}
-    local {{ '{}_COUNTER'.format(iter.name) }}=0
+    export {{ '{}_COUNTER'.format(iter.name) }}=0
     for {{ iter.name }} in {{ VALUES }}
     do
     {%- endfilter %}
@@ -52,16 +50,16 @@ __checkMaxThreads {{ MAX_THREADS }}
   {%- filter indent(width=FUNCTION_INDENT) %}
         if [[ $(__testWhen '{{ stage_or_step.iterate.when }}') != 'false' ]]
         then
-            {%- filter indent(width=FUNCTION_INDENT + INDENT) %}
+            {%- filter indent(width=FUNCTION_INDENT + (INDENT * (INDENT_MOD + 1))) %}
             {{- step_or_stage_exec(stage_or_step, FUNCTION_NAME, ITERATOR_ID.ID, STAGE_NAME) }}
             {%- endfilter %}
         else
             {%- if not STAGE_NAME %}
             __stageHeader "${__STAGE_COUNTER}({{ ITERATOR_ID.ID }})" '{{ stage_or_step.name }}' 'SKIPPED' 2>&1 | \
-                __filterStageLogOutput "${_STAGE_COUNTER}({{ ITERATOR_ID.ID }})"
+            __filterStageLogOutput "${_STAGE_COUNTER}({{ ITERATOR_ID.ID }})"
             {%- else %}
             __stepHeader "${__STEP_ID}({{ ITERATOR_ID.ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.interpreter }}' 'SKIPPED' | \
-                __filterStepLogOutput "${_STEP_ID}({{ ITERATOR_ID.ID }})"
+            __filterStepLogOutput "${_STEP_ID}({{ ITERATOR_ID.ID }})"
             {%- endif %}
         fi
   {%- endfilter %}
@@ -76,6 +74,7 @@ __checkMaxThreads {{ MAX_THREADS }}
     {%- filter indent(width=(((loop.length + INDENT_MOD) - loop.index) * INDENT)) %}
         let {{ '{}_COUNTER'.format(iter.name) }}+=1
     done
+    unset {{ '{}_COUNTER'.format(iter.name) }}
     {%- endfilter %}
 {%- endfor %}
 {%- endmacro %}

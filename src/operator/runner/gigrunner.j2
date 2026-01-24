@@ -42,7 +42,7 @@ function __gigrunner() {
       {%- if stage.iterate %}
         {{- iter_macros.realize_iterators(stage, STAGE_FUNCTION_NAME) }}
       {%- else %}
-        {{ iter_macros.check_max_threads(stage.maxParallel) }}
+        {{- iter_macros.check_max_threads(stage.maxParallel) }}
         {{ STAGE_FUNCTION_NAME }} ${__EXP_STAGE_ID} 2>&1 {{ RUN_PARALLEL }}
       {%- endif %}
     else

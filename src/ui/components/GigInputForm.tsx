@@ -10,11 +10,16 @@ import {
     EmptyStateIcon,
     Form,
     FormGroup,
-}  from '@patternfly/react-core';
+    FormHelperText,
+    HelperText
+} from '@patternfly/react-core';
 
 import CubesIcon from '@patternfly/react-icons/dist/esm/icons/cubes-icon';
 
-import inputComps from '../utilities/inputComps';
+import {
+    inputComps,
+    inputCompsDefaultValue
+} from '../utilities/inputComps';
 
 const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormState) => {
     formGroup.attributes ??= {};
@@ -45,9 +50,12 @@ const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormS
         )
     });
 
+    let helperText = <FormHelperText><HelperText>{formGroup.helperText}</HelperText></FormHelperText>;
+
     return (
         <FormGroup {...formGroup.attributes}>
             {widgets}
+            {formGroup.helperText && helperText}
         </FormGroup>
     );
 };
@@ -67,7 +75,11 @@ interface GigModuleFormProps {
 }
 
 export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFormProps) => {
-    const [gigDefFormState, setGigDefFormState] = React.useState({});
+    let formState: any = {};
+    formSpec?.forEach( (formGroup: any) => {
+        formState[formGroup.var] = formGroup.defaultValue?.[formGroup.var] ?? inputCompsDefaultValue[formGroup.components[0].inputType];
+    });
+    const [gigDefFormState, setGigDefFormState] = React.useState(formState);
 
     let formName = 'generic-form';
     let formSpecGroups = formSpec?.map( (formGroup, index) => {

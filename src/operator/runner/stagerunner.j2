@@ -6,11 +6,11 @@ set -o pipefail
 
 {%- macro run_step(stage, step, HAS_SECRETS, STAGE_NAME, STEP_NAME, STEP_RUN_DIR, STEP_RUN_NAME) %}
     {
-      local CURRENT_PID=${BASHPID}
-      __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' ${CURRENT_PID} {{ HAS_SECRETS }} 2>&1 && \
-      {%- set STEP_RUN_NAME = '{}_{}'.format(STAGE_NAME, STEP_NAME) %}
-      {{ '${{GIG_RUN_HOME}}/{}/interpreter__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_NAME) }} 2>&1 && \
-      echo "==> Step ${__STEP_ID} complete: {{ stage.name }}:{{ step.name }} <==" 2>&1
+        local CURRENT_PID=${BASHPID}
+        __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' ${CURRENT_PID} {{ HAS_SECRETS }} 2>&1 && \
+        {%- set STEP_RUN_NAME = '{}_{}'.format(STAGE_NAME, STEP_NAME) %}
+        {{ '${{GIG_RUN_HOME}}/{}/interpreter__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_NAME) }} 2>&1 && \
+        echo "==> Step ${__STEP_ID} complete: {{ stage.name }}:{{ step.name }} <==" 2>&1
     } | __filterStepLogOutput ${__EXP_STEP_ID}
 {%- endmacro %}
 
@@ -26,7 +26,8 @@ function {{ STAGE_FUNCTION_NAME }}() {
 
       {%- set STEP_GIG_MOD_NAMESPACE = gig_mod.namespace
         if not (step.stageRef and step.stepRef.gigModuleRef.namespace)
-        else step.stepRef.gigModuleRef.namespace %}
+        else step.stepRef.gigModuleRef.namespace
+      %}
       {%- set STEP_GIG_MOD_NAME = gig_mod.name if not step.stepRef else step.stepRef.gigModuleRef.name %}
       {%- set STEP_RUN_DIR = '{}_{}'.format(STEP_GIG_MOD_NAMESPACE, STEP_GIG_MOD_NAME) %}
 

@@ -77,7 +77,7 @@ elCicdTemplates:
       __waitForUserInput {STAGE_NAME}_{STEP_NAME}
     JinjaTemplate: $<PYTHON_JINJA_COMMAND>
     Python: python -m trace -t {FILE_NAME} {CLI_ARGS}
-    Shell: source {FILE_NAME} {CLI_ARGS}
+    Shell: "{FILE_NAME} {CLI_ARGS}"
 
 - templateNames: [deployment, service, serviceAccount]
   annotations:

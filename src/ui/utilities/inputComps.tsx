@@ -18,7 +18,6 @@ import {
     TextInput,
     TimePicker,
     Title,
-    Tooltip,
 }  from '@patternfly/react-core';
 
 interface GigTitleProps {
@@ -59,6 +58,7 @@ function GigCheckBox({formGroup, gigDefFormState, setGigDefFormState, props, ind
         }));
     };
 
+    props.defaultChecked = gigDefFormState[formGroup.var] == props.isChecked ||  props.defaultChecked;
     return (
         <Checkbox {...props} isChecked={gigDefFormState[formGroup.var]} defaultChecked={props.defaultChecked ?? false} />
     );
@@ -72,12 +72,13 @@ function GigTextInput({formGroup, gigDefFormState, setGigDefFormState, props, in
         }));
     };
 
+    props.value = gigDefFormState[formGroup.var];
     return (
         <TextInput {...props} />
     );
 }
 
-const inputComps = {
+export const inputComps = {
     Banner: Banner,
     Checkbox: GigCheckBox,
     DatePicker: DatePicker,
@@ -95,7 +96,15 @@ const inputComps = {
     TextArea: TextArea,
     TextInput: GigTextInput,
     TimePicker: TimePicker,
-    Tooltip: Tooltip,
 };
 
-export default inputComps;
+export const inputCompsDefaultValue = {
+    Checkbox: false,
+    DatePicker: null,
+    Dropdown: '',
+    FormSelect: '',
+    Radio: '',
+    TextArea: '',
+    TextInput: '',
+    TimePicker: '',
+};

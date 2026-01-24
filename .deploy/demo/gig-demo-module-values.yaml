@@ -25,6 +25,8 @@ elCicdTemplates:
           - inputType: TextInput
             booleans:
             - isRequired
+        defaultValue:
+          CLUSTER_ADMIN_USER_NAME: kubeadmin
         var: CLUSTER_ADMIN_USER_NAME
       - attributes:
           label: Cluster Admin Password
@@ -36,6 +38,8 @@ elCicdTemplates:
             booleans:
             - isRequired
             inputType: TextInput
+        helperText: |-
+          Cluster admin passwords are at least 8 chars long
         var: CLUSTER_ADMIN_PASSWORD
       - attributes:
           isInline: 'true'
