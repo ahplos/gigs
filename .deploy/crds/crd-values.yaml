@@ -104,7 +104,7 @@ elCicdDefs:
                 description: |-
                   Attributes are a map of {key,value} pairs for configuring a component.
                 additionalProperties:
-                  type: string
+                  x-kubernetes-int-or-string: true
               booleans:
                 type: array
                 description: |-
@@ -127,8 +127,6 @@ elCicdDefs:
           type: string
           description: |-
             Short, descriptive help that will be displayed alongside component(s) for users.
-        validationRegex:
-          type: string
         var:
           type: string
           description: |-

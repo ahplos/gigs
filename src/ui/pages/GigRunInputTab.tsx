@@ -3,7 +3,8 @@ import * as React from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 
 import {
-    PageSection,
+    TabContent,
+    TabContentBody
 } from '@patternfly/react-core';
 
 import {
@@ -43,10 +44,12 @@ export const GigRunInputTab = (model) => {
 
     return (
         <>
-            <PageSection isFilled style={{ background: 'rgba(200, 54, 54, 0)' }}>
-                {title}
-                <GigInputForm formSpec={formSpec} submissionAction={submissionAction} formType={formType} />
-            </PageSection>
+            <TabContent id="input-gigrun-tab">
+                <TabContentBody hasPadding>
+                    {title}
+                    <GigInputForm formSpec={formSpec} submissionAction={submissionAction} formType={formType} />
+                </TabContentBody>
+            </TabContent>
         </>
     );
 };

@@ -18,6 +18,7 @@ import {
     TextInput,
     TimePicker,
     Title,
+    ValidatedOptions
 }  from '@patternfly/react-core';
 
 interface GigTitleProps {
@@ -36,10 +37,12 @@ interface GigInputProps {
     gigDefFormState: Map<string, string|boolean>;
     setGigDefFormState: React.Dispatch<React.SetStateAction<Map<string, string|boolean>>>;
     props: any;
+    errorState: Map<string, string|boolean>;
+    setErrorState: React.Dispatch<React.SetStateAction<Map<string, string|boolean>>>;
     index: Number;
 }
 
-function GigRadio({formGroup, gigDefFormState, setGigDefFormState, props, index}: GigInputProps) {
+function GigRadio({formGroup, gigDefFormState, setGigDefFormState, errorState, setErrorState, props, index}: GigInputProps) {
     props.onChange = (e) => {
         setGigDefFormState(prevFormValues => ({
             ...prevFormValues,
@@ -50,7 +53,7 @@ function GigRadio({formGroup, gigDefFormState, setGigDefFormState, props, index}
     return <Radio {...props} />
 }
 
-function GigCheckBox({formGroup, gigDefFormState, setGigDefFormState, props, index}: GigInputProps) {
+function GigCheckBox({formGroup, gigDefFormState, setGigDefFormState, errorState, setErrorState, props, index}: GigInputProps) {
     props.onChange = (e) => {
         setGigDefFormState(prevFormValues => ({
             ...prevFormValues,
@@ -64,17 +67,29 @@ function GigCheckBox({formGroup, gigDefFormState, setGigDefFormState, props, ind
     );
 }
 
-function GigTextInput({formGroup, gigDefFormState, setGigDefFormState, props, index}: GigInputProps) {
-    props.onChange = (e) => {
+function GigTextInput({formGroup, gigDefFormState, setGigDefFormState, errorState, setErrorState, props, index}: GigInputProps) {
+    props.onChange = (e, value) => {
         setGigDefFormState(prevFormValues => ({
             ...prevFormValues,
-            [formGroup.var]: e.target.value
+            [formGroup.var]: value
+        }));
+        setErrorState(prevErrorValues => ({
+            ...prevErrorValues,
+            [formGroup.var]: undefined
+        }));
+    };
+
+    props.onInvalid = (e, value) => {
+        e.target.validated = ValidatedOptions.error;
+        setErrorState(prevErrorValues => ({
+            ...prevErrorValues,
+            [formGroup.var]: true
         }));
     };
 
     props.value = gigDefFormState[formGroup.var];
     return (
-        <TextInput {...props} />
+        <TextInput {...props} validated={ errorState[formGroup.var] ? ValidatedOptions.error : ValidatedOptions.default }/>
     );
 }
 

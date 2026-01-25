@@ -21,7 +21,7 @@ import {
     inputCompsDefaultValue
 } from '../utilities/inputComps';
 
-const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormState) => {
+const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormState, errorState, setErrorState) => {
     formGroup.attributes ??= {};
     formGroup.attributes.name = formGroupId;
     formGroup.attributes.id = formGroupId;
@@ -45,6 +45,8 @@ const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormS
             <Tag formGroup={formGroup}
                  gigDefFormState={gigDefFormState}
                  setGigDefFormState={setGigDefFormState}
+                 errorState={errorState}
+                 setErrorState={setErrorState}
                  props={component.attributes}
                  index={index}/>
         )
@@ -81,10 +83,12 @@ export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFo
     });
     const [gigDefFormState, setGigDefFormState] = React.useState(formState);
 
+    const [errorState, setErrorState] = React.useState({});
+
     let formName = 'generic-form';
     let formSpecGroups = formSpec?.map( (formGroup, index) => {
         let formGroupId = `${formName}-${index}`;
-        return createFormGroup(formGroup, formGroupId, gigDefFormState, setGigDefFormState);
+        return createFormGroup(formGroup, formGroupId, gigDefFormState, setGigDefFormState, errorState, setErrorState);
     }) ?? [];
 
     const showForm = (formType == GigFormType.WAITING_FOR_INPUT) ||
@@ -95,7 +99,7 @@ export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFo
             <Form id={formName} name={formName} onSubmit={ (e) => {
                     e.preventDefault();
                     const target = e.target as HTMLFormElement;
-                    target.checkValidity() && submissionAction(gigDefFormState);
+                    target.reportValidity() && submissionAction(gigDefFormState);
                 }}
             >
                 {formSpecGroups.length ? <>{formSpecGroups}<Divider/></> : <></> }

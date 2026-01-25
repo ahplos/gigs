@@ -35,6 +35,8 @@ elCicdTemplates:
         components:
           - attributes:
               type: password
+              pattern: \w+
+              minLength: 6
             booleans:
             - isRequired
             inputType: TextInput
