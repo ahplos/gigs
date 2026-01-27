@@ -10,7 +10,6 @@ from jinja2 import Environment, FileSystemLoader
 import kopf
 from kopf import AdmissionError
 
-import kr8s
 from kr8s.objects import ConfigMap, CronJob, Job, Secret
 
 from utilities.gig_types import Gig, GigModule, GigRun, GigRunState

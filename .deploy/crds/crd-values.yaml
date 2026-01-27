@@ -244,6 +244,7 @@ elCicdDefs-$<GIG_MODULE>:
           will be checked for existence and that the required params are defined before ing.
         items:
           type: string
+          pattern: '^[a-zA-Z_](\w+)$'
         x-kubernetes-list-type: set
       secretVars:
         type: array

@@ -17,6 +17,18 @@ function __convertJsonDictToEnv() {
     echo $(echo "${JSON}" | jq -r 'to_entries[]|"'${KEY_PREFIX}'\(.key)=\"\(.value'${BASE64}')\""' | tr '"' "'")
 }
 
+function __verifyRequiredInputParams() {
+    __loadEnv
+    for REQ_INPUT_PARAM in {{ ' '.join(gig_mod.spec.requiredInputParams) }}
+    do
+        if [[ -z ${!REQ_INPUT_PARAM} ]]
+        then
+            echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" | __filterStageLogOutput '--'
+            exit 1
+        fi
+    done
+}
+
 function __saveInputParamsToEnv() {
     INPUT_PARAMS=$(kubectl get secret -n {{ gig_run.namespace }} {{ gig_run.name }} -o jsonpath='{.data}')
     if [[ ! -z ${INPUT_PARAMS} ]]

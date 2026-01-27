@@ -11,10 +11,13 @@ import {
     Form,
     FormGroup,
     FormHelperText,
-    HelperText
+    HelperText,
+    HelperTextItem,
+    ValidatedOptions,
 } from '@patternfly/react-core';
 
 import CubesIcon from '@patternfly/react-icons/dist/esm/icons/cubes-icon';
+import ExclamationCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/exclamation-circle-icon';
 
 import {
     inputComps,
@@ -52,7 +55,17 @@ const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormS
         )
     });
 
-    let helperText = <FormHelperText><HelperText>{formGroup.helperText}</HelperText></FormHelperText>;
+    let helperIcon = errorState[formGroup.var] ? <ExclamationCircleIcon/> : <></>;
+    let helperVariant = errorState[formGroup.var] ? ValidatedOptions.error : ValidatedOptions.default;
+    let helperText = (
+        <FormHelperText>
+            <HelperText>
+                <HelperTextItem icon={helperIcon} variant={helperVariant}>
+                    {formGroup.helperText}
+                </HelperTextItem>
+            </HelperText>
+        </FormHelperText>
+    )
 
     return (
         <FormGroup {...formGroup.attributes}>

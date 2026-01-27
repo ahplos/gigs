@@ -1,5 +1,6 @@
 #!/usr/bin/bash -e
 # gigrunner
+set -e
 set -o pipefail
 {%- import 'iterator-macro.j2' as iter_macros %}
 
@@ -14,6 +15,8 @@ function __gigrunner() {
     local _STAGE_COUNTER=00
 
     echo "$(__gigRunHeader)" | __filterStageLogOutput '--'
+
+    __verifyRequiredInputParams
 
     {%- for stage in gig_mod.spec.stages %}
       {%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
