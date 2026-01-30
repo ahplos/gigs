@@ -1,6 +1,5 @@
-#!/usr/bin/bash -e
+#!/usr/bin/bash
 # steprunner
-set -o pipefail
 
 {%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
 {%- set STEP_NAME = step.name if not (step.stepRef and step.stepRef.name) else step.stepRef.name %}
@@ -15,4 +14,5 @@ echo "${ {{- secretVar }}}" >> .secrets
 {%- set FILE_NAME = '$GIG_RUN_HOME/{}/step__{}_{}'.format(GIG_MOD_DIR_NAME, STAGE_NAME, STEP_NAME) %}
 
 {%- set ARGS = step.args if step.args else '' %}
-{{ step.command.format(FILE_NAME=FILE_NAME, STAGE_NAME=STAGE_NAME, STEP_NAME=STEP_NAME, CLI_ARGS=ARGS) }} || __killGigRun
+{{ step.command.format(FILE_NAME=FILE_NAME, STAGE_NAME=STAGE_NAME, STEP_NAME=STEP_NAME, CLI_ARGS=ARGS) }}
+return $?

@@ -72,72 +72,102 @@ elCicdDefs:
     items:
       type: object
       required:
-      - components
+      - inputType
       - var
       properties:
         attributes:
           type: object
           description: |-
-            A map of key/value pairs that optionally configure a group of components.
-          additionalProperties:
-            type: string
-        booleans:
-          type: array
-          description: |-
-            String only attributes for configuring a component; e.g. isVisible (vs isVisible="true").
-          items:
-            type: string
-          x-kubernetes-list-type: set
-        components:
-          type: array
-          items:
-            type: object
-            description: |-
-              Arbitrary keys corresponding to JSX PatternFly Form (e.g. TextInput or Radio) controls that contain a map of zero or more
-              attributes for the control; e.g.
-                - component: Radio
-                  attributes:
-                    label: Option 1
-            properties:
-              attributes:
-                type: object
-                description: |-
-                  Attributes are a map of {key,value} pairs for configuring a component.
-                additionalProperties:
-                  x-kubernetes-int-or-string: true
-              booleans:
-                type: array
-                description: |-
-                  String only attributes for configuring a component; isVisible (vs isVisible="true").
-                items:
-                  type: string
-                x-kubernetes-list-type: set
-              inputType:
+            General attributes for form component(s).  Only the label is required.
+          required:
+          - label
+          properties:
+            isChecked:
+              type: boolean
+              description: |-
+                If true and a checkbox, the checkbox will be created as already selected.
+            isInline:
+              type: boolean
+              description: |-
+                If true, multiple components will be displayed horizontally.  Only useful if defined a radioGroup.
+            isRequired:
+              type: boolean
+              description: |-
+                If true, the component must have a value entered by the user before the form can be submitted.
+            label:
+              type: string
+              description: |-
+                Descriptive label to be displayed above the component(s).
+            labelInfo:
+              type: string
+              description: |-
+                Additional label information displayed after the label.
+            max:
+              type: integer
+              description: |-
+                If the component represents a number, the maximum value to be valid; for dates, the latest date.
+            maxLength:
+              type: integer
+              description: |-
+                For text components, the maximum length of text to be valid.
+            min:
+              type: integer
+              description: |-
+                If the component represents a number, the minimum value to be valid; for dates, the earliest date.
+            minLength:
+              type: integer
+              description: |-
+                For text components, the minimum length of text for the input to be valid.
+            options:
+              type: array
+              description: |-
+                For Select, RadioGroup, and Checkbox  components, a list a strings representing choices for the user to select.
+                For RadioGroup and Select components this corresponds to the possible values, too.
+              items:
                 type: string
-                enum:
-                - Checkbox
-                - Dropdown
-                - NumberInput
-                - Radio
-                - TextArea
-                - TextInput
-            required:
-            - inputType
+              x-kubernetes-list-type: set
+            pattern:
+              type: string
+              description: |-
+                An optional regular expression for the value of the input to be validated against.
+            placeholder:
+              type: string
+              description: |-
+                For text based components, placeholder of the text input when there is no value.
+            type:
+              type: string
+              description: |-
+                For Text component only, configures the typeof input.  Can be 'text', 'date', 'datetime-local', 'email', 'month',
+                'number', 'password', 'search', 'tel', 'time', or 'url'.
+              enum: ["text", "date", "datetime-local", "email", "month", "number", "password", "search", "tel", "time", or "url"]
+            defaultValue:
+              type: string
+              description: |-
+                The default value of the input item.  For numbered or boolean components, use the corresponding string value; e.g. 'true' vs true.
         helperText:
           type: string
           description: |-
-            Short, descriptive help that will be displayed alongside component(s) for users.
+            Short, descriptive help that will be displayed under the component(s) for users.
+        inputType:
+          type: string
+          description: |-
+            The type of component(s) to display.  May be either:
+            - Checkbox
+            - RadioGroup
+            - Select
+            - Text
+            - TextArea
+          enum:
+          - Checkbox
+          - RadioGroup
+          - Select
+          - Text
+          - TextArea
         var:
           type: string
           description: |-
             Variable that will be assigned from the value of component(s) in the group.
           pattern: '^\w+$'
-        defaultValue:
-          x-kubernetes-preserve-unknown-fields: true
-          type: object
-          description: |-
-            Should hold a single key/value pair of "var: <value>"; e.g. given var's value is MY_INPUT_VAR, then MY_INPUT_VAR: myDefaultValue.
-            The values can be any valid YAML value.  All other additional fields will be ignored.
 
 elCicdDefs-$<GIG_FORM>:
   TITLE_CASE_NAME: GigForm

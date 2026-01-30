@@ -19,43 +19,28 @@ elCicdTemplates:
       inputForm:
       - attributes:
           label: Cluster Admin User Name
-        booleans:
-        - isRequired
-        components:
-          - inputType: TextInput
-            booleans:
-            - isRequired
-        defaultValue:
-          CLUSTER_ADMIN_USER_NAME: kubeadmin
+          isRequired: true
+          defaultValue: kubeadmin
+        inputType: Text
         var: CLUSTER_ADMIN_USER_NAME
       - attributes:
           label: Cluster Admin Password
-        booleans:
-        - isRequired
-        components:
-          - attributes:
-              type: password
-              pattern: \w+
-              minLength: 6
-            booleans:
-            - isRequired
-            inputType: TextInput
+          isRequired: true
+          minLength: 6
+          pattern: \w+
+          type: password
         helperText: |-
-          Cluster admin passwords are at least 8 chars long
+          Cluster admin passwords are at least 6 chars long
+        inputType: Text
         var: CLUSTER_ADMIN_PASSWORD
       - attributes:
-          isInline: 'true'
+          isInline: true
           label: Visual Mode
-          role: radiogroup
-        components:
-          - attributes:
-              label: Graphical
-            inputType: Radio
-          - attributes:
-              label: Logs
-            booleans:
-            - isChecked
-            inputType: Radio
+          options:
+          - Graphical
+          - Logs
+          defaultValue: Logs
+        inputType: RadioGroup
         var: RUN_DEBUG_MODE
 
 - apiVersion: batch.ahplos.org/v1beta1
@@ -157,8 +142,7 @@ elCicdTemplates:
               {%- for LANG in LANGS %}
               - attributes:
                   label: {{ LANG }}
-                components:
-                  - inputType: Checkbox
+                inputType: Checkbox
                 var: LANG_{{ LANG|upper }}
               {%- endfor %}
 

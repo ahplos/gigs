@@ -48,7 +48,8 @@ export __EXP_STAGE_OR_STEP_ID="${_STEP_ID}({{ ITER_ID }})"
 {%- set FUNCTION_INDENT = (stage_or_step.iterate|length - INDENT_MOD) * INDENT %}
 {%- if stage_or_step.iterate.when %}
   {%- filter indent(width=FUNCTION_INDENT) %}
-        if [[ $(__testWhen '{{ stage_or_step.iterate.when }}') != 'false' ]]
+        local __WHEN= $(__testWhen '{{ stage_or_step.iterate.when }}')
+        if [[ ${__WHEN,,} != 'false' ]]
         then
             {%- filter indent(width=FUNCTION_INDENT + (INDENT * (INDENT_MOD + 1))) %}
             {{- step_or_stage_exec(stage_or_step, FUNCTION_NAME, ITERATOR_ID.ID, STAGE_NAME) }}

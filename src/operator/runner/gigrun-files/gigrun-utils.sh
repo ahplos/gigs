@@ -1,4 +1,4 @@
-#!/usr/bin/bash -e
+#!/usr/bin/bash
 
 __HEADER_FOOTER_BORDER='******************************************************************'
 __HEADER_FOOTER_PREFIX='**'
@@ -50,15 +50,19 @@ function __waitForUserInput() {
     export USER_INPUT_PATCH=${1}
     python ${GIG_RUN_HOME}/jinja_stage.py ${GIG_RUN_HOME}/user_input_patch.j2 user_input_patch.yaml
 
-    kubectl patch gigrun ${GIG_RUN_NAME} -n ${GIG_RUN_NAMESPACE} --patch-file user_input_patch.yaml --type='merge' 2>&1 > /dev/null
+    kubectl patch gigrun ${GIG_RUN_NAME} -n ${GIG_RUN_NAMESPACE} --patch-file user_input_patch.yaml --type='merge' --warnings-as-errors 2>&1 > /dev/null
+    if [[ $? == 0 ]]
+    then
+        echo 'Waiting for user input...'
 
-    echo 'Waiting for user input...'
+        kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} 2>&1 > /dev/null
 
-    kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} &> /dev/null
+        __saveInputParamsToEnv
 
-    __saveInputParamsToEnv
-
-    echo 'User input received; continuing...'
+        echo 'User input received; continuing...'
+    else
+        return 1
+    fi
 }
 
 function __checkMaxThreads() {

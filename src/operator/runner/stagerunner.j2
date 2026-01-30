@@ -5,13 +5,25 @@ set -o pipefail
 {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
 
 {%- macro run_step(stage, step, HAS_SECRETS, STAGE_NAME, STEP_NAME, STEP_RUN_DIR, STEP_RUN_NAME) %}
-    {
-        local CURRENT_PID=${BASHPID}
-        __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' ${CURRENT_PID} {{ HAS_SECRETS }} 2>&1 && \
-        {%- set STEP_RUN_NAME = '{}_{}'.format(STAGE_NAME, STEP_NAME) %}
-        {{ '${{GIG_RUN_HOME}}/{}/interpreter__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_NAME) }} 2>&1 && \
-        echo "==> Step ${__STEP_ID} complete: {{ stage.name }}:{{ step.name }} <==" 2>&1
-    } | __filterStepLogOutput ${__EXP_STEP_ID}
+    local CURRENT_PID=${BASHPID}
+    __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' ${CURRENT_PID} {{ HAS_SECRETS }} 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}
+
+    {%- set STEP_RUN_NAME = '{}_{}'.format(STAGE_NAME, STEP_NAME) %}
+    set +e +o pipefail
+    local __STEP_OUTPUT
+    __STEP_OUTPUT=$(source {{ '${{GIG_RUN_HOME}}/{}/interpreter__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_NAME) }} 2>&1)
+    local __STEP_RESULT=$?
+    set -e -o pipefail
+
+    echo "${__STEP_OUTPUT}" | __filterStepLogOutput ${__EXP_STEP_ID}
+
+    if [[ ${__STEP_RESULT} == 0 ]]
+    then
+        echo "==> SUCCESS: Step ${__STEP_ID} {{ stage.name }}:{{ step.name }} <==" 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}
+    else
+        echo "==> FAIL [EXIT CODE ${__STEP_RESULT}]: Step ${__STEP_ID} {{ stage.name }}:{{ step.name }} <==" 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}
+        __killGigRun
+    fi
 {%- endmacro %}
 
 _STAGE_COUNTER=${1}
@@ -39,7 +51,8 @@ function {{ STAGE_FUNCTION_NAME }}() {
         local __STEP_ID=${1}
 
         {%- if step.iterate and step.iterate.when %}
-        if [[ $(__testWhen '{{ step.iterate.when }}') != 'false' ]]
+        local __WHEN= $(__testWhen '{{ step.iterate.when }}')
+        if [[ ${__WHEN,,} != 'false' ]]
         then
             {%- filter indent(width=8) %}
             {{- run_step(stage, step, HAS_SECRETS, STAGE_NAME, STEP_NAME, STEP_RUN_DIR, STEP_RUN_NAME) }}
@@ -60,7 +73,8 @@ function {{ STAGE_FUNCTION_NAME }}() {
     export -f {{ STEP_FUNCTION_NAME }}
     export __EXP_STEP_ID="${_STEP_ID}"
       {%- if step.when %}
-    if [[ $(__testWhen '{{ step.when }}') != 'false' ]]
+    local __WHEN= $(__testWhen '{{ step.when }}')
+    if [[ ${__WHEN,,} != 'false' ]]
     then
       {%- if step.iterate %}
         {{- realize_iterators(step, STEP_FUNCTION_NAME, STAGE_NAME) }}

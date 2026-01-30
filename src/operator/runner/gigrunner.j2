@@ -1,7 +1,6 @@
 #!/usr/bin/bash -e
 # gigrunner
-set -e
-set -o pipefail
+
 {%- import 'iterator-macro.j2' as iter_macros %}
 
 {%- macro run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) %}
@@ -12,6 +11,9 @@ set -o pipefail
 {%- endmacro %}
 
 function __gigrunner() {
+    set -e
+    set -o pipefail
+
     local _STAGE_COUNTER=00
 
     echo "$(__gigRunHeader)" | __filterStageLogOutput '--'
@@ -40,7 +42,8 @@ function __gigrunner() {
     export -f {{ STAGE_FUNCTION_NAME }}
     export __EXP_STAGE_ID="${_STAGE_COUNTER}"
     {%- if stage.when %}
-    if [[ $(__testWhen '{{ stage.when if stage.when else '' }}') != 'false' ]]
+    local __WHEN= $(__testWhen '{{ stage.when }}')
+    if [[ ${__WHEN,,} != 'false' ]]
     then
       {%- if stage.iterate %}
         {{- iter_macros.realize_iterators(stage, STAGE_FUNCTION_NAME) }}

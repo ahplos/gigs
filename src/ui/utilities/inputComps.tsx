@@ -1,22 +1,11 @@
 import * as React from 'react';
 import {
-    Banner,
     Checkbox,
-    DatePicker,
-    Dropdown,
-    HelperText,
-    HelperTextItem,
-    FormHelperText,
-    FormGroup,
     FormSelect,
-    FormSelectOption,
+    // FormSelectOption,
     Radio,
-    Sidebar,
-    SidebarContent,
-    SidebarPanel,
     TextArea,
     TextInput,
-    TimePicker,
     Title,
     ValidatedOptions
 }  from '@patternfly/react-core';
@@ -34,92 +23,110 @@ export function GigTitle({title, headingLevel}: GigTitleProps) {
 
 interface GigInputProps {
     formGroup: any;
-    gigDefFormState: Map<string, string|boolean>;
-    setGigDefFormState: React.Dispatch<React.SetStateAction<Map<string, string|boolean>>>;
+    gigFormState: Map<string, string|boolean>;
+    setGigFormState: React.Dispatch<React.SetStateAction<Map<string, string|boolean>>>;
     props: any;
-    errorState: Map<string, string|boolean>;
-    setErrorState: React.Dispatch<React.SetStateAction<Map<string, string|boolean>>>;
+    gigFormErrors: Map<string, string|boolean>;
+    setGigFormErrors: React.Dispatch<React.SetStateAction<Map<string, string|boolean>>>;
     index: Number;
 }
 
-function GigRadio({formGroup, gigDefFormState, setGigDefFormState, errorState, setErrorState, props, index}: GigInputProps) {
-    props.onChange = (e) => {
-        setGigDefFormState(prevFormValues => ({
-            ...prevFormValues,
-            [formGroup.var]: props.label
-        }));
-    };
-
-    return <Radio {...props} />
-}
-
-function GigCheckBox({formGroup, gigDefFormState, setGigDefFormState, errorState, setErrorState, props, index}: GigInputProps) {
-    props.onChange = (e) => {
-        setGigDefFormState(prevFormValues => ({
-            ...prevFormValues,
-            [formGroup.var]: !prevFormValues[formGroup.var]
-        }));
-    };
-
-    props.defaultChecked = gigDefFormState[formGroup.var] == props.isChecked ||  props.defaultChecked;
-    return (
-        <Checkbox {...props} isChecked={gigDefFormState[formGroup.var]} defaultChecked={props.defaultChecked ?? false} />
-    );
-}
-
-function GigTextInput({formGroup, gigDefFormState, setGigDefFormState, errorState, setErrorState, props, index}: GigInputProps) {
-    props.onChange = (e, value) => {
-        setGigDefFormState(prevFormValues => ({
-            ...prevFormValues,
-            [formGroup.var]: value
-        }));
-        setErrorState(prevErrorValues => ({
-            ...prevErrorValues,
-            [formGroup.var]: undefined
-        }));
-    };
-
-    props.onInvalid = (e, value) => {
+function setGigFormInputCompValidation(formGroup, gigFormErrors, setGigFormErrors,  props) {
+    props.onInvalid = (e) => {
         e.target.validated = ValidatedOptions.error;
-        setErrorState(prevErrorValues => ({
+        setGigFormErrors(prevErrorValues => ({
             ...prevErrorValues,
             [formGroup.var]: true
         }));
     };
 
-    props.value = gigDefFormState[formGroup.var];
+    props.validated = () =>  { gigFormErrors[formGroup.var] ? ValidatedOptions.error : ValidatedOptions.default }
+}
+
+function GigRadioGroup({formGroup, gigFormState, setGigFormState, gigFormErrors, setGigFormErrors, props}: GigInputProps) {
+    let gigRadioGroup: React.ReactElement[] = [];
+
+    if (gigFormState[formGroup.var] == undefined && props.defaultValue) {
+        gigFormState[formGroup.var] = props.defaultValue;
+        delete props.defaultValue;
+    }
+
+    props.options.forEach( option => {
+        setGigFormInputCompValidation(formGroup, gigFormErrors, setGigFormErrors, props);
+
+        props.onChange = (e, checked) => {
+            if (checked) {
+                setGigFormState(prevFormValues => ({
+                    ...prevFormValues,
+                    [formGroup.var]: e.target.label
+                }));
+
+                setGigFormErrors(prevFormValues => ({
+                    ...prevFormValues,
+                    [formGroup.var]: undefined
+                }));
+            }
+        };
+
+        props.label = option;
+        props.checked = gigFormState[formGroup.var] == option;
+        props.isChecked = gigFormState[formGroup.var] == option;
+        gigRadioGroup.push(<Radio {...props}/>);
+    });
+
+    return gigRadioGroup;
+}
+
+function GigCheckBox({formGroup, gigFormState, setGigFormState, gigFormErrors, setGigFormErrors, props}: GigInputProps) {
+    setGigFormInputCompValidation(formGroup, gigFormErrors, setGigFormErrors, props);
+
+    if (gigFormState[formGroup.var] == undefined) {
+        props.defaultValue = props.defaultValue ?? 'false';
+        gigFormState[formGroup.var] = (props.defaultValue?.match(/^true$/i) || false);
+        delete props.defaultValue;
+    }
+
+    props.onChange = (e, checked) => {
+        setGigFormState(prevFormValues => ({
+            ...prevFormValues,
+            [formGroup.var]: checked
+        }));
+
+        gigFormErrors[formGroup.var] = undefined;
+    };
+
     return (
-        <TextInput {...props} validated={ errorState[formGroup.var] ? ValidatedOptions.error : ValidatedOptions.default }/>
+        <Checkbox checked={gigFormState[formGroup.var]} isChecked={gigFormState[formGroup.var]} {...props} />
+    );
+}
+
+function GigTextInput({formGroup, gigFormState, setGigFormState, gigFormErrors, setGigFormErrors, props}: GigInputProps) {
+    setGigFormInputCompValidation(formGroup, gigFormErrors, setGigFormErrors, props);
+
+    props.onChange = (e, value) => {
+        setGigFormState(prevFormValues => ({
+            ...prevFormValues,
+            [formGroup.var]: value
+        }));
+
+        setGigFormErrors(prevFormValues => ({
+            ...prevFormValues,
+            [formGroup.var]: undefined
+        }));
+    };
+
+    gigFormState[formGroup.var] = (gigFormState[formGroup.var] == undefined) ? props.defaultValue ?? '' : gigFormState[formGroup.var];
+    delete props.defaultValue;
+
+    return (
+        <TextInput value={gigFormState[formGroup.var]} {...props} />
     );
 }
 
 export const inputComps = {
-    Banner: Banner,
     Checkbox: GigCheckBox,
-    DatePicker: DatePicker,
-    Dropdown: Dropdown,
-    HelperText: HelperText,
-    HelperTextItem: HelperTextItem,
-    FormHelperText: FormHelperText,
-    FormGroup: FormGroup,
-    FormSelect: FormSelect,
-    FormSelectOption: FormSelectOption,
-    Radio: GigRadio,
-    Sidebar: Sidebar,
-    SidebarContent: SidebarContent,
-    SidebarPanel: SidebarPanel,
+    Select: FormSelect,
+    RadioGroup: GigRadioGroup,
     TextArea: TextArea,
-    TextInput: GigTextInput,
-    TimePicker: TimePicker,
-};
-
-export const inputCompsDefaultValue = {
-    Checkbox: false,
-    DatePicker: null,
-    Dropdown: '',
-    FormSelect: '',
-    Radio: '',
-    TextArea: '',
-    TextInput: '',
-    TimePicker: '',
+    Text: GigTextInput,
 };

@@ -21,56 +21,49 @@ import ExclamationCircleIcon from '@patternfly/react-icons/dist/dynamic/icons/ex
 
 import {
     inputComps,
-    inputCompsDefaultValue
 } from '../utilities/inputComps';
 
-const createFormGroup = (formGroup, formGroupId, gigDefFormState, setGigDefFormState, errorState, setErrorState) => {
-    formGroup.attributes ??= {};
-    formGroup.attributes.name = formGroupId;
-    formGroup.attributes.id = formGroupId;
-    formGroup.attributes.fieldId = formGroupId;
-    formGroup.booleans ??= [];
-    formGroup.booleans.forEach ((boolAttr) => {
-        formGroup.attributes[boolAttr] = true;
-    });
-    let widgets = formGroup.components.map( (component, index) => {
-        component.attributes ??= {};
-        component.attributes.id = `${formGroup.attributes.id}-${index}`;
-        component.attributes.name = formGroup.attributes.name;
-        component.booleans ??= [];
-        component.booleans.forEach ((boolAttr) => {
-            formGroup.attributes[boolAttr] = true;
-            component.attributes[boolAttr] = true;
-        });
+const createFormGroup = (formGroup, gigFormState, setGigFormState, gigFormErrors, setGigFormErrors) => {
+    let formGroupKeys = ['isInline', 'label', 'labelInfo'];
 
-        const Tag = inputComps[component.inputType];
-        return (
-            <Tag formGroup={formGroup}
-                 gigDefFormState={gigDefFormState}
-                 setGigDefFormState={setGigDefFormState}
-                 errorState={errorState}
-                 setErrorState={setErrorState}
-                 props={component.attributes}
-                 index={index}/>
-        )
-    });
+    formGroup.attributes.fieldId = formGroup.var;
 
-    let helperIcon = errorState[formGroup.var] ? <ExclamationCircleIcon/> : <></>;
-    let helperVariant = errorState[formGroup.var] ? ValidatedOptions.error : ValidatedOptions.default;
-    let helperText = (
-        <FormHelperText>
-            <HelperText>
-                <HelperTextItem icon={helperIcon} variant={helperVariant}>
-                    {formGroup.helperText}
-                </HelperTextItem>
-            </HelperText>
-        </FormHelperText>
-    )
+    const inputCompAttrs = {...formGroup.attributes};
+    inputCompAttrs.name = formGroup.var;
+    inputCompAttrs.id = formGroup.var;
+    formGroupKeys.forEach(x => delete inputCompAttrs[x]);
 
+    const Tag = inputComps[formGroup.inputType];
+    let formGroupChildren =
+        <Tag formGroup={formGroup}
+             gigFormState={gigFormState}
+             setGigFormState={setGigFormState}
+             gigFormErrors={gigFormErrors}
+             setGigFormErrors={setGigFormErrors}
+             props={inputCompAttrs} />
+
+    let formGroupId = `formGroup-${formGroup.var}`;
+    const formGroupAttrs: any = {};
+    formGroupKeys.forEach(x => formGroupAttrs[x] = formGroup.attributes[x]);
+    formGroupAttrs.name = formGroupId;
+    formGroupAttrs.id = formGroupId;
+    formGroupAttrs.fieldId = formGroup.var;
+    formGroupAttrs.isRequired = formGroup.attributes.isRequired;
+
+    let helperIcon = gigFormErrors[formGroup.var] ? <ExclamationCircleIcon/> : <></>;
+    let helperVariant = gigFormErrors[formGroup.var] ? ValidatedOptions.error : ValidatedOptions.default;
     return (
-        <FormGroup {...formGroup.attributes}>
-            {widgets}
-            {formGroup.helperText && helperText}
+        <FormGroup name={formGroupId} id={formGroupId} {...formGroupAttrs}>
+            {formGroupChildren}
+            {formGroup.helperText &&
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem icon={helperIcon} variant={helperVariant}>
+                            {formGroup.helperText}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
+            }
         </FormGroup>
     );
 };
@@ -84,35 +77,31 @@ export const GigFormType = {
 export type GigFormType = typeof GigFormType[keyof typeof GigFormType];
 
 interface GigModuleFormProps {
-    formSpec: Array<object>;
+    formSpec: Array<Object>;
     submissionAction(formState: Object): any;
     formType: GigFormType;
 }
 
 export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFormProps) => {
     let formState: any = {};
-    formSpec?.forEach( (formGroup: any) => {
-        formState[formGroup.var] = formGroup.defaultValue?.[formGroup.var] ?? inputCompsDefaultValue[formGroup.components[0].inputType];
-    });
-    const [gigDefFormState, setGigDefFormState] = React.useState(formState);
+    const [gigFormState, setGigFormState] = React.useState(formState);
 
-    const [errorState, setErrorState] = React.useState({});
+    const [gigFormErrors, setGigFormErrors] = React.useState({});
 
-    let formName = 'generic-form';
     let formSpecGroups = formSpec?.map( (formGroup, index) => {
-        let formGroupId = `${formName}-${index}`;
-        return createFormGroup(formGroup, formGroupId, gigDefFormState, setGigDefFormState, errorState, setErrorState);
+        return createFormGroup(formGroup, gigFormState, setGigFormState, gigFormErrors, setGigFormErrors);
     }) ?? [];
 
     const showForm = (formType == GigFormType.WAITING_FOR_INPUT) ||
         (formType == GigFormType.START) ||
         (formType == GigFormType.PREVIEW && formSpec)
     if (showForm) {
+        let formName = 'gigrun-input-form';
         return (
             <Form id={formName} name={formName} onSubmit={ (e) => {
                     e.preventDefault();
                     const target = e.target as HTMLFormElement;
-                    target.reportValidity() && submissionAction(gigDefFormState);
+                    target.reportValidity() && submissionAction(gigFormState);
                 }}
             >
                 {formSpecGroups.length ? <>{formSpecGroups}<Divider/></> : <></> }
@@ -128,7 +117,7 @@ export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFo
                             variant='primary'
                             onClick={(e) => {
                                 e.preventDefault();
-                                gigDefFormState['__ABORT_ABORT_ABORT'] = '__ABORT_ABORT_ABORT'
+                                gigFormState['__ABORT_ABORT_ABORT'] = '__ABORT_ABORT_ABORT'
                             }}
                         >
                             {'Abort'}
