@@ -15,12 +15,14 @@ elCicdTemplates:
   template:
     spec:
       formTitle:
-        title:  Sign in as a cluster-admin for the Gig Interpreter Demonstration
+        title:  Sign in as a cluster-admin for the Ahplos Gig Demonstration
       inputForm:
       - attributes:
           label: Cluster Admin User Name
           isRequired: true
           defaultValue: kubeadmin
+          style:
+            maxWidth: 50%
         inputType: Text
         var: CLUSTER_ADMIN_USER_NAME
       - attributes:
@@ -29,6 +31,8 @@ elCicdTemplates:
           minLength: 6
           pattern: \w+
           type: password
+          style:
+            maxWidth: 50%
         helperText: |-
           Cluster admin passwords are at least 6 chars long
         inputType: Text
@@ -93,12 +97,12 @@ elCicdTemplates:
           gigModuleRef:
             name: $<GIG_MOD_ASK_USER>
       - name: $<DEMONSTRATE_GO>
-        when: env.LANG_GO
+        when: input.LANG_GO
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
       - name: $<DEMONSTRATE_PYTHON>
-        when: env.LANG_PYTHON
+        when: input.LANG_PYTHON
         maxParallel: 2
         iterate:
           when: env.INDEX != 2
@@ -213,6 +217,6 @@ elCicdTemplates:
         - name: $<PRINT_THE_DEMO_MSG>
           sourceCode: |-
             echo ${TEST_MSG}
-            sleep 3
+            sleep 1
   template:
     spec: $<GIG_MOD_SPECS>

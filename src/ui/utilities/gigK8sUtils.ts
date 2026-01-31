@@ -76,7 +76,7 @@ export default class GigK8sUtils {
                     name: gig.metadata.name
                 },
                 inputReceived: false,
-                inputValues: {...inputValues}
+                inputValues: JSON.stringify(inputValues)
             }
         };
 
@@ -174,7 +174,7 @@ export default class GigK8sUtils {
     }
 
     public static patchGigRunInputValues = (gigRun: GigRun, inputValues: object): Promise<GigRun> => {
-        gigRun.spec.inputValues = {...inputValues}
+        gigRun.spec.inputValues = JSON.stringify(inputValues)
         gigRun.spec.inputReceived = true
 
         return k8sUpdate({model: GigK8sUtils.gigRunModel, data: gigRun})

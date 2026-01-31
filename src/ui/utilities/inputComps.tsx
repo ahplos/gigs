@@ -55,23 +55,17 @@ function GigRadioGroup({formGroup, gigFormState, setGigFormState, gigFormErrors,
         setGigFormInputCompValidation(formGroup, gigFormErrors, setGigFormErrors, props);
 
         props.onChange = (e, checked) => {
+            gigFormErrors[formGroup.var] = undefined;
             if (checked) {
                 setGigFormState(prevFormValues => ({
                     ...prevFormValues,
-                    [formGroup.var]: e.target.label
-                }));
-
-                setGigFormErrors(prevFormValues => ({
-                    ...prevFormValues,
-                    [formGroup.var]: undefined
+                    [formGroup.var]: option
                 }));
             }
         };
 
         props.label = option;
-        props.checked = gigFormState[formGroup.var] == option;
-        props.isChecked = gigFormState[formGroup.var] == option;
-        gigRadioGroup.push(<Radio {...props}/>);
+        gigRadioGroup.push(<Radio {...props} isChecked={ gigFormState[formGroup.var] == option } />);
     });
 
     return gigRadioGroup;
@@ -87,16 +81,15 @@ function GigCheckBox({formGroup, gigFormState, setGigFormState, gigFormErrors, s
     }
 
     props.onChange = (e, checked) => {
+        gigFormErrors[formGroup.var] = undefined;
         setGigFormState(prevFormValues => ({
             ...prevFormValues,
             [formGroup.var]: checked
         }));
-
-        gigFormErrors[formGroup.var] = undefined;
     };
 
     return (
-        <Checkbox checked={gigFormState[formGroup.var]} isChecked={gigFormState[formGroup.var]} {...props} />
+        <Checkbox checked={gigFormState[formGroup.var]} isChecked={ gigFormState[formGroup.var] } {...props} />
     );
 }
 
@@ -104,14 +97,10 @@ function GigTextInput({formGroup, gigFormState, setGigFormState, gigFormErrors, 
     setGigFormInputCompValidation(formGroup, gigFormErrors, setGigFormErrors, props);
 
     props.onChange = (e, value) => {
+        gigFormErrors[formGroup.var] = undefined;
         setGigFormState(prevFormValues => ({
             ...prevFormValues,
             [formGroup.var]: value
-        }));
-
-        setGigFormErrors(prevFormValues => ({
-            ...prevFormValues,
-            [formGroup.var]: undefined
         }));
     };
 

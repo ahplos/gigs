@@ -42,8 +42,8 @@ function __gigrunner() {
     export -f {{ STAGE_FUNCTION_NAME }}
     export __EXP_STAGE_ID="${_STAGE_COUNTER}"
     {%- if stage.when %}
-    local __WHEN= $(__testWhen '{{ stage.when }}')
-    if [[ ${__WHEN,,} != 'false' ]]
+    local __WHEN=$(__testWhen '{{ stage.when }}')
+    if [[ ${__WHEN,,} == 'true' ]]
     then
       {%- if stage.iterate %}
         {{- iter_macros.realize_iterators(stage, STAGE_FUNCTION_NAME) }}

@@ -24,7 +24,7 @@ import {
 } from '../utilities/inputComps';
 
 const createFormGroup = (formGroup, gigFormState, setGigFormState, gigFormErrors, setGigFormErrors) => {
-    let formGroupKeys = ['isInline', 'label', 'labelInfo'];
+    let formGroupKeys = ['style', 'isInline', 'label', 'labelInfo'];
 
     formGroup.attributes.fieldId = formGroup.var;
 
@@ -36,11 +36,11 @@ const createFormGroup = (formGroup, gigFormState, setGigFormState, gigFormErrors
     const Tag = inputComps[formGroup.inputType];
     let formGroupChildren =
         <Tag formGroup={formGroup}
-             gigFormState={gigFormState}
-             setGigFormState={setGigFormState}
-             gigFormErrors={gigFormErrors}
-             setGigFormErrors={setGigFormErrors}
-             props={inputCompAttrs} />
+            gigFormState={gigFormState}
+            setGigFormState={setGigFormState}
+            gigFormErrors={gigFormErrors}
+            setGigFormErrors={setGigFormErrors}
+            props={inputCompAttrs} />
 
     let formGroupId = `formGroup-${formGroup.var}`;
     const formGroupAttrs: any = {};
@@ -52,6 +52,7 @@ const createFormGroup = (formGroup, gigFormState, setGigFormState, gigFormErrors
 
     let helperIcon = gigFormErrors[formGroup.var] ? <ExclamationCircleIcon/> : <></>;
     let helperVariant = gigFormErrors[formGroup.var] ? ValidatedOptions.error : ValidatedOptions.default;
+
     return (
         <FormGroup name={formGroupId} id={formGroupId} {...formGroupAttrs}>
             {formGroupChildren}

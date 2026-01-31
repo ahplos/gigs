@@ -42,21 +42,23 @@ export __EXP_STAGE_OR_STEP_ID="${_STEP_ID}({{ ITER_ID }})"
     export {{ '{}_COUNTER'.format(iter.name) }}=0
     for {{ iter.name }} in {{ VALUES }}
     do
+        export {{ iter.name }}
     {%- endfilter %}
 {%- endfor %}
 
 {%- set FUNCTION_INDENT = (stage_or_step.iterate|length - INDENT_MOD) * INDENT %}
 {%- if stage_or_step.iterate.when %}
   {%- filter indent(width=FUNCTION_INDENT) %}
-        local __WHEN= $(__testWhen '{{ stage_or_step.iterate.when }}')
-        if [[ ${__WHEN,,} != 'false' ]]
+        local __WHEN=$(__testWhen '{{ stage_or_step.iterate.when }}')
+        if [[ ${__WHEN,,} = 'true' ]]
         then
             {%- filter indent(width=FUNCTION_INDENT + (INDENT * (INDENT_MOD + 1))) %}
             {{- step_or_stage_exec(stage_or_step, FUNCTION_NAME, ITERATOR_ID.ID, STAGE_NAME) }}
             {%- endfilter %}
         else
             {%- if not STAGE_NAME %}
-            __stageHeader "${__STAGE_COUNTER}({{ ITERATOR_ID.ID }})" '{{ stage_or_step.name }}' 'SKIPPED' 2>&1 | \
+            local CURRENT_PID=${BASHPID}
+            __stageHeader "${__STAGE_COUNTER}({{ ITERATOR_ID.ID }})" '{{ stage_or_step.name }}' ${CURRENT_PID} 'SKIPPED' 2>&1 | \
             __filterStageLogOutput "${_STAGE_COUNTER}({{ ITERATOR_ID.ID }})"
             {%- else %}
             __stepHeader "${__STEP_ID}({{ ITERATOR_ID.ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.interpreter }}' 'SKIPPED' | \

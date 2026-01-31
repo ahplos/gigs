@@ -177,7 +177,7 @@ export type GigRun = K8sResourceCommon & {
         }
         inputForm?: InputCompGroupSpec[];
         inputReceived?: boolean;
-        inputValues?: object;
+        inputValues?: string;
         startedBy?: string;
         runState?: GigRunState;
     };

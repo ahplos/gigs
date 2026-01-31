@@ -9,14 +9,6 @@ function __loadEnv() {
     set +o allexport
 }
 
-function __convertJsonDictToEnv() {
-    JSON="${1}"
-    KEY_PREFIX=${2}
-    BASE64=${3:+|@base64d}
-
-    echo $(echo "${JSON}" | jq -r 'to_entries[]|"'${KEY_PREFIX}'\(.key)=\"\(.value'${BASE64}')\""' | tr '"' "'")
-}
-
 function __verifyRequiredInputParams() {
     __loadEnv
     for REQ_INPUT_PARAM in {{ ' '.join(gig_mod.spec.requiredInputParams) }}
@@ -30,20 +22,27 @@ function __verifyRequiredInputParams() {
 }
 
 function __saveInputParamsToEnv() {
-    INPUT_PARAMS=$(kubectl get secret -n {{ gig_run.namespace }} {{ gig_run.name }} -o jsonpath='{.data}')
-    if [[ ! -z ${INPUT_PARAMS} ]]
+    local JSON_INPUT_VALUES=$(kubectl get secret --ignore-not-found -n {{ gig_run.namespace }} {{ gig_run.name }} -o jsonpath='{.data.inputValues}' | base64 --decode)
+    GIG_RUN_INPUT=$(jq -s '.[0] + .[1] // empty' <(echo ${GIG_RUN_INPUT}) <(echo ${JSON_INPUT_VALUES}))
+    echo "${GIG_RUN_INPUT}" > .input.json
+    echo 'GIG_RUN_INPUT=$(cat .input.json)' >> .env
+
+    echo
+    echo "${__HEADER_FOOTER_BORDER}"
+    if [[ ! -z ${GIG_RUN_INPUT} ]]
     then
-        INPUT_PARAMS=$(__convertJsonDictToEnv ${INPUT_PARAMS} '' TRUE | tr ' ' '\n')
-        echo "${INPUT_PARAMS}" > .env
-        echo
-        echo "${__HEADER_FOOTER_BORDER}"
+        INPUT_PARAMS=$(echo "${GIG_RUN_INPUT}" | jq -r 'to_entries[]|"\(.key)=\(.value)"')
+        echo "${INPUT_PARAMS}" >> .env
+
         echo "${__HEADER_FOOTER_PREFIX} INPUT PARAMS RECEIVED:"
         echo "${__HEADER_FOOTER_PREFIX}"
         echo "${INPUT_PARAMS}" | sed "s/^/${__HEADER_FOOTER_PREFIX} /g"
-        echo "${__HEADER_FOOTER_BORDER}"
 
         kubectl patch secret -n {{ gig_run.namespace }} {{ gig_run.name }} --patch 'data:' 2>&1 > /dev/null
+    else
+        echo "${__HEADER_FOOTER_PREFIX} NO INPUT PARAMS RECEIVED"
     fi
+    echo "${__HEADER_FOOTER_BORDER}"
 }
 
 function __waitForUserInput() {
@@ -59,6 +58,7 @@ function __waitForUserInput() {
 
         __saveInputParamsToEnv
 
+        echo
         echo 'User input received; continuing...'
     else
         return 1
@@ -213,5 +213,6 @@ function __stepHeader() {
 }
 
 function __testWhen() {
-    node -e "env = {...process.env}; result = Boolean(${1}); console.log(result)"
+    __loadEnv
+    node -e "env = {...process.env}; const input = JSON.parse(env.GIG_RUN_INPUT); console.log(${1})"
 }

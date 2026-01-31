@@ -19,8 +19,6 @@ DATA = 'data'
 
 STRING_DATA = 'stringData'
 
-UID = 'uid'
-
 GIG_MOD_REFS = 'gig_def_refs'
 
 GIG_RUN = 'gigrun'
@@ -85,7 +83,7 @@ def on_create_gigrun(body, meta, patch, logger, **_):
 
     job = create_job(cron_job, gig_run, gig_mod, gigrunner_secret, gig_def_secrets_map)
 
-    create_or_patch_inputValues_secret(gig_run)
+    create_or_patch_inputValues_secret(gig_run, logger)
 
     patch.metadata[GIG_CONSTS.LABELS] = {
         GIG_CONSTS.JOB_NAME_SELECTOR_LABEL: job.name,
@@ -132,7 +130,7 @@ def on_update_gigrun_inputReceived_True(body, patch, logger, **_):
     gig_run = GigRun(body)
 
     if (gig_run.spec.inputReceived):
-        create_or_patch_inputValues_secret(gig_run)
+        create_or_patch_inputValues_secret(gig_run, logger)
 
         patch[GIG_CONSTS.SPEC] = {
             GIG_CONSTS.INPUT_RECEIVED: (not gig_run.spec.inputReceived),
@@ -156,24 +154,19 @@ def update_gig_def_commands(gig_mod: GigModule):
             if (command):
                 stage.command = command
 
-def create_or_patch_inputValues_secret(gig_run: GigRun):
+def create_or_patch_inputValues_secret(gig_run: GigRun, logger):
     uid = gig_run.metadata.annotations[GigRun.UUID_ANNOTATION]
-    inputValues = GIG_CONSTS.GLOBAL_REGISTRY.pop(uid, {})
+    inputValues = GIG_CONSTS.GLOBAL_REGISTRY.pop(uid, '')
 
-    for k in inputValues:
-        inputValues[k] = str(inputValues[k])
-
-    inputValuesSecret = Secret(gig_run.name, namespace=gig_run.metadata.namespace)
-
-    if (not inputValuesSecret.exists()):
-        inputValuesSecret[STRING_DATA] = inputValues
-        inputValuesSecret['type'] = f'{GigRun.group}/{GigRun.singular}'
-        inputValuesSecret.create()
-        inputValuesSecret.set_owner(gig_run)
-    elif (inputValues):
-        inputValuesSecret.patch(
-            {DATA: None, STRING_DATA: inputValues}, type='merge'
-        )
+    if (inputValues):
+        inputValuesSecret = Secret(gig_run.name, namespace=gig_run.metadata.namespace)
+        inputValuesSecret[STRING_DATA] = {GIG_CONSTS.INPUT_VALUES: inputValues}
+        if (not inputValuesSecret.exists()):
+            inputValuesSecret['type'] = f'{GigRun.group}/{GigRun.singular}'
+            inputValuesSecret.create()
+            inputValuesSecret.set_owner(gig_run)
+        else:
+            inputValuesSecret.patch({STRING_DATA: {GIG_CONSTS.INPUT_VALUES: inputValues}})
 
 def create_job(cron_job: CronJob, gig_run: GigRun, gig_mod: GigModule, gigrunner_secret: Secret, gig_def_secrets_map: dict) -> Job:
     spec = deepcopy(cron_job.spec.jobTemplate)

@@ -51,8 +51,8 @@ function {{ STAGE_FUNCTION_NAME }}() {
         local __STEP_ID=${1}
 
         {%- if step.iterate and step.iterate.when %}
-        local __WHEN= $(__testWhen '{{ step.iterate.when }}')
-        if [[ ${__WHEN,,} != 'false' ]]
+        local __WHEN=$(__testWhen '{{ step.iterate.when }}')
+        if [[ ${__WHEN,,} = 'true' ]]
         then
             {%- filter indent(width=8) %}
             {{- run_step(stage, step, HAS_SECRETS, STAGE_NAME, STEP_NAME, STEP_RUN_DIR, STEP_RUN_NAME) }}
@@ -73,8 +73,8 @@ function {{ STAGE_FUNCTION_NAME }}() {
     export -f {{ STEP_FUNCTION_NAME }}
     export __EXP_STEP_ID="${_STEP_ID}"
       {%- if step.when %}
-    local __WHEN= $(__testWhen '{{ step.when }}')
-    if [[ ${__WHEN,,} != 'false' ]]
+    local __WHEN=$(__testWhen '{{ step.when }}')
+    if [[ ${__WHEN,,} = 'true' ]]
     then
       {%- if step.iterate %}
         {{- realize_iterators(step, STEP_FUNCTION_NAME, STAGE_NAME) }}

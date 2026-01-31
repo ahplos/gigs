@@ -82,6 +82,10 @@ elCicdDefs:
           required:
           - label
           properties:
+            defaultValue:
+              type: string
+              description: |-
+                The default value of the input item.  For numbered or boolean components, use the corresponding string value; e.g. 'true' vs true.
             isChecked:
               type: boolean
               description: |-
@@ -134,16 +138,17 @@ elCicdDefs:
               type: string
               description: |-
                 For text based components, placeholder of the text input when there is no value.
+            style:
+              type: object
+              description: |-
+                Basic CSS styling can be defined here; e.g. maxWidth: 500px.
+              x-kubernetes-preserve-unknown-fields: true
             type:
               type: string
               description: |-
                 For Text component only, configures the typeof input.  Can be 'text', 'date', 'datetime-local', 'email', 'month',
                 'number', 'password', 'search', 'tel', 'time', or 'url'.
               enum: ["text", "date", "datetime-local", "email", "month", "number", "password", "search", "tel", "time", or "url"]
-            defaultValue:
-              type: string
-              description: |-
-                The default value of the input item.  For numbered or boolean components, use the corresponding string value; e.g. 'true' vs true.
         helperText:
           type: string
           description: |-
@@ -521,15 +526,13 @@ elCicdDefs-$<GIG_RUN>:
         type: boolean
         default: false
       inputValues:
-        type: object
+        type: string
         description: |
-          Dictionary of input values to pass to a Pod when starting a GigRun, or to resume execution when paused for further input.
+          JSON string of input values to pass to a runner Pod when starting a GigRun, or to resume execution when paused for further input.
           InputValues are never preserved in a deployed GigRun, but rather used by the Gig Operator to create an associated Secret for
-          the Pod to read and use.
-        x-kubernetes-preserve-unknown-fields: true
-        properties:
-          additionalProperties:
-            type: string
+          the Pod to read and use.  The Secret will contain the JSON string of all inputValues, each subsequent update will be merged with
+          any existing values for the life of the GigRun, and the JSON string all will be injected into an environment variable in the runner
+          as GIG_RUN_INPUT.
       runState: $<RUN_STATE>
       startedBy:
         type: string
