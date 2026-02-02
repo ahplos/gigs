@@ -68,13 +68,9 @@ export const GIG_MAP: Map<string, GigRun> = new Map();
 export const CURRENT_GIG_RUN = "CURRENT_GIG_RUN";
 
 export type InputCompGroupSpec = {
+    inputType: string;
+    attributes: object;
     var: string;
-    components: {
-        inputType: string;
-        attributes: object;
-        booleans: string[];
-        tooltip: string;
-    }[];
 };
 
 export type GigForm = K8sResourceCommon & {

@@ -55,7 +55,7 @@ const GigModulesTable: React.FC<GigFormTableProps> = ({ data, unfilteredData, lo
     ];
 
     let listItems = (gigForm: GigForm) => {
-        return gigForm.spec.inputForm?.map((widget) => <ListItem><b>{widget.var}</b> [{widget.components[0].inputType}]</ListItem>)
+        return gigForm.spec.inputForm?.map((widget) => <ListItem><b>{widget.var}</b> [{widget.inputType}]</ListItem>)
     };
 
     const GigModulesRow: React.FC<RowProps<GigForm>> = ({ obj, activeColumnIDs }) => {

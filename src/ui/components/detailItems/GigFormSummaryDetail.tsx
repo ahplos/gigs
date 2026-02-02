@@ -17,7 +17,7 @@ export const GigFormSummaryDetail = (model) => {
 
     return (
         <List component={ListComponent.ol} type={OrderType.number}>
-            {gigForm.spec.inputForm?.map((comp) => <ListItem><b>{comp.var}</b> [{comp.components[0].inputType}]</ListItem>)}
+            {gigForm.spec.inputForm?.map((comp) => <ListItem><b>{comp.var}</b> [{comp.inputType}]</ListItem>)}
         </List>
     );
 }
