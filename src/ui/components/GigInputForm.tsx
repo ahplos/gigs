@@ -98,20 +98,19 @@ export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFo
         (formType == GigFormType.PREVIEW && formSpec)
     if (showForm) {
         let formName = 'gigrun-input-form';
+        let buttonLabel = (formType == GigFormType.WAITING_FOR_INPUT) ? (formSpec ? 'Submit' : 'Approve') : 'Start';
         return (
             <Form id={formName} name={formName} onSubmit={ (e) => {
                     e.preventDefault();
                     const target = e.target as HTMLFormElement;
-                    target.reportValidity() && submissionAction(gigFormState);
+                    target.reportValidity() && formType != GigFormType.PREVIEW && submissionAction(gigFormState);
                 }}
             >
                 {formSpecGroups.length ? <>{formSpecGroups}<Divider/></> : <></> }
                 <ActionGroup>
-                    {!(formType == GigFormType.PREVIEW) &&
-                        <Button type={ButtonType.submit} variant='primary' >
-                            {(formType == GigFormType.WAITING_FOR_INPUT) ? (formSpec ? 'Submit' : 'Approve') : 'Start'}
-                        </Button>
-                    }
+                    <Button type={ButtonType.submit} variant='primary' >
+                        {formType == GigFormType.PREVIEW ? 'Test' : buttonLabel}
+                    </Button>
                     {(formType == GigFormType.WAITING_FOR_INPUT) &&
                         <Button
                             type={ButtonType.submit}
