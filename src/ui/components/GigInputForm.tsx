@@ -23,7 +23,7 @@ import {
     inputComps,
 } from '../utilities/inputComps';
 
-const createFormGroup = (formGroup, gigFormState, setGigFormState, gigFormErrors, setGigFormErrors) => {
+const createFormGroup = (formGroup, gigFormState, setGigFormState, selectAllFormState, setSelectAllFormState, gigFormErrors, setGigFormErrors) => {
     let formGroupKeys = ['style', 'isInline', 'label', 'labelInfo'];
 
     formGroup.attributes.fieldId = formGroup.var;
@@ -36,11 +36,13 @@ const createFormGroup = (formGroup, gigFormState, setGigFormState, gigFormErrors
     const Tag = inputComps[formGroup.inputType];
     let formGroupChildren =
         <Tag formGroup={formGroup}
-            gigFormState={gigFormState}
-            setGigFormState={setGigFormState}
-            gigFormErrors={gigFormErrors}
-            setGigFormErrors={setGigFormErrors}
-            props={inputCompAttrs} />
+             gigFormState={gigFormState}
+             setGigFormState={setGigFormState}
+             selectAllFormState={selectAllFormState}
+             setSelectAllFormState={setSelectAllFormState}
+             gigFormErrors={gigFormErrors}
+             setGigFormErrors={setGigFormErrors}
+             props={inputCompAttrs} />
 
     let formGroupId = `formGroup-${formGroup.var}`;
     const formGroupAttrs: any = {};
@@ -85,12 +87,14 @@ interface GigModuleFormProps {
 
 export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFormProps) => {
     let formState: any = {};
+    let selectAllState: any = {};
     const [gigFormState, setGigFormState] = React.useState(formState);
+    const [selectAllFormState, setSelectAllFormState] = React.useState(selectAllState);
 
     const [gigFormErrors, setGigFormErrors] = React.useState({});
 
     let formSpecGroups = formSpec?.map( (formGroup, index) => {
-        return createFormGroup(formGroup, gigFormState, setGigFormState, gigFormErrors, setGigFormErrors);
+        return createFormGroup(formGroup, gigFormState, setGigFormState, selectAllFormState, setSelectAllFormState, gigFormErrors, setGigFormErrors);
     }) ?? [];
 
     const showForm = (formType == GigFormType.WAITING_FOR_INPUT) ||

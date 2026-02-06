@@ -79,8 +79,6 @@ elCicdDefs:
           type: object
           description: |-
             General attributes for form component(s).  Only the label is required.
-          required:
-          - label
           properties:
             defaultValue:
               type: string
@@ -125,7 +123,7 @@ elCicdDefs:
             options:
               type: array
               description: |-
-                For Select, RadioGroup, and Checkbox  components, a list a strings representing choices for the user to select.
+                For Select, RadioGroup, and CheckboxGroup components, a list a strings representing choices for the user to select.
                 For RadioGroup and Select components this corresponds to the possible values, too.
               items:
                 type: string
@@ -158,12 +156,14 @@ elCicdDefs:
           description: |-
             The type of component(s) to display.  May be either:
             - Checkbox
+            - CheckboxGroup
             - RadioGroup
             - Select
             - Text
             - TextArea
           enum:
           - Checkbox
+          - CheckboxGroup
           - RadioGroup
           - Select
           - Text

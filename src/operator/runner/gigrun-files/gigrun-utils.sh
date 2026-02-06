@@ -101,7 +101,6 @@ function __generateSecretFilter() {
 }
 
 function __filterStageLogOutput() {
-    local __DELIM=$'\x1F'
     local _STAGE_COUNTER=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
 
     LOGGING="$(cat)"
@@ -109,7 +108,6 @@ function __filterStageLogOutput() {
 }
 
 function __filterStepLogOutput() {
-    local __DELIM=$'\x1F'
     local _STEP_ID=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
 
     LOGGING="$(cat)"
@@ -118,6 +116,7 @@ function __filterStepLogOutput() {
 
 function __filterSecrets() {
     __loadEnv
+    local __DELIM=$'\x1F'
     local SECRETS_REGEX=$(__generateSecretFilter)
     echo "$(echo "${1}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g")"
 }

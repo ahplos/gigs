@@ -97,12 +97,12 @@ elCicdTemplates:
           gigModuleRef:
             name: $<GIG_MOD_ASK_USER>
       - name: $<DEMONSTRATE_GO>
-        when: input.LANG_GO
+        when: input.LANG_DEMO.includes('Go')
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
       - name: $<DEMONSTRATE_PYTHON>
-        when: input.LANG_PYTHON
+        when: input.LANG_DEMO.includes("Python")
         maxParallel: 2
         iterate:
           when: env.INDEX != 2
@@ -139,16 +139,14 @@ elCicdTemplates:
           interpreter: Input
           sourceCode: |-
             formTitle:
-              title: 'Select the Gig Interpreter(s) to demo'
+              title: 'Gig Interpreter(s) to demo'
             inputForm:
               {%- include 'gig_interpreters.j2' %}
               {%- from 'gig_interpreters.j2' import LANGS %}
-              {%- for LANG in LANGS %}
               - attributes:
-                  label: {{ LANG }}
-                inputType: Checkbox
-                var: LANG_{{ LANG|upper }}
-              {%- endfor %}
+                  options: {{ LANGS }}
+                inputType: CheckboxGroup
+                var: LANG_DEMO
 
   elCicdDefs-$<GIG_MOD_SOURCE_DEMO>:
     GIG_MOD_SPECS:

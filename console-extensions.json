@@ -144,7 +144,7 @@
     "type": "console.tab/horizontalNav",
     "properties": {
       "page": {
-        "name": "Preview Form",
+        "name": "Preview",
         "href": "gigrun-preview"
       },
       "model": {

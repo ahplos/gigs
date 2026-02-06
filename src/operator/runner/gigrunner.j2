@@ -42,7 +42,7 @@ function __gigrunner() {
     export -f {{ STAGE_FUNCTION_NAME }}
     export __EXP_STAGE_ID="${_STAGE_COUNTER}"
     {%- if stage.when %}
-    local __WHEN=$(__testWhen '{{ stage.when }}')
+    local __WHEN=$(__testWhen '{{ stage.when | replace("'", "'\\''") }}')
     if [[ ${__WHEN,,} == 'true' ]]
     then
       {%- if stage.iterate %}
