@@ -17,6 +17,8 @@ elCicdDefs:
 
   SECRET_NAME: $<OBJ_NAME_PREFIX>-secrets
 
+  GITHUB_HOOK: github-hook
+
   HISTORY_LIMIT: 15
 
 elCicdTemplates:
@@ -71,3 +73,40 @@ elCicdTemplates:
   objName: $<SECRET_NAME>
   stringData:
     A_SECRET: the demo secret
+
+- templateName: secret
+  objName: $<GITHUB_HOOK>
+  stringData:
+    secret: the demo secret
+
+- apiVersion: batch.ahplos.org/v1beta1
+  kind: GigHook
+  objNames: [$<OBJ_NAME_PREFIX>, $<OBJ_NAME_PREFIX>]
+  objName: $<OBJ_NAME_PREFIX>-$<#>
+  template:
+    spec:
+      eventData:
+      - key: X-GitHub-Event
+        validation:
+          match: ^push$
+      - key: $.deleted
+        source: Payload
+        validation:
+          bool: false
+      - key: X-Hub-Signature-256
+        validation:
+          secretKeyRef:
+            name: hook-secret
+            key: hook-secret
+          type: HMAC
+      - key: $.ref
+        source: Payload
+        inputVar: SCM_BRANCH
+        validation:
+          match: ^refs/heads/development$
+
+- templateName: secret
+  objName: hook-secret
+  stringData:
+    hook-secret: my-test-secret
+

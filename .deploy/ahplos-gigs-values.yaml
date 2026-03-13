@@ -1,6 +1,7 @@
 elCicdDefs:
   PLUGIN_NAME: ahplos-gigs-console-plugin
   OPERATOR_NAME: ahplos-gigs-operator
+  GIG_HOOKS_HANDLER: ahplos-gighooks
 
   IMAGE_REGISTRY: dev-demo-image-registry.apps-crc.testing
   AHPLOS_GIGS_PLUGIN_IMAGE: $<IMAGE_REGISTRY>/$<PLUGIN_NAME>:latest
@@ -36,7 +37,9 @@ elCicdTemplates:
   imagePullSecrets:
   - name: $<AHPLOS_GIGS_IMAGE_PULL_SECRET>
   imagePullPolicy: $<IMAGE_PULL_POLICY>
-  serviceAccountName: $<OBJ_NAME>
+  strategy:
+    type: Recreate
+  serviceAccountName: $<OPERATOR_NAME>
   workDir: /ahplos-gigs-controller
   command:
   - bash
@@ -56,14 +59,34 @@ elCicdTemplates:
   - name: AHPLOS_GIGS_INTERPRETER_MAP
     value: $<AHPLOS_GIGS_INTERPRETER_MAP>
   volumeMounts:
-    - name: $<CERT_NAME>
-      readOnly: true
-      mountPath: /var/cert
+  - name: $<CERT_NAME>
+    readOnly: true
+    mountPath: /var/cert
   volumes:
-    - name: $<CERT_NAME>
-      secret:
-        secretName: $<CERT_NAME>
-        defaultMode: 0420
+  - name: $<CERT_NAME>
+    secret:
+      secretName: $<CERT_NAME>
+      defaultMode: 0420
+
+- templateNames: [deployment, service, ingress]
+  objName: $<GIG_HOOKS_HANDLER>-handler
+  port: $<PORT>
+  host: $<GIG_HOOKS_HANDLER>.$<CLUSTER_DOMAIN>
+  path: /
+  image: $<AHPLOS_GIGS_OPERATOR_IMAGE>
+  imagePullSecrets:
+  - name: $<AHPLOS_GIGS_IMAGE_PULL_SECRET>
+  imagePullPolicy: $<IMAGE_PULL_POLICY>
+  serviceAccountName: $<OPERATOR_NAME>
+  workDir: /ahplos-gigs-controller
+  command:
+  - bash
+  - -c
+  - |-
+    set -ex
+    ls -al
+    python --version
+    python gig_hooks_handler.py $<toString|PORT>
 
 - templateName: configMap
   elCicdDefs:
@@ -245,6 +268,7 @@ elCicdTemplates:
     - gigmodules
     - gigforms
     - gigs
+    - gighooks
     - gigruns
     - gigmodules/status
     - gigforms/status
@@ -253,6 +277,7 @@ elCicdTemplates:
     - gigmodules/finalizers
     - gigforms/finalizers
     - gigs/finalizers
+    - gighooks/finalizers
     - gigruns/finalizers
 
 - templateName: clusterRole

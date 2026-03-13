@@ -13,7 +13,7 @@
     "clean-all": "rm -rf dist node_modules",
     "build": "yarn clean && yarn install && NODE_ENV=prod yarn webpack",
     "build-dev": "yarn clean && yarn install && yarn webpack",
-    "build-image": "build_image() { podman build --squash -f ${2:-Dockerfile} --tag $1; } ; build_image",
+    "build-image": "build_image() { podman build --tls-verify=false --squash -f ${2:-Dockerfile} --tag $1; } ; build_image",
     "push-image": "push_image() { podman push --tls-verify=false $1; }; push_image",
     "build-push-image": "build_push_image() { yarn build-image $1 $2 && yarn push-image $1; }; build_push_image",
     "build-all": "build_all() { yarn build && yarn build-push-image $1 $2; }; build_all",

@@ -161,13 +161,13 @@ elCicdTemplates:
             package main
 
             import (
-              "os"
+                "os"
             )
 
             func main() {
-              var f, _ = os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
-              defer f.Close()
-              f.WriteString("\nTEST_MSG='This test msg was set using Go'")
+                var f, _ = os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
+                defer f.Close()
+                f.WriteString("\nTEST_MSG='This test msg was set using Go'")
             }
         - name: print-the-go-msg
           maxParallel: 2

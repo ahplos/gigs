@@ -1,9 +1,10 @@
 elCicdDefs:
   GIG: gig
   GIG_FORM: $<GIG>form
+  GIG_HOOK: $<GIG>hook
   GIG_MODULE: $<GIG>module
   GIG_RUN: $<GIG>run
-  GIG_TYPES: [$<GIG_MODULE>, $<GIG_FORM>, $<GIG>, $<GIG_RUN>]
+  GIG_TYPES: [$<GIG_MODULE>, $<GIG_FORM>, $<GIG_HOOK>, $<GIG>, $<GIG_RUN>]
 
   STAGE_STEP_PATTERN: '[a-z]+(?:-[a-z0-9]+)*'
 
@@ -12,6 +13,24 @@ elCicdDefs:
       type: string
     namespace:
       type: string
+
+  STEP_REF:
+    type: object
+    description: |-
+      Reference to another Step in a Stage in a GigModuleto be processed where referenced.  When clauses in the
+      referenced Step are ignored.
+    required:
+    - gigModuleRef
+    - stage
+    - name
+    properties:
+      gigModuleRef: $<GIG_MODULE_REF>
+      name:
+        type: string
+        pattern: $<STAGE_STEP_PATTERN>
+      stage:
+        type: string
+        pattern: $<STAGE_STEP_PATTERN>
 
   RUN_STATE:
     type: string
@@ -64,7 +83,7 @@ elCicdDefs:
 
   FORM_SPEC:
     type: array
-    description: |
+    description: |-
       Optional list of groups of components organized into sections of a form users will use to  a job.
     x-kubernetes-list-type: map
     x-kubernetes-list-map-keys:
@@ -177,12 +196,12 @@ elCicdDefs:
 elCicdDefs-$<GIG_FORM>:
   TITLE_CASE_NAME: GigForm
   SHORT_NAMES:
-  - gigform
-  - gigforms
+  - $<GIG_FORM>
+  - $<GIG_FORM>s
   SPEC_DEFINITION:
     type: object
-    description: |
-      $<TITLE_CASE_NAME>Spec defines a GigForm, and the optional and/or required inputValues to  it.
+    description: |-
+      $<TITLE_CASE_NAME>Spec defines a $<TITLE_CASE_NAME>, and the optional and/or required inputValues to  it.
     required:
     - inputForm
     properties:
@@ -192,8 +211,8 @@ elCicdDefs-$<GIG_FORM>:
 elCicdDefs-$<GIG_MODULE>:
   TITLE_CASE_NAME: GigModule
   SHORT_NAMES:
-  - gigmod
-  - gigmods
+  - $<GIG_MODULE>
+  - $<GIG_MODULE>s
   ITERATE_SPEC:
     type: object
     properties:
@@ -248,8 +267,8 @@ elCicdDefs-$<GIG_MODULE>:
     - loops
   SPEC_DEFINITION:
     type: object
-    description: |
-      $<TITLE_CASE_NAME>Spec defines a GigModule, and the optional and/or required inputValues to  it.
+    description: |-
+      $<TITLE_CASE_NAME>Spec defines a $<TITLE_CASE_NAME>, and the optional and/or required inputValues to  it.
     required:
     - activeDeadlineSeconds
     - stages
@@ -257,7 +276,7 @@ elCicdDefs-$<GIG_MODULE>:
     properties:
       activeDeadlineSeconds:
         type: integer
-        description: |
+        description: |-
           Time in seconds before a GigRun will be terminated. This value will override any value set in an associated CronJob.
         default: 600
       description:
@@ -265,7 +284,7 @@ elCicdDefs-$<GIG_MODULE>:
       gigFormRef: $<GIG_FORM_REF>
       inputParams:
         type: array
-        description: |
+        description: |-
           List of input params used by the module.  This list has no functional value and is not verified. Use it for
           documentation purposes only.
         items:
@@ -274,7 +293,7 @@ elCicdDefs-$<GIG_MODULE>:
       mode: $<MODE_SPEC>
       requiredInputParams:
         type: array
-        description: |
+        description: |-
           List of required input parameters that are required to  to module.  A Secret with the same name as the GigRun
           will be checked for existence and that the required params are defined before ing.
         items:
@@ -283,14 +302,14 @@ elCicdDefs-$<GIG_MODULE>:
         x-kubernetes-list-type: set
       secretVars:
         type: array
-        description: |
+        description: |-
           List of environment variables that are secrets and should be obfuscated in GigRun logs.
         items:
           type: string
         x-kubernetes-list-type: set
       stages:
         type: array
-        description: |
+        description: |-
           List of stages. Stages are a comprised of a list of Steps.  Can be referenced from other GigModules.
         x-kubernetes-list-type: map
         x-kubernetes-list-map-keys:
@@ -310,7 +329,7 @@ elCicdDefs-$<GIG_MODULE>:
             iterate: $<ITERATE_SPEC>
             maxParallel:
               type: integer
-              description: |
+              description: |-
                 Number of maximum background processes the stage should run in.  If greater than 0, then stage will spawn
                 in the background up the to number given; e.g. if the stage is iterated over 5 times, but maxParallel
                 is 3, at most 3 active stages will execute simultaneously until all 5 are run.
@@ -320,7 +339,7 @@ elCicdDefs-$<GIG_MODULE>:
               pattern: $<STAGE_STEP_PATTERN>
             stageRef:
               type: object
-              description: |
+              description: |-
                 Reference to another Stage in a GigModule to be processed where referenced.  When clauses in the
                 referenced Stage are ignored.
               required:
@@ -334,13 +353,13 @@ elCicdDefs-$<GIG_MODULE>:
               type: boolean
             when:
               type: string
-              description: |
+              description: |-
                 Javascript statement that must evaluate to `true` for the stage to be processed. For ease of writing expressions,
                 environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in shell can be refered
                 to as `env.FOO` in the statements.
             interationWhen:
               type: string
-              description: |
+              description: |-
                 Javascript statement that must evaluate to `true` for the step to be processed. For ease of writing expressions,
                 environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in shell can be refered
                 to as `env.FOO` in the statements. Only evaluated if iterate are defined, and evaluated each time just before
@@ -349,7 +368,7 @@ elCicdDefs-$<GIG_MODULE>:
               type: string
             steps:
               type: array
-              description: |
+              description: |-
                 List of Steps within a Stage.  Steps define a unit of work within a Stage. Can be referenced by name in other Stages.
               x-kubernetes-list-type: map
               x-kubernetes-list-map-keys:
@@ -366,7 +385,7 @@ elCicdDefs-$<GIG_MODULE>:
                 properties:
                   command:
                     type: string
-                    descriptions: |
+                    descriptions: |-
                       Command used to process the sourceCode. The 'command' is defined by the 'interpreter' and set by the gigs controller
                       unless the 'interpreter' is set to 'Custom'.
                   args:
@@ -377,7 +396,7 @@ elCicdDefs-$<GIG_MODULE>:
                     description: Description of name's purpose.
                   interpreter:
                     type: string
-                    description: |
+                    description: |-
                       The interpretor for the step, either a module type or language. Scripts are mounted as files in the Pod and executed
                       using the declared interpreter; i.e. in a subprocess. The 'Shell' (Bash) interpreter is the default.
                     enum:
@@ -392,41 +411,26 @@ elCicdDefs-$<GIG_MODULE>:
                   iterate: $<ITERATE_SPEC>
                   maxParallel:
                     type: integer
-                    description: |
+                    description: |-
                       Number of maximum background processes the step should run in.  If greater than 0, then step will spawn
                       in the background up the to number given; e.g. if the step is iterated over 5 times, but maxParallel
                       is 3, at most 3 active steps will execute simultaneously until all 5 are run.
                   name:
                     type: string
-                    description: |
+                    description: |-
                       Name of the step. Must start and end with an alphanumeric character, and '-' and '.' may be used.
                       The name will reflect the name of the file used to store the sourceCode, so name appropiately;
                       e.g. <some-name>.py if the name is a Python sourceCode.
                     pattern: $<STAGE_STEP_PATTERN>
                   sourceCode:
                     type: string
-                    description: |
+                    description: |-
                       The sourceCode to execute. Can be writting in any language or module type supported by Ahplos Gigs,
                       or as a sourceCode for a custom command to run.  Can alse refer to another GigModule.
-                  stepRef:
-                    type: object
-                    description: |
-                      Reference to another Step in a Stage in a GigModuleto be processed where referenced.  When clauses in the
-                      referenced Step are ignored.
-                    required:
-                    - gigModuleRef
-                    - stage
-                    properties:
-                      gigModuleRef: $<GIG_MODULE_REF>
-                      name:
-                        type: string
-                        pattern: $<STAGE_STEP_PATTERN>
-                      stage:
-                        type: string
-                        pattern: $<STAGE_STEP_PATTERN>
+                  stepRef: $<STEP_REF>
                   secretVars:
                     type: array
-                    description: |
+                    description: |-
                       A list of environment variables that should be obfuscated in the logs. Because these variables may
                       be assigned before the log filtering component is aware of the variable, debug logging/tracing will be turned
                       off for this stage if secretVars are defined.  Once declared, the value assigned in this stage
@@ -439,13 +443,13 @@ elCicdDefs-$<GIG_MODULE>:
                     type: boolean
                   when:
                     type: string
-                    description: |
+                    description: |-
                       Javascript statement that must evaluate to `true` for the step to be processed. For ease of writing expressions,
                       environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in shell can be refered
                       to as `env.FOO` in the statements.
                   interationWhen:
                     type: string
-                    description: |
+                    description: |-
                       Javascript statement that must evaluate to `true` for the step to be processed. For ease of writing expressions,
                       environment variables are copied into the `env` Javascript object; e.g. FOO='some value' in shell can be refered
                       to as `env.FOO` in the statements. Only evaluated if iterate are defined, and evaluated each time just before
@@ -459,9 +463,14 @@ elCicdDefs-$<GIG_MODULE>:
 
 elCicdDefs-$<GIG>:
   TITLE_CASE_NAME: Gig
+  SHORT_NAMES:
+  - $<GIG>
+  - $<GIG>s
   SPEC_DEFINITION:
     type: object
-    description: $<TITLE_CASE_NAME>Spec defines the relationship between a $<GIG_MODULE> and specific CronJob (i.e. JobTemplate).
+    description: |-
+      $<TITLE_CASE_NAME>Spec defines a $<TITLE_CASE_NAME>. $<TITLE_CASE_NAME>s represent the relationship between a
+      GigModule, CronJob, and GigForm.
     properties:
       cronJobRef:
         type: object
@@ -479,6 +488,7 @@ elCicdDefs-$<GIG>:
         required:
         - name
       gigFormRef: $<GIG_FORM_REF>
+
     required:
     - cronJobRef
     - gigModuleRef
@@ -500,26 +510,24 @@ elCicdDefs-$<GIG>:
 
 elCicdDefs-$<GIG_RUN>:
   TITLE_CASE_NAME: GigRun
+  SHORT_NAMES:
+  - $<GIG_RUN>
+  - $<GIG_RUN>s
   SPEC_DEFINITION:
     type: object
-    description: |
-      $<TITLE_CASE_NAME>Spec defines a specific Job run produced from the parent Gig's CronJob.
+    description: |-
+      $<TITLE_CASE_NAME>Spec defines a $<TITLE_CASE_NAME>, which in turn trigger a Job produced from the parent Gig's CronJob.
     properties:
       gigRef:
         type: object
+        required:
+        - name
         properties:
           name:
             type: string
             x-kubernetes-validations:
             - rule: "!(self != oldSelf)"
-              message: gigRef name and containerName are immutable
-          containerName:
-            type: string
-            x-kubernetes-validations:
-            - rule: "!(self != oldSelf)"
-              message: gigRef name and containerName are immutable
-        required:
-        - name
+              message: gigRef is immutable
       formTitle: $<TITLE_SPEC>
       inputForm: $<FORM_SPEC>
       inputReceived:
@@ -527,7 +535,7 @@ elCicdDefs-$<GIG_RUN>:
         default: false
       inputValues:
         type: string
-        description: |
+        description: |-
           JSON string of input values to pass to a runner Pod when starting a GigRun, or to resume execution when paused for further input.
           InputValues are never preserved in a deployed GigRun, but rather used by the Gig Operator to create an associated Secret for
           the Pod to read and use.  The Secret will contain the JSON string of all inputValues, each subsequent update will be merged with
@@ -536,7 +544,7 @@ elCicdDefs-$<GIG_RUN>:
       runState: $<RUN_STATE>
       startedBy:
         type: string
-        description: |
+        description: |-
           User or ServiceAccount that created the GigRun.
         x-kubernetes-validations:
         - rule: "size(oldSelf) > 0 && !(self != oldSelf)"
@@ -548,8 +556,89 @@ elCicdDefs-$<GIG_RUN>:
     properties:
       runTime:
         type: integer
-        description: |
+        description: |-
           Time in seconds it took to complete processing the GigRun.
+
+elCicdDefs-$<GIG_HOOK>:
+  TITLE_CASE_NAME: GigHook
+  SHORT_NAMES:
+  - $<GIG_HOOK>
+  - $<GIG_HOOK>s
+  SPEC_DEFINITION:
+    type: object
+    description: |-
+      $<TITLE_CASE_NAME>Spec defines a $<TITLE_CASE_NAME>. A $<TITLE_CASE_NAME> defines a trigger
+      from external sources for a $<GIG>.  $<GIG_HOOK>s must exist in the same namespace and have
+      the same name as the $<GIG> they intend to trigger.
+    properties:
+      isEnabled:
+        type: boolean
+        default: true
+      eventData:
+        type: array
+        description: |-
+          List of values to expected in hook.  Used to defined expected values and/or whether
+          they are to be passed onto the $<GIG_RUN> if it hook passes validation.
+        items:
+          type: object
+          x-kubernetes-validations:
+          - rule: "has(self.inputVar) || has(self.validation)"
+            message: "You must define a mapping to a $<GIG_RUN> inputVar and/or a validation for each listing"
+          required:
+          - key
+          - source
+          properties:
+            key:
+              type: string
+              description: |-
+                The key of the incoming request.  Headers and query strings are treated as literals.  Payload keys
+                are treated as JSON paths.
+            inputVar:
+              type: string
+              description:
+                Name of variable to pass the value from the hook event to the $<GIG_RUN>. If values need further processing,
+                that logic belongs inside a GigModule.
+            source:
+              type: string
+              description: |-
+                Where to look for the key in the POST to extract the value.
+              enum:
+              - Header
+              - Payload
+              - QueryString
+              default: Header
+            validation:
+              type: object
+              x-kubernetes-validations:
+              oneOf:
+                - required: ["bool"]
+                - required: ["match"]
+                - required: ["secretKeyRef"]
+              properties:
+                bool:
+                  type: boolean
+                match:
+                  type: string
+                  description:
+                    Regular expression or HMAC key to validate against the incoming value.
+                secretKeyRef:
+                  type: object
+                  description:
+                    Regular expression or HMAC key in Secret to validate against the incoming value.
+                  properties:
+                    name:
+                      type: string
+                    key:
+                      type: string
+                type:
+                  type: string
+                  description: |
+                    Determines how non-boolean matches are performed against the incoming value. Regex will
+                    match against a regular expression, and HMAC compare the incoming value against the HMAC
+                    hash based on the payload and the given key.
+                  enum:
+                  - Regex
+                  - HMAC
 
 elCicdTemplates:
 - apiVersion: apiextensions.k8s.io/v1

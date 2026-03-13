@@ -113,3 +113,21 @@ class GigRun(new_class('GigRun', version=f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/{GIG_CO
     def raw(self, value: Any) -> None:
         self._raw = Box(value, default_box=True, default_box_attr=None)
 
+class GigHook(new_class('GigHook', version=f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/{GIG_CONSTS.V1_BETA1}', namespaced=True)):
+
+    group: str = GIG_CONSTS.BATCH_AHPLOS_ORG
+
+    def __create_box(self, value: Any = {}):
+        return Box(value, default_box=True, default_box_attr=None)
+
+    def __init__(self, resource: SpecType, namespace: str | None = None, api: Api | None = None) -> None:
+        super().__init__(resource, namespace, api)
+        self.raw.setdefault('metadata', self.__create_box()).setdefault('labels', self.__create_box())
+        self.raw.metadata.setdefault('annotations', self.__create_box())
+        self.raw.setdefault('spec', self.__create_box()).setdefault('eventData', BoxList())
+        self.raw.spec.setdefault('isEnabled', False)
+
+    @APIObject.raw.setter
+    def raw(self, value: Any) -> None:
+        self._raw = Box(value, default_box=True, default_box_attr=None)
+
