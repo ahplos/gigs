@@ -85,7 +85,7 @@ elCicdTemplates:
   - |-
     set -ex
     python --version
-    python gig_hooks_handler.py $<toString|PORT>
+    python gighook_handler.py $<toString|PORT>
 
 - templateName: configMap
   elCicdDefs:
