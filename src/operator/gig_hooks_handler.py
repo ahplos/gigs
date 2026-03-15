@@ -37,7 +37,7 @@ class GigHookValidationType(StrEnum):
 
 logger = logging.getLogger('GigHooks')
 
-@gig_hooks_handler.route(f'/gighook/<namespace>/<name>', methods=['POST'])
+@gig_hooks_handler.route('/gighooks/<namespace>/<name>', methods=['POST'])
 def process_trigger(namespace, name):
     gig_hook = GigHook.get(name, namespace)
     gig = Gig.get(name, namespace)

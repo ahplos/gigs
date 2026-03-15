@@ -101,7 +101,6 @@
       "component": { "$codeRef": "gigUiComponents.GigModStagesDetail" }
     }
   },
-
   {
     "type": "console.navigation/resource-ns",
     "properties": {
@@ -379,6 +378,72 @@
       },
       "component": { "$codeRef": "gigUiComponents.GigRunRunTimeDetail" },
       "path": "status.runTime"
+    }
+  },
+  {
+    "type": "console.navigation/resource-ns",
+    "properties": {
+      "id": "ahplos-gig-hooks",
+      "section": "ahplos-gigs-section",
+      "name": "GigHooks",
+      "model": {
+          "group": "batch.ahplos.org",
+          "version": "v1beta1",
+          "kind": "GigHook"
+      }
+    }
+  },
+  {
+    "type": "console.page/resource/list",
+    "properties": {
+      "model": {
+          "group": "batch.ahplos.org",
+          "version": "v1beta1",
+          "kind": "GigHook"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigHooksListPage" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "gighook-header-fields",
+      "column": "right",
+      "title": "Header Fields",
+      "model": {
+        "group": "batch.ahplos.org",
+        "version": "v1beta1",
+        "kind": "GigHook"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigHookHeaderFieldsDetail" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "gighook-querystring-fields",
+      "column": "right",
+      "title": "QueryString Fields",
+      "model": {
+        "group": "batch.ahplos.org",
+        "version": "v1beta1",
+        "kind": "GigHook"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigHookQueryStringFieldsDetail" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
+      "id": "gighook-payload-fields",
+      "column": "right",
+      "title": "Payload Fields",
+      "model": {
+        "group": "batch.ahplos.org",
+        "version": "v1beta1",
+        "kind": "GigHook"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigHookPayloadFieldsDetail" }
     }
   }
 ]

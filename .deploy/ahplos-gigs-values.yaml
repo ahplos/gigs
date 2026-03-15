@@ -84,7 +84,6 @@ elCicdTemplates:
   - -c
   - |-
     set -ex
-    ls -al
     python --version
     python gig_hooks_handler.py $<toString|PORT>
 

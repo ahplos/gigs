@@ -11,11 +11,11 @@ import {
 
 
 export const GigModRequiredInputVarsDetail = (model) => {
-    const gigDef: GigModule = model.obj;
+    const gigMod: GigModule = model.obj;
 
     return (
         <List isPlain>
-            {gigDef.spec.requiredInputParams?.map((param) => <ListItem><b>{param}</b></ListItem>)}
+            {gigMod.spec.requiredInputParams?.map((param) => <ListItem><b>{param}</b></ListItem>)}
         </List>
     );
 }

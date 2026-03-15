@@ -64,6 +64,12 @@ export const GIG_RUN_GVK: K8sGroupVersionKind = {
     kind: "GigRun",
 };
 
+export const GIG_HOOK_GVK: K8sGroupVersionKind = {
+    group: BATCH_AHPLOS_ORG,
+    version: API_VERSION,
+    kind: "GigHook",
+};
+
 export const GIG_MAP: Map<string, GigRun> = new Map();
 export const CURRENT_GIG_RUN = "CURRENT_GIG_RUN";
 
@@ -180,5 +186,27 @@ export type GigRun = K8sResourceCommon & {
 
     status?: {
         runTime?: number;
+    };
+};
+
+export type GigHookEventData = {
+    key: string;
+    inputVar?: string;
+    source: 'Header'| 'Payload' | 'QueryString' ;
+    validation?: {
+        bool?: boolean;
+        match?: string;
+        secretKeyRef?: {
+            name: string;
+            key: string;
+        }
+        type?: 'Regex' | 'HMAC';
+    }
+};
+
+export type GigHook = K8sResourceCommon & {
+    spec: {
+        isEnabled: boolean;
+        eventData: GigHookEventData[]
     };
 };

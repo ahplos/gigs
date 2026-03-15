@@ -12,10 +12,12 @@ import {
     GIG_MODULE_GVK,
     GIG_FORM_GVK,
     GIG_GVK,
+    GIG_HOOK_GVK,
     GIG_RUN_GVK,
     Gig,
     GigModule,
     GigForm,
+    GigHook,
     GigRun,
     GigRunState,
     JOB_GVK,
@@ -44,6 +46,22 @@ export default class GigK8sUtils {
         labelPluralKey: 'ahplos-gigs-plugin~GigRuns',
         namespaced: true,
         plural: 'gigruns',
+        propagationPolicy: 'Background',
+    };
+
+    private static readonly gigHookModel: K8sModel = {
+        abbr: 'GH',
+        apiGroup: 'batch.ahplos.org',
+        apiVersion: 'v1beta1',
+        crd: true,
+        id: 'gighook',
+        kind: 'GigHook',
+        label: 'GigHook',
+        labelKey: 'ahplos-gigs-plugin~GigHook',
+        labelPlural: 'GigHooks',
+        labelPluralKey: 'ahplos-gigs-plugin~GigHooks',
+        namespaced: true,
+        plural: 'gighooks',
         propagationPolicy: 'Background',
     };
 
@@ -171,6 +189,20 @@ export default class GigK8sUtils {
         options.groupVersionKind = GIG_RUN_GVK;
         options.isList = true;
         return GigK8sUtils.getK8sResources<GigRun[]>(options);
+    }
+
+    public static getGigHooks(
+        options: WatchK8sResource = {}
+    ) {
+        options.groupVersionKind = GIG_HOOK_GVK;
+        options.isList = true;
+        return GigK8sUtils.getK8sResources<GigHook[]>(options);
+    }
+
+    public static toggleGigHookEnabled = (gigRun: GigHook, enabled: boolean): Promise<GigHook> => {
+        gigRun.spec.isEnabled = enabled;
+
+        return k8sUpdate({model: GigK8sUtils.gigHookModel, data: gigRun})
     }
 
     public static patchGigRunInputValues = (gigRun: GigRun, inputValues: object): Promise<GigRun> => {
