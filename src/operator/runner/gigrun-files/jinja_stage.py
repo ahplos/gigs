@@ -14,6 +14,7 @@ environment.filters['from_yaml_all'] = safe_load_all
 
 template = environment.get_template(sys.argv[1])
 
-output = template.render(env=os.environ, cli_args=sys.argv[2:])
+args = sys.argv[2:] if len(sys.argv) > 1 else ''
+output = template.render(env=os.environ, cli_args=args)
 with open(f'{gigrun_working_dir}/{os.path.basename(sys.argv[2])}', 'w') as rendered_file:
     rendered_file.write(output)

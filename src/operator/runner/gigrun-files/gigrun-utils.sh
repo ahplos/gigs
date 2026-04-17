@@ -1,21 +1,16 @@
 #!/usr/bin/bash
 
+ECHO_XTRACE_REGEX='^[+]+\s+echo(\s|$)'
+
 __HEADER_FOOTER_BORDER='******************************************************************'
 __HEADER_FOOTER_PREFIX='**'
 
-function __loadEnv() {
-    set -o allexport
-    source .env
-    set +o allexport
-}
-
 function __verifyRequiredInputParams() {
-    __loadEnv
     for REQ_INPUT_PARAM in {{ ' '.join(gig_mod.spec.requiredInputParams) }}
     do
-        if [[ -z ${!REQ_INPUT_PARAM} ]]
+        if [[ -z $(gigEnvGet ${REQ_INPUT_PARAM}) ]]
         then
-            echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" | __filterStageLogOutput '--'
+            echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" | __logOutput '--'
             exit 1
         fi
     done
@@ -23,16 +18,18 @@ function __verifyRequiredInputParams() {
 
 function __saveInputParamsToEnv() {
     local JSON_INPUT_VALUES=$(kubectl get secret --ignore-not-found -n {{ gig_run.namespace }} {{ gig_run.name }} -o jsonpath='{.data.inputValues}' | base64 --decode)
-    GIG_RUN_INPUT=$(jq -s '.[0] + .[1] // empty' <(echo ${GIG_RUN_INPUT}) <(echo ${JSON_INPUT_VALUES}))
-    echo "${GIG_RUN_INPUT}" > .input.json
-    echo 'GIG_RUN_INPUT=$(cat .input.json)' >> .env
+    local GIG_RUN_INPUT=$(jq -s '.[0] + .[1] // empty' <(echo ${GIG_RUN_INPUT}) <(echo ${JSON_INPUT_VALUES}))
+    gigEnvSet __GIG_RUN_INPUT "${GIG_RUN_INPUT}"
 
     echo
     echo "${__HEADER_FOOTER_BORDER}"
     if [[ ! -z ${GIG_RUN_INPUT} ]]
     then
         INPUT_PARAMS=$(echo "${GIG_RUN_INPUT}" | jq -r 'to_entries[]|"\(.key)=\(.value)"')
-        echo "${INPUT_PARAMS}" >> .env
+        for INPUT_PARAM in ${INPUT_PARAMS}
+        do
+            gigEnvSet $(echo ${INPUT_PARAM} | tr '=' ' ')
+        done
 
         echo "${__HEADER_FOOTER_PREFIX} INPUT PARAMS RECEIVED:"
         echo "${__HEADER_FOOTER_PREFIX}"
@@ -42,6 +39,7 @@ function __saveInputParamsToEnv() {
     else
         echo "${__HEADER_FOOTER_PREFIX} NO INPUT PARAMS RECEIVED"
     fi
+
     echo "${__HEADER_FOOTER_BORDER}"
 }
 
@@ -74,7 +72,6 @@ function __checkMaxThreads() {
 }
 
 function __checkForAbortSignal() {
-    PID=${1}
     kubectl wait gigrun/{{ gig_run.name }} -n {{ gig_run.namespace }} \
         --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.spec.runState}=Aborting' \
         2>&1 > /dev/null
@@ -85,45 +82,53 @@ function __checkForAbortSignal() {
 }
 
 function __killGigRun() {
-    PID=$(cat .__ROOT_PID)
+    local PID=$(gigEnvGet GIG_PID)
     timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}
 }
 
 function __generateSecretFilter() {
-    local SECRET_VARS=$(cat .secrets)
+    local GIG_SECRET_VARS="$(gigSecrets | xargs)"
+    local STAGE_SECRET_VARS="$(stageSecrets | xargs)"
     local SECRETS_REGEX=''
-    for VAR in ${SECRET_VARS}
+    for VAR in ${GIG_SECRET_VARS} ${STAGE_SECRET_VARS}
     do
-        SECRETS_REGEX+=${SECRETS_REGEX:+${!VAR:+|}}${!VAR}
+        SECRETS_REGEX+=${SECRETS_REGEX:+${SECRETS_REGEX:+|}}$(gigEnvGet ${VAR})
     done
 
     echo ${SECRETS_REGEX:-$(echo -e '\u2654')}
 }
 
-function __filterStageLogOutput() {
-    local _STAGE_COUNTER=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
+function __logOutput() {
+    local _HEADER_ID=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
 
-    LOGGING="$(cat)"
-    echo "$(__filterSecrets "${LOGGING}" | sed -e "/^${_STAGE_COUNTER}/! s/^/${_STAGE_COUNTER}-gr $(__gigRunTime) /")"
+    HEADER=$(awk -v H_ID="${_HEADER_ID}" -v RUN_TIME="$(__gigRunTime)" \
+        '{sub(/^/, sprintf("%-25s", "["RUN_TIME"|"H_ID"] ")); print}')
+
+    echo "${HEADER} $(cat)"
 }
 
-function __filterStepLogOutput() {
-    local _STEP_ID=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
-
-    LOGGING="$(cat)"
-    echo "$(__filterSecrets "${LOGGING}" | sed "s/^/${_STEP_ID} $(__gigRunTime) /g")"
+function __logFilteredOutput() {
+    local INPUT="$(cat)"
+    INPUT=$(echo "${INPUT}" | sed -E "/${ECHO_XTRACE_REGEX}/d")
+    if [[ ! -z "${INPUT}" ]]
+    then
+        __filterSecrets "${INPUT}" | __logOutput "${1}"
+    fi
 }
 
 function __filterSecrets() {
-    __loadEnv
     local __DELIM=$'\x1F'
     local SECRETS_REGEX=$(__generateSecretFilter)
-    echo "$(echo "${1}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g")"
+
+    echo "${1}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g"
 }
 
 function __gigRunTime() {
-    local GIG_RUN_TIME=$(echo $(($(date +%s) - ${GIG_RUN_START_TIME})))
-    echo $(printf '%02d:%02d:%02d' $((GIG_RUN_TIME/3600)) $((GIG_RUN_TIME/60)) $((GIG_RUN_TIME%60)) )
+    local GIG_RUN_TIME=$(gigdb-cli INFO | grep uptime_in_seconds | sed 's/[^0-9]//g')
+    local HOURS=$((GIG_RUN_TIME/3600))
+    local MINUTES=$((GIG_RUN_TIME%3600/60))
+    local SECONDS=$((GIG_RUN_TIME%60))
+    echo $(printf '%02d:%02d:%02d' ${HOURS} ${MINUTES} ${SECONDS})
 }
 
 function __gigRunHeader() {
@@ -134,12 +139,8 @@ function __gigRunHeader() {
     {%- endif %}
     echo "${__HEADER_FOOTER_PREFIX} $(date)"
     echo "${__HEADER_FOOTER_PREFIX}"
-    KUBE_EXEC=kubectl
-    type oc >/dev/null 2>&1
-    if [[ $? ]]
-    then
-        KUBE_EXEC=oc
-    fi
+
+    [[ -z $(type -p oc) ]] && KUBE_EXEC=kubectl || KUBE_EXEC=oc
     echo "${__HEADER_FOOTER_PREFIX} ${KUBE_EXEC} version"
     ${KUBE_EXEC} version | sed "s/^\(.*\)/${__HEADER_FOOTER_PREFIX} \1/g"
     echo "${__HEADER_FOOTER_BORDER}"
@@ -178,7 +179,7 @@ function __stageHeader() {
         echo "${__HEADER_FOOTER_BORDER}"
     )
 
-    echo "${STAGE_HEADER}"
+    echo "${STAGE_HEADER}" | __logOutput "${STAGE_ID}"
 }
 
 function __stepHeader() {
@@ -208,10 +209,10 @@ function __stepHeader() {
         echo "${__HEADER_FOOTER_BORDER}"
     )
 
-    echo "${STEP_HEADER}"
+    echo "${STEP_HEADER}"  | __logOutput "${STEP_ID}"
 }
 
 function __testWhen() {
-    __loadEnv
-    node -e "env = {...process.env}; const input = JSON.parse(env.GIG_RUN_INPUT); console.log(${1})"
+    local GIG_RUN_INPUT=$(gigEnvGet __GIG_RUN_INPUT | tr -d '\n')
+    node -e "jsonstr = '${GIG_RUN_INPUT}'; env = {...process.env}; const input = JSON.parse(jsonstr); console.log(${1})"
 }

@@ -58,11 +58,9 @@ export __EXP_STAGE_OR_STEP_ID="${_STEP_ID}({{ ITER_ID }})"
         else
             {%- if not STAGE_NAME %}
             local CURRENT_PID=${BASHPID}
-            __stageHeader "${__STAGE_COUNTER}({{ ITERATOR_ID.ID }})" '{{ stage_or_step.name }}' ${CURRENT_PID} 'SKIPPED' 2>&1 | \
-            __filterStageLogOutput "${_STAGE_COUNTER}({{ ITERATOR_ID.ID }})"
+            __stageHeader "${__STAGE_COUNTER}({{ ITERATOR_ID.ID }})" '{{ stage_or_step.name }}' ${CURRENT_PID} 'SKIPPED' 2>&1
             {%- else %}
-            __stepHeader "${__STEP_ID}({{ ITERATOR_ID.ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.interpreter }}' 'SKIPPED' | \
-            __filterStepLogOutput "${_STEP_ID}({{ ITERATOR_ID.ID }})"
+            __stepHeader "${__STEP_ID}({{ ITERATOR_ID.ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.interpreter }}' 'SKIPPED'
             {%- endif %}
         fi
   {%- endfilter %}

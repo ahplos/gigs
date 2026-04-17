@@ -2,17 +2,31 @@
 FROM registry.access.redhat.com/ubi9/python-312-minimal:latest
 USER root
 
+ARG GIG_DB_PKG=keydb
+ARG GIG_DB_CLI=keydb-cli
+ARG GIG_DB_SERVER=keydb-server
+ARG GIG_DB_BENCHMARK=keydb-benchmark
+
 ARG OC_TAR_GZ_FILE=openshift-client-linux.tar.gz
 ARG OC_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/${OC_TAR_GZ_FILE}
 
 RUN <<EOF
     set -ex
-    microdnf install --assumeyes --nodocs jq go nodejs tar gzip procps-ng
+    #### ADJUST FOLLOWING FOR OTHER DISTROS ####
+    rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    microdnf install --assumeyes --nodocs jq jo go nodejs tar gzip procps-ng ${GIG_DB_PKG}
     microdnf clean all
+    #### END ADJUST FOLLOWING FOR OTHER DISTROS ####
+
+    rm -f /usr/bin/${GIG_DB_BENCHMARK}
+
+    ln -s /usr/bin/${GIG_DB_CLI} /usr/bin/gigdb-cli
+    ln -s /usr/bin/${GIG_DB_SERVER} /usr/bin/gigdb-server
+
     curl -fsSLo /tmp/${OC_TAR_GZ_FILE} ${OC_CLI_URL}
     tar -C /usr/local/bin/ -xf /tmp/${OC_TAR_GZ_FILE} 'oc' 'kubectl'
     rm /tmp/${OC_TAR_GZ_FILE}
-    python -m pip install jinja2 pyyaml
+    python -m pip install jinja2 pyyaml redis
 EOF
 
 ENV HOME=/workDir
@@ -20,3 +34,5 @@ ENV HOME=/workDir
 WORKDIR /workDir
 
 USER 1001
+
+ENTRYPOINT [ "bash", "-ce" ]

@@ -6,9 +6,7 @@
 
 {%- set HAS_SECRETS = 'HAS_SECRETS' if step.secretVars else '' %}
 {%- if HAS_SECRETS %}
-  {%- for secretVar in step.secretVars %}
-echo "${ {{- secretVar }}}" >> .secrets
-  {%- endfor %}
+gigSecretsAdd {{ step.secretVars|join(' ') }}
 {%- endif %}
 
 {%- set FILE_NAME = '$GIG_RUN_HOME/{}/step__{}_{}'.format(GIG_MOD_DIR_NAME, STAGE_NAME, STEP_NAME) %}

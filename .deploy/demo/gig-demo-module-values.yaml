@@ -88,9 +88,9 @@ elCicdTemplates:
         - name: cluster-admin-login.sh
           sourceCode: |-
             SOME_VAR='Testing passing variables across stages and steps through the environment'
-            echo "SOME_VAR: ${SOME_VAR}"
-            echo "SOME_VAR='${SOME_VAR}'" >> .env
-            oc login --insecure-skip-tls-verify -u ${CLUSTER_ADMIN_USER_NAME} -p ${CLUSTER_ADMIN_PASSWORD} https://kubernetes.default.svc
+            gigEnvSet SOME_VAR 'Testing passing variables across stages and steps through the environment'
+            echo "SOME_VAR: $(gigEnvGet SOME_VAR)"
+            oc login --insecure-skip-tls-verify -u $(gigEnvGet CLUSTER_ADMIN_USER_NAME) -p $(gigEnvGet CLUSTER_ADMIN_PASSWORD) https://kubernetes.default.svc
             sleep 2
       - name: $<CHOOSE_DEMO_SOURCE_TYPES>
         stageRef:
@@ -130,7 +130,7 @@ elCicdTemplates:
         steps:
         - name: retrieve-gig-operator-supported-languages
           sourceCode: |-
-            echo "SOME_VAR: ${SOME_VAR}"
+            echo "SOME_VAR [set in previous stage and step]: $(gigEnvGet SOME_VAR)"
             JSON=$(oc get configmap ahplos-gigs-interpreters -n gigs-operator -o jsonpath='{.data}')
             LANGS=$(echo "${JSON}" | jq -r 'keys[]' | paste -sd ',' - | sed -E -e 's/([A-Z][A-Za-z.-]+)/"\1"\ /g')
             echo "{%- set LANGS = [${LANGS}] %}" > gig_interpreters.j2

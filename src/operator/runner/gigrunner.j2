@@ -5,18 +5,17 @@
 
 {%- macro run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) %}
     local CURRENT_PID=${BASHPID}
-    __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' ${CURRENT_PID} | __filterStageLogOutput ${_STAGE_COUNTER}
+    __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' ${CURRENT_PID} 
     . ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stage__{{ STAGE_NAME }} ${__STAGE_COUNTER}
-    (echo && echo "==> STAGE ${__STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") | __filterStageLogOutput ${_STAGE_COUNTER}
+    (echo && echo "==> STAGE ${__STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") | __logOutput ${_STAGE_COUNTER}
 {%- endmacro %}
 
 function __gigrunner() {
-    set -e
-    set -o pipefail
+    set -e -o pipefail
 
     local _STAGE_COUNTER=00
 
-    echo "$(__gigRunHeader)" | __filterStageLogOutput '--'
+    echo "$(__gigRunHeader)" | __logFilteredOutput '--'
 
     __verifyRequiredInputParams
 
@@ -33,12 +32,11 @@ function __gigrunner() {
     function {{ STAGE_FUNCTION_NAME }}() {
         local __STAGE_COUNTER=${1}
         {%- filter indent(width=4) %}
-        {{- run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) }}
+        {{- run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) }} | __logOutput ${_STAGE_COUNTER}
         {%- endfilter %}
     }
 
     let _STAGE_COUNTER+=1
-    __loadEnv
     export -f {{ STAGE_FUNCTION_NAME }}
     export __EXP_STAGE_ID="${_STAGE_COUNTER}"
     {%- if stage.when %}
@@ -52,7 +50,7 @@ function __gigrunner() {
         {{ STAGE_FUNCTION_NAME }} ${__EXP_STAGE_ID} 2>&1 {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stageHeader ${__EXP_STAGE_ID} '{{ stage.name }}' ${BASHPID} 'SKIPPED' | __filterStageLogOutput ${__EXP_STAGE_ID}
+        __stageHeader ${__EXP_STAGE_ID} '{{ stage.name }}' ${BASHPID} 'SKIPPED'
     fi
     {%- else %}
       {%- if stage.iterate %}

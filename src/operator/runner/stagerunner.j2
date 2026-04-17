@@ -6,7 +6,7 @@ set -o pipefail
 
 {%- macro run_step(stage, step, HAS_SECRETS, STAGE_NAME, STEP_NAME, STEP_RUN_DIR, STEP_RUN_NAME) %}
     local CURRENT_PID=${BASHPID}
-    __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' ${CURRENT_PID} {{ HAS_SECRETS }} 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}
+    __stepHeader ${__STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' ${CURRENT_PID} {{ HAS_SECRETS }} 2>&1
 
     {%- set STEP_RUN_NAME = '{}_{}'.format(STAGE_NAME, STEP_NAME) %}
     set +e +o pipefail
@@ -15,13 +15,13 @@ set -o pipefail
     local __STEP_RESULT=$?
     set -e -o pipefail
 
-    echo "${__STEP_OUTPUT}" | __filterStepLogOutput ${__EXP_STEP_ID}
+    echo "${__STEP_OUTPUT}" | __logFilteredOutput ${__EXP_STEP_ID}
 
     if [[ ${__STEP_RESULT} == 0 ]]
     then
-        echo "==> SUCCESS: Step ${__STEP_ID} {{ stage.name }}:{{ step.name }} <==" 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}
+        echo "==> SUCCESS: Step ${__STEP_ID} {{ stage.name }}:{{ step.name }} <==" 2>&1 | __logOutput ${__EXP_STEP_ID}
     else
-        echo "==> FAIL [EXIT CODE ${__STEP_RESULT}]: Step ${__STEP_ID} {{ stage.name }}:{{ step.name }} <==" 2>&1 | __filterStepLogOutput ${__EXP_STEP_ID}
+        echo "==> FAIL [EXIT CODE ${__STEP_RESULT}]: Step ${__STEP_ID} {{ stage.name }}:{{ step.name }} <==" 2>&1 | __logOutput ${__EXP_STEP_ID}
         __killGigRun
     fi
 {%- endmacro %}
@@ -69,7 +69,6 @@ function {{ STAGE_FUNCTION_NAME }}() {
 
     let _STEP_COUNTER+=1
     local _STEP_ID="${_STAGE_COUNTER}-${_STEP_COUNTER}"
-    __loadEnv
     export -f {{ STEP_FUNCTION_NAME }}
     export __EXP_STEP_ID="${_STEP_ID}"
       {%- if step.when %}
@@ -82,8 +81,7 @@ function {{ STAGE_FUNCTION_NAME }}() {
         {{ STEP_FUNCTION_NAME }} ${__EXP_STEP_ID} {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stepHeader ${_STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' 'SKIPPED' | \
-            __filterStepLogOutput ${_STEP_ID}
+        __stepHeader ${_STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' 'SKIPPED'
     fi
       {%- else %}
         {%- if step.iterate %}
