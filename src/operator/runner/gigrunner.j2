@@ -5,7 +5,7 @@
 
 {%- macro run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) %}
     local CURRENT_PID=${BASHPID}
-    __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' ${CURRENT_PID} 
+    __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' ${CURRENT_PID} | __logOutput ${_STAGE_COUNTER}
     . ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stage__{{ STAGE_NAME }} ${__STAGE_COUNTER}
     (echo && echo "==> STAGE ${__STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") | __logOutput ${_STAGE_COUNTER}
 {%- endmacro %}
@@ -32,7 +32,7 @@ function __gigrunner() {
     function {{ STAGE_FUNCTION_NAME }}() {
         local __STAGE_COUNTER=${1}
         {%- filter indent(width=4) %}
-        {{- run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) }} | __logOutput ${_STAGE_COUNTER}
+        {{- run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) }}
         {%- endfilter %}
     }
 

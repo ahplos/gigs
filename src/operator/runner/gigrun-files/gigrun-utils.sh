@@ -99,12 +99,9 @@ function __generateSecretFilter() {
 }
 
 function __logOutput() {
-    local _HEADER_ID=$(echo "${1}" | sed 's/\b[0-9]\b/0&/g')
+    local LOG_HDR=$(printf "%s%18s" "$(__gigRunTime)" "[${1}] ")
 
-    HEADER=$(awk -v H_ID="${_HEADER_ID}" -v RUN_TIME="$(__gigRunTime)" \
-        '{sub(/^/, sprintf("%-25s", "["RUN_TIME"|"H_ID"] ")); print}')
-
-    echo "${HEADER} $(cat)"
+    sed -E -e "s/^/$LOG_HDR/g" <<< "$(cat)"
 }
 
 function __logFilteredOutput() {
@@ -153,7 +150,7 @@ function __gigRunFooter() {
     echo "${__HEADER_FOOTER_BORDER}"
     echo "${__HEADER_FOOTER_PREFIX} GIG COMPLETE: EXIT CODE ${1}"
     echo "${__HEADER_FOOTER_PREFIX}"
-    echo "** $(date)"
+    echo "${__HEADER_FOOTER_PREFIX} $(date)"
     echo "${__HEADER_FOOTER_BORDER}"
 }
 

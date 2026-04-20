@@ -63,7 +63,7 @@ export function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
     const [paused, setPaused] = React.useState<boolean>(false);
     const [pauseDisabled, setPauseDisabled] = React.useState<boolean>();
 
-    const [isLinesWrppped, setLinesWrppped] = React.useState<boolean>(true);
+    const [isLinesWrapped, setLinesWrapped] = React.useState<boolean>(true);
     const [isShowLineNumbers, setShowLineNumbers] = React.useState<boolean>(true);
     const [isFullScreen, setFullScreen] = React.useState<boolean>(false);
 
@@ -74,7 +74,7 @@ export function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
     }
 
     const changeLinesWrapped = (event: React.FormEvent<HTMLInputElement>, checked: boolean) => {
-        setLinesWrppped(checked);
+        setLinesWrapped(checked);
     }
 
     const clickExpandCollapse = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -110,7 +110,7 @@ export function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
                     <Switch
                         id='gigrun-log-viewer-totalLines-wrapped'
                         label='Wrap Lines'
-                        isChecked={isLinesWrppped}
+                        isChecked={isLinesWrapped}
                         onChange={changeLinesWrapped}
                         ouiaId='BasicSwitch'
                     />
@@ -263,7 +263,7 @@ export function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
             header={<LogHeader />}
             toolbar={<LogToolbar />}
             hasLineNumbers={isShowLineNumbers}
-            isTextWrapped={isLinesWrppped}
+            isTextWrapped={isLinesWrapped}
             data={errData ? errData : podLogs}
             initialIndexWidth={3}
             height={PERCENT_HEIGHT_100}

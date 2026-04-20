@@ -9,9 +9,9 @@ set +o allexport
 
 gigdb-server --daemonize yes
 
-gigEnvSet LOGGING_END_CHAR $(printf '\xE2\x90\x83-')
+gigEnvSet LOGGING_END_CHAR $'\xE2\x90\x83'-
 
-trap '__gigRunFooter $? | __logOutput "$(gigEnvGet LOGGING_END_CHAR)" | tee gig.log' EXIT
+trap 'echo "$(__gigRunFooter $?)" | __logFilteredOutput "$(gigEnvGet LOGGING_END_CHAR)"' EXIT
 
 touch gig.log
 
@@ -20,7 +20,7 @@ gigSecretsAdd $(cat ${SECRETS_FILE} | xargs)
 
 ${GIG_RUN_HOME}/{{ gig_mod.namespace }}_{{ gig_mod.name }}/gigrunner.sh >> gig.log &
 gigEnvSet GIG_PID $!
-# __checkForAbortSignal | __logOutput "$(gigEnvGet LOGGING_END_CHAR)" | tee gig.log &
+__checkForAbortSignal | __logOutput "$(gigEnvGet LOGGING_END_CHAR)" &
 tail -q --pid $(gigEnvGet GIG_PID) -f gig.log -n +1 2> /dev/null
 
 exit $(cat .stagerunner_exit_status 2>/dev/null || echo 1)
