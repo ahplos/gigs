@@ -1,11 +1,10 @@
-import os
 import yaml
 
 from jinja2 import Environment, FileSystemLoader
 
 import kopf
 
-from kr8s.objects import ConfigMap, Secret
+from kr8s.objects import Secret
 
 from utilities.gig_types import GigModule
 
@@ -20,15 +19,6 @@ COMMAND = 'command'
 @kopf.on.create(GigModule.version, GigModule.plural)  # type: ignore
 def on_create_or_update_gigmodule(body, logger, **_):
     gig_mod: GigModule = GigModule(body)
-
-    step_interpreters = ConfigMap.get(os.environ['AHPLOS_GIGS_INTERPRETER_MAP'], os.environ['AHPLOS_GIGS_OPERATOR_NAMESPACE'])
-
-    for stage in gig_mod.spec.stages: # type: ignore
-        if (not stage.stageRef):
-            for step in stage.steps:
-                if (not step.stepRef and step.interpreter != 'Custom'):
-                    step.interpreter = step.interpreter if step.interpreter else 'Shell'
-                    step.command = step_interpreters.data[step.interpreter]
 
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
     template_data = {

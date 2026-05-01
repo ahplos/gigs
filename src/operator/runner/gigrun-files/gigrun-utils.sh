@@ -10,7 +10,7 @@ function __verifyRequiredInputParams() {
     do
         if [[ -z $(gigEnvGet ${REQ_INPUT_PARAM}) ]]
         then
-            echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" | __logOutput '--'
+            echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" |& __logOutput '--'
             exit 1
         fi
     done
@@ -23,7 +23,7 @@ function __saveInputParamsToEnv() {
 
     echo
     echo "${__HEADER_FOOTER_BORDER}"
-    if [[ ! -z ${GIG_RUN_INPUT} ]]
+    if [[ -n ${GIG_RUN_INPUT} ]]
     then
         INPUT_PARAMS=$(echo "${GIG_RUN_INPUT}" | jq -r 'to_entries[]|"\(.key)=\(.value)"')
         for INPUT_PARAM in ${INPUT_PARAMS}
@@ -64,11 +64,17 @@ function __waitForUserInput() {
 }
 
 function __checkMaxThreads() {
-    local MAX_THREADS=${1}
-    while [[ $(jobs -r | wc -l) -ge ${MAX_THREADS} ]]
-    do
-        sleep 0.1
-    done
+    (
+        { set +x; } 2>/dev/null
+        local MAX_THREADS="${1}"
+        if [[ -n ${MAX_THREADS} && ${MAX_THREADS} =~ ^[0-9]+$ && ${MAX_THREADS} > 0 ]]
+        then
+            while [[ $(jobs -r | wc -l) -ge ${MAX_THREADS} ]]
+            do
+                sleep 0.1
+            done
+        fi
+    )
 }
 
 function __checkForAbortSignal() {
@@ -76,14 +82,40 @@ function __checkForAbortSignal() {
         --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.spec.runState}=Aborting' \
         2>&1 > /dev/null
 
-    echo
-    echo "=> ABORT RUN REQUESTED..."
-    __killGigRun
+    __killGigRun "==> ABORT RUN REQUESTED..."
 }
 
 function __killGigRun() {
+    sleep 1
+    echo
+    echo "${1:-==> FAILURE: TERMINATING DUE TO ERROR IN GIG}"
     local PID=$(gigEnvGet GIG_PID)
-    timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}
+    (timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}) > /dev/null
+}
+
+function __logOutput() {
+    local LOG_HDR=$(printf "%s%18s" "$(__gigRunTime)" "[${1}] ")
+    local INPUT="$(set +e +o pipefail && timeout 1s cat || :)"
+
+    if [[ -n ${INPUT} ]]
+    then
+        echo "${INPUT}" | sed -E -e "s/^/${LOG_HDR}/g"
+    fi
+}
+
+function __logFilteredOutput() {
+    while IFS='' read -r LOG_OUT
+    do
+        INPUT=$(echo "${LOG_OUT}" | sed -E "/${ECHO_XTRACE_REGEX}/d")
+        __filterSecrets "${INPUT}" >> "${1}"
+    done
+}
+
+function __filterSecrets() {
+    local __DELIM=$'\x1F'
+    local SECRETS_REGEX=$(__generateSecretFilter)
+
+    echo "${1}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g"
 }
 
 function __generateSecretFilter() {
@@ -98,28 +130,6 @@ function __generateSecretFilter() {
     echo ${SECRETS_REGEX:-$(echo -e '\u2654')}
 }
 
-function __logOutput() {
-    local LOG_HDR=$(printf "%s%18s" "$(__gigRunTime)" "[${1}] ")
-
-    sed -E -e "s/^/$LOG_HDR/g" <<< "$(cat)"
-}
-
-function __logFilteredOutput() {
-    local INPUT="$(cat)"
-    INPUT=$(echo "${INPUT}" | sed -E "/${ECHO_XTRACE_REGEX}/d")
-    if [[ ! -z "${INPUT}" ]]
-    then
-        __filterSecrets "${INPUT}" | __logOutput "${1}"
-    fi
-}
-
-function __filterSecrets() {
-    local __DELIM=$'\x1F'
-    local SECRETS_REGEX=$(__generateSecretFilter)
-
-    echo "${1}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g"
-}
-
 function __gigRunTime() {
     local GIG_RUN_TIME=$(gigdb-cli INFO | grep uptime_in_seconds | sed 's/[^0-9]//g')
     local HOURS=$((GIG_RUN_TIME/3600))
@@ -129,20 +139,21 @@ function __gigRunTime() {
 }
 
 function __gigRunHeader() {
-    echo "${__HEADER_FOOTER_BORDER}"
-    echo "${__HEADER_FOOTER_PREFIX} GIG: {{ gig_mod.name }}"
-    {%- if gig_mod.spec.description %}
-    echo "${__HEADER_FOOTER_PREFIX} {{ gig_mod.spec.description }}"
-    {%- endif %}
-    echo "${__HEADER_FOOTER_PREFIX} $(date)"
-    echo "${__HEADER_FOOTER_PREFIX}"
+    local GIG_HEADER=$(
+        echo "${__HEADER_FOOTER_BORDER}"
+        echo "${__HEADER_FOOTER_PREFIX} GIG: {{ gig_mod.name }}"
+        {%- if gig_mod.spec.description %}
+        echo "${__HEADER_FOOTER_PREFIX} {{ gig_mod.spec.description }}"
+        {%- endif %}
+        echo "${__HEADER_FOOTER_PREFIX} $(date)"
+        echo "${__HEADER_FOOTER_PREFIX}"
 
-    [[ -z $(type -p oc) ]] && KUBE_EXEC=kubectl || KUBE_EXEC=oc
-    echo "${__HEADER_FOOTER_PREFIX} ${KUBE_EXEC} version"
-    ${KUBE_EXEC} version | sed "s/^\(.*\)/${__HEADER_FOOTER_PREFIX} \1/g"
-    echo "${__HEADER_FOOTER_BORDER}"
-
-    __saveInputParamsToEnv
+        [[ -z $(type -p oc) ]] && KUBE_EXEC=kubectl || KUBE_EXEC=oc
+        echo "${__HEADER_FOOTER_PREFIX} ${KUBE_EXEC} version"
+        ${KUBE_EXEC} version | sed "s/^\(.*\)/${__HEADER_FOOTER_PREFIX} \1/g"
+        echo "${__HEADER_FOOTER_BORDER}"
+    )
+    echo "${GIG_HEADER}" | __logOutput '--'
 }
 
 function __gigRunFooter() {
@@ -193,12 +204,8 @@ function __stepHeader() {
         echo "${__HEADER_FOOTER_PREFIX} Step ${STEP_ID}: ${STAGE_NAME}:${STEP_NAME}"
         echo "${__HEADER_FOOTER_PREFIX}       Interpreter: ${STEP_INTERPRETER}"
         echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: ${CURRENT_PID}"
-        echo "${__HEADER_FOOTER_PREFIX}       $(date)"
 
-        if [[ ${STAGE_TYPE} == 'HAS_SECRETS' ]]
-        then
-            echo "${__HEADER_FOOTER_PREFIX} WARNING: SECRETS REALIZED [Logging output suppressed]"
-        elif [[ ${STAGE_TYPE} == 'SKIPPED' ]]
+        if [[ ${STAGE_TYPE} == 'SKIPPED' ]]
         then
             echo "${__HEADER_FOOTER_PREFIX} WARNING: STEP SKIPPED [Precondition(s) for execution failed]"
         fi
@@ -209,7 +216,17 @@ function __stepHeader() {
     echo "${STEP_HEADER}"  | __logOutput "${STEP_ID}"
 }
 
-function __testWhen() {
-    local GIG_RUN_INPUT=$(gigEnvGet __GIG_RUN_INPUT | tr -d '\n')
-    node -e "jsonstr = '${GIG_RUN_INPUT}'; env = {...process.env}; const input = JSON.parse(jsonstr); console.log(${1})"
+function __stepFooter() {
+    local STEP_ID=${1}
+    local STAGE_NAME=${2}
+    local STEP_NAME=${3}
+    local STEP_RESULT=${4}
+
+    if [[ ${STEP_RESULT} == 0 ]]
+    then
+        echo "==> SUCCESS: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} <==" | __logOutput "${STEP_ID}"
+    else
+        echo "==> FAIL [EXIT CODE ${STEP_RESULT}]: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} <==" | __logOutput "${STEP_ID}"
+        __killGigRun
+    fi
 }

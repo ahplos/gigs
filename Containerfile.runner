@@ -1,5 +1,5 @@
 # TEMPLATE FOR A DEFAULT GIG RUNNER
-FROM registry.access.redhat.com/ubi9/python-312-minimal:latest
+FROM registry.access.redhat.com/ubi10/ubi-minimal:latest
 USER root
 
 ARG GIG_DB_PKG=keydb
@@ -10,23 +10,46 @@ ARG GIG_DB_BENCHMARK=keydb-benchmark
 ARG OC_TAR_GZ_FILE=openshift-client-linux.tar.gz
 ARG OC_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/${OC_TAR_GZ_FILE}
 
+ENV PYTHON_VERSION=3.12 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=UTF-8 \
+    APP_ROOT=/opt/app-root \
+    PIP_NO_CACHE_DIR=off \
+    HOME=/opt/app-root/src \
+    NPM_RUN=start \
+    PLATFORM="el9" \
+    NODEJS_VERSION=22 \
+    NPM_RUN=start \
+    NAME=nodejs \
+    NODE_PATH=/usr/local/lib/node_modules \
+    PATH=$PATH:${NODE_PATH}
+
+WORKDIR /opt/app-root/src
+
 RUN <<EOF
     set -ex
-    #### ADJUST FOLLOWING FOR OTHER DISTROS ####
-    rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-    microdnf install --assumeyes --nodocs jq jo go nodejs tar gzip procps-ng ${GIG_DB_PKG}
+    #### ADJUST FOLLOWING FOR OTHER BASE IMAGE DISTROS ####
+    rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+    microdnf install --assumeyes --nodocs jq jo go git helm python${PYTHON_VERSION} nodejs npm tar gzip procps-ng ${GIG_DB_PKG}
+    microdnf remove --assumeyes subversion mercurial nodejs-docs
     microdnf clean all
     #### END ADJUST FOLLOWING FOR OTHER DISTROS ####
 
     rm -f /usr/bin/${GIG_DB_BENCHMARK}
-
     ln -s /usr/bin/${GIG_DB_CLI} /usr/bin/gigdb-cli
     ln -s /usr/bin/${GIG_DB_SERVER} /usr/bin/gigdb-server
 
     curl -fsSLo /tmp/${OC_TAR_GZ_FILE} ${OC_CLI_URL}
     tar -C /usr/local/bin/ -xf /tmp/${OC_TAR_GZ_FILE} 'oc' 'kubectl'
     rm /tmp/${OC_TAR_GZ_FILE}
+
+    npm install -g redis --unsafe-perm
+
+    python -m ensurepip --upgrade
     python -m pip install jinja2 pyyaml redis
+
+    go mod init github.com/ahplos/gigs
+    go get github.com/redis/go-redis/v9
 EOF
 
 ENV HOME=/workDir

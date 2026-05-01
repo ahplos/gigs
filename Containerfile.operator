@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/python-312
+FROM registry.access.redhat.com/ubi10/python-312-minimal
 USER root
 
 ARG OC_TAR_GZ_FILE=openshift-client-linux.tar.gz
@@ -10,9 +10,13 @@ WORKDIR /ahplos-gigs-controller
 
 RUN <<EOF
     set -ex
+    #### ADJUST FOLLOWING FOR OTHER BASE IMAGE DISTROS ####
+    microdnf install --assumeyes --nodocs tar gzip
+    microdnf clean all
+    #### END ADJUST FOLLOWING FOR OTHER DISTROS ####
+
     python --version
-    python -m ensurepip
-    python -m pip install --upgrade pip
+    python -m ensurepip --upgrade
     python -m pip install -r requirements.txt
     curl -fsSLo /tmp/${OC_TAR_GZ_FILE} ${OC_CLI_URL}
     tar -C /usr/local/bin/ -xf /tmp/${OC_TAR_GZ_FILE} 'oc' 'kubectl'

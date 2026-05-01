@@ -1,16 +1,23 @@
 #!/usr/bin/bash
 # steprunner
 
-{%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
-{%- set STEP_NAME = step.name if not (step.stepRef and step.stepRef.name) else step.stepRef.name %}
-
 {%- set HAS_SECRETS = 'HAS_SECRETS' if step.secretVars else '' %}
 {%- if HAS_SECRETS %}
 gigSecretsAdd {{ step.secretVars|join(' ') }}
 {%- endif %}
 
-{%- set FILE_NAME = '$GIG_RUN_HOME/{}/step__{}_{}'.format(GIG_MOD_DIR_NAME, STAGE_NAME, STEP_NAME) %}
+{%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
+{%- set STEP_NAME = step.name if not (step.stepRef and step.stepRef.name) else step.stepRef.name %}
 
-{%- set ARGS = step.args if step.args else '' %}
-{{ step.command.format(FILE_NAME=FILE_NAME, STAGE_NAME=STAGE_NAME, STEP_NAME=STEP_NAME, CLI_ARGS=ARGS) }}
+{%- set CLI_ARGS = step.args|join(' ') if step.args else '' %}
+{%- set CLI_ARGS = step.defaultArgs|join(' ') ~ ARGS if step.defaultArgs else ARGS %}
+
+stepEnvSet INTERPRETER {{ step.interpreter }}
+stepEnvSet TEMPLATE_TYPE '{{ step.templateType if step.templateType else '' }}'
+stepEnvSet STEP_FILE_PATH {{ '$GIG_RUN_HOME/{}/step__{}_{}'.format(GIG_MOD_DIR_NAME, STAGE_NAME, STEP_NAME) }}
+stepEnvSet STAGE_NAME {{ STAGE_NAME }}
+stepEnvSet STEP_NAME {{ STEP_NAME }}
+stepEnvSet CLI_ARGS '{{ CLI_ARGS }}'
+
+${GIG_RUN_HOME}/execute-interpreter.sh
 return $?

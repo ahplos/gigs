@@ -1,66 +1,65 @@
 #!/usr/bin/bash -e
 # gigrunner
-
 {%- import 'iterator-macro.j2' as iter_macros %}
 
-{%- macro run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) %}
-    local CURRENT_PID=${BASHPID}
-    __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' ${CURRENT_PID} | __logOutput ${_STAGE_COUNTER}
-    . ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stage__{{ STAGE_NAME }} ${__STAGE_COUNTER}
-    (echo && echo "==> STAGE ${__STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") | __logOutput ${_STAGE_COUNTER}
-{%- endmacro %}
+gigEnvSet GIG_PID "${BASHPID}"
 
 function __gigrunner() {
     set -e -o pipefail
 
-    local _STAGE_COUNTER=00
+    local _STAGE_COUNTER=0
 
-    echo "$(__gigRunHeader)" | __logFilteredOutput '--'
+    __gigRunHeader
+
+    echo "$(__saveInputParamsToEnv)" |& __logOutput '--'
 
     __verifyRequiredInputParams
 
     {%- for stage in gig_mod.spec.stages %}
       {%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
-      {%- set STAGE_GIG_MOD_NAMESPACE = gig_mod.namespace
-        if not (stage.stageRef and stage.stageRef.gigModuleRef.namespace) else stage.stageRef.gigModuleRef.namespace %}
-      {%- set STAGE_GIG_MOD_NAME = gig_mod.name if not stage.stageRef else stage.stageRef.gigModuleRef.name %}
+      {%- set STAGE_GIG_MOD_NAMESPACE = stage.stageRef.gigModuleRef.namespace
+        if (stage.stageRef and stage.stageRef.gigModuleRef.namespace) else gig_mod.namespace %}
+      {%- set STAGE_GIG_MOD_NAME = stage.stageRef.gigModuleRef.name if stage.stageRef else gig_mod.name %}
 
       {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
 
       {%- set RUN_PARALLEL = '&' if (stage.maxParallel and stage.maxParallel > 0) else '' %}
 
     function {{ STAGE_FUNCTION_NAME }}() {
-        local __STAGE_COUNTER=${1}
-        {%- filter indent(width=4) %}
-        {{- run_stage(stage, STAGE_GIG_MOD_NAMESPACE, STAGE_GIG_MOD_NAME, STAGE_NAME) }}
-        {%- endfilter %}
+        local __STAGE_COUNTER="${1}"
+        local CURRENT_PID=${BASHPID}
+        (
+            export STAGE_ID=$(uuidgen)
+            export STAGE_COUNTER=${__STAGE_COUNTER}
+            __stageHeader ${STAGE_COUNTER} '{{ stage.name }}' ${CURRENT_PID}
+            source ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stage__{{ STAGE_NAME }}
+            (echo && echo "==> STAGE ${STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") |& __logOutput "${STAGE_COUNTER}"
+        )
     }
+
+      {%- if stage.secretVars %}
+    local NEW_SECRET_VARS={{ stage.secretVars|join(' ') }}
+    gigSecretsSet ${NEW_SECRET_VARS}
+      {%- endif %}
 
     let _STAGE_COUNTER+=1
     export -f {{ STAGE_FUNCTION_NAME }}
-    export __EXP_STAGE_ID="${_STAGE_COUNTER}"
-    {%- if stage.when %}
-    local __WHEN=$(__testWhen '{{ stage.when | replace("'", "'\\''") }}')
-    if [[ ${__WHEN,,} == 'true' ]]
+    local __WHEN_DIR=${GIG_RUN_HOME}/{{ GIG_MOD_DIR_NAME }}
+    (cd ${__WHEN_DIR} && npm link redis > /dev/null)
+    local __WHEN_FILE_NAME=${__WHEN_DIR}/stage__{{ stage.name }}_when.js
+    if [[ ! -f ${__WHEN_FILE_NAME} || $(node ${__WHEN_FILE_NAME}) == 'true' ]]
     then
       {%- if stage.iterate %}
         {{- iter_macros.realize_iterators(stage, STAGE_FUNCTION_NAME) }}
       {%- else %}
-        {{- iter_macros.check_max_threads(stage.maxParallel) }}
-        {{ STAGE_FUNCTION_NAME }} ${__EXP_STAGE_ID} 2>&1 {{ RUN_PARALLEL }}
+        {% if stage.maxParallel -%}
+        {{ '__checkMaxThreads ' ~ stage.maxParallel }}
+        {%- endif %}
+        {{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stageHeader ${__EXP_STAGE_ID} '{{ stage.name }}' ${BASHPID} 'SKIPPED'
+        __stageHeader ${_STAGE_COUNTER} '{{ stage.name }}' ${BASHPID} 'SKIPPED'
     fi
-    {%- else %}
-      {%- if stage.iterate %}
-    {{- iter_macros.realize_iterators(stage, STAGE_FUNCTION_NAME) }}
-      {%- else %}
-    {{ iter_macros.check_max_threads(stage.maxParallel) }}
-    {{ STAGE_FUNCTION_NAME }} ${__EXP_STAGE_ID} 2>&1 {{ RUN_PARALLEL }}
-      {%- endif %}
-    {%- endif %}
-
     {%- if stage.wait or loop.index == gig_mod.spec.stages|length %}
 
     wait
@@ -70,5 +69,3 @@ function __gigrunner() {
 
 __gigrunner
 echo $? > .stagerunner_exit_status
-
-

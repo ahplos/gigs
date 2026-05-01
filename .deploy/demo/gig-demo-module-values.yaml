@@ -69,26 +69,31 @@ elCicdTemplates:
       stages:
       - name: prove-parallel-stage
         description: Prove parallel processing works by making this step take longer than the rest of the Gig.
-        maxParallel: 2
+        maxParallel: 1
         steps:
         - name: sleep-in-the-background-in-first-stage
           sourceCode: |-
-            sleep 40
+            sleep 25
         - name: print-message-from-first-stage
-          sourceCode: |-
-            echo 'PROVING PARALLEL PROCESSING BY STAGE WORKS BY PRINTING SECOOND STEP OF FIRST STAGE AT THE END'
+          stepRef:
+            gigModuleRef:
+              name: $<GIG_MOD_PRINT_MSG>
+            stage: $<PRINT_THE_DEMO_MSG>
+            name: $<PRINT_THE_DEMO_MSG>
+          args:
+          -  'PROVING PARALLEL PROCESSING BY STAGE WORKS BY PRINTING SECOND STEP OF FIRST STAGE AT THE END'
       - name: login
         description: Login into cluster as cluster admin, and retrieve Gig supported Step interpreters.
         steps:
         - name: prove-parallel-step
-          maxParallel: 2
+          maxParallel: 1
           sourceCode: |-
             sleep 25
-            echo 'PROVING PARALLEL PROCESSING BY STEP WORKS BY PRINTING SECOOND STEP OF FIRST STAGE AT THE END'
+            echo 'PROVING PARALLEL PROCESSING BY STEP WORKS BY PRINTING FIRST STEP OF SECOND STAGE AT THE END'
         - name: cluster-admin-login.sh
           sourceCode: |-
             SOME_VAR='Testing passing variables across stages and steps through the environment'
-            gigEnvSet SOME_VAR 'Testing passing variables across stages and steps through the environment'
+            gigEnvSet SOME_VAR "${SOME_VAR}"
             echo "SOME_VAR: $(gigEnvGet SOME_VAR)"
             oc login --insecure-skip-tls-verify -u $(gigEnvGet CLUSTER_ADMIN_USER_NAME) -p $(gigEnvGet CLUSTER_ADMIN_PASSWORD) https://kubernetes.default.svc
             sleep 2
@@ -97,26 +102,24 @@ elCicdTemplates:
           gigModuleRef:
             name: $<GIG_MOD_ASK_USER>
       - name: $<DEMONSTRATE_GO>
-        when: input.LANG_DEMO.includes('Go')
+        when: gigEnv.LANGS.includes('Go')
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
       - name: $<DEMONSTRATE_PYTHON>
-        when: input.LANG_DEMO.includes("Python")
+        when: gigEnv.LANGS.includes("Python")
         maxParallel: 2
         iterate:
-          when: env.INDEX != 2
           loops:
           - name: INDEX
             range:
-              last: 3
+              last: 2
+            when: env.INDEX != 2
           - name: VALS
             vector:
             - foo
             - 6
             - bar
-            - baz
-            - howdy
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
@@ -130,23 +133,22 @@ elCicdTemplates:
         steps:
         - name: retrieve-gig-operator-supported-languages
           sourceCode: |-
-            echo "SOME_VAR [set in previous stage and step]: $(gigEnvGet SOME_VAR)"
-            JSON=$(oc get configmap ahplos-gigs-interpreters -n gigs-operator -o jsonpath='{.data}')
-            LANGS=$(echo "${JSON}" | jq -r 'keys[]' | paste -sd ',' - | sed -E -e 's/([A-Z][A-Za-z.-]+)/"\1"\ /g')
-            echo "{%- set LANGS = [${LANGS}] %}" > gig_interpreters.j2
+            echo "SOME_VAR [set in completely different module, stage, & step]: $(gigEnvGet SOME_VAR)"
+            JSONPATH='.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.stages.items.properties.steps.items.properties.interpreter.enum'
+            LANGS="$(oc get crd gigmodules.batch.ahplos.org -o jsonpath="{${JSONPATH}}")"
+            gigEnvSet LANGS ${LANGS}
             sleep 2
-        - name: ask-user-what-languages-to-demo.j2
-          interpreter: Input
+        - name: gigrun-operator-supported-languages-patch.yaml
+          interpreter: UserInput
+          templateType: Go
           sourceCode: |-
             formTitle:
               title: 'Gig Interpreter(s) to demo'
             inputForm:
-              {%- include 'gig_interpreters.j2' %}
-              {%- from 'gig_interpreters.j2' import LANGS %}
-              - attributes:
-                  options: {{ LANGS }}
-                inputType: CheckboxGroup
-                var: LANG_DEMO
+            - attributes:
+                options: {{ .Values.gigEnv.LANGS }}
+              inputType: CheckboxGroup
+              var: LANG_DEMO
 
   elCicdDefs-$<GIG_MOD_SOURCE_DEMO>:
     GIG_MOD_SPECS:
@@ -172,18 +174,16 @@ elCicdTemplates:
         - name: print-the-go-msg
           maxParallel: 2
           iterate:
-            when: env.INDEX != 2
             loops:
             - name: INDEX
               range:
-                last: 3
+                last: 2
+              when: env.INDEX != 1
             - name: VALS
               vector:
               - foo
               - 6
               - bar
-              - baz
-              - howdy
           stepRef:
             gigModuleRef:
               name: $<GIG_MOD_PRINT_MSG>
@@ -209,12 +209,14 @@ elCicdTemplates:
       mode: Library
       stages:
       - name: $<PRINT_THE_DEMO_MSG>
-        description: Print the message assigned to the TEST_MSG environment variable.
+        description: Print the message assigned to the TEXT_MESSAGE environment variable.
         mode: Library
         steps:
         - name: $<PRINT_THE_DEMO_MSG>
           sourceCode: |-
-            echo ${TEST_MSG}
+            TEXT_MSG=${1:-$(stageEnvGet TEXT_MESSAGE)}
+            TEXT_MSG=${TEXT_MSG:-$(gigEnvGet TEXT_MESSAGE)}
+            echo ${TEXT_MSG}
             sleep 1
   template:
     spec: $<GIG_MOD_SPECS>
