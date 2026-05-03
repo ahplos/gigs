@@ -8,11 +8,11 @@ function gigEnvGet() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET 'GIG_ENV' "${1}" )
 }
 
-function gigEnvGetCsv() {
+function gigEnvToCsv() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw --csv HGETALL 'GIG_ENV' )
 }
 
-function gigEnvGetJson() {
+function gigEnvToJson() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL 'GIG_ENV' | paste -d "=" - - | jo )
 }
 
@@ -21,7 +21,7 @@ function gigEnvKeys() {
 }
 
 function gigEnvSet() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET 'GIG_ENV' "${1}" "${2}" > /dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET 'GIG_ENV' "${1}" "${2}" >/dev/null )
 }
 
 function gigEnvValues() {
@@ -36,11 +36,11 @@ function stageEnvGet() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET ${STAGE_ID} "${1}" )
 }
 
-function stageEnvGetCsv() {
+function stageEnvToCsv() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw --csv HGETALL ${STAGE_ID} )
 }
 
-function stageEnvGetJson() {
+function stageEnvToJson() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL ${STAGE_ID} | paste -d "=" - - | jo )
 }
 
@@ -49,7 +49,7 @@ function stageEnvKeys() {
 }
 
 function stageEnvSet() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET ${STAGE_ID} "${1}" "${2}" > /dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET ${STAGE_ID} "${1}" "${2}" >/dev/null )
 }
 
 function stageEnvValues() {
@@ -64,11 +64,11 @@ function stepEnvGet() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET ${STEP_ID} "${1}" )
 }
 
-function stepEnvGetCsv() {
+function stepEnvToCsv() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw --csv HGETALL ${STEP_ID} )
 }
 
-function stepEnvGetJson() {
+function stepEnvToJson() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL ${STEP_ID} | paste -d "=" - - | jo )
 }
 
@@ -77,7 +77,7 @@ function stepEnvKeys() {
 }
 
 function stepEnvSet() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET ${STEP_ID} "${1}" "${2}" > /dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET ${STEP_ID} "${1}" "${2}" >/dev/null )
 }
 
 function stepEnvValues() {
@@ -85,7 +85,7 @@ function stepEnvValues() {
 }
 
 function gigSecretsAdd() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SADD GIG_SECRETS $* > /dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SADD GIG_SECRETS $* >/dev/null )
 }
 
 function gigSecretExists() {
@@ -97,11 +97,11 @@ function gigSecrets() {
 }
 
 function gigSecretsRemove() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SREM GIG_SECRETS $* > /dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SREM GIG_SECRETS $* >/dev/null )
 }
 
 function stageSecretsAdd() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SADD ${STAGE_ID}_SECRETS $* > /dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SADD ${STAGE_ID}_SECRETS $* >/dev/null )
 }
 
 function stageSecretExists() {
@@ -113,5 +113,5 @@ function stageSecrets() {
 }
 
 function stageSecretsRemove() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SREM ${STAGE_ID}_SECRETS $* > /dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SREM ${STAGE_ID}_SECRETS $* >/dev/null )
 }

@@ -107,7 +107,7 @@ elCicdTemplates:
     else
         LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="[::]:$<toString|PORT>"
     fi
-    sed "s/LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/$LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/g" /etc/nginx/$<NGINX_CONF> > /tmp/$<NGINX_CONF>
+    sed "s/LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/$LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/g" /etc/nginx/$<NGINX_CONF> >/tmp/$<NGINX_CONF>
 
     nginx -c /tmp/$<NGINX_CONF> -g 'daemon off;'
   env:

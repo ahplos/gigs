@@ -140,13 +140,13 @@ elCicdTemplates:
             sleep 2
         - name: gigrun-operator-supported-languages-patch.yaml
           interpreter: UserInput
-          templateType: Go
+          templateType: Helm
           sourceCode: |-
             formTitle:
               title: 'Gig Interpreter(s) to demo'
             inputForm:
             - attributes:
-                options: {{ .Values.gigEnv.LANGS }}
+                options: {{ .Values.gigEnv.LANGS | toYaml | nindent 4 }}
               inputType: CheckboxGroup
               var: LANG_DEMO
 

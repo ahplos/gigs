@@ -1,26 +1,29 @@
 #!/usr/bin/bash
-set -e -o pipefail
+set -e -E -o pipefail
 
-function renderGoTemplate() {
-    local INPUT_FILE=${1}
-    local OUTPUT_FILE=${2}
+trap 'stepEnvSet LINENO ${LINENO}' ERR
 
-    local __TMP_CHART_DIR=$(mktemp -d)
-    cp ${$GIG_RUN_HOME}/Chart.yaml ${__TMP_CHART}
+TEMPLATE_FILE=${1}
+RENDERED_FILE=${2}
+CHART_DIR=${3}
+EXTRA_VALUES_FILE=${4}
 
-    mkdir ${__TMP_CHART_DIR}/templates
-    cp {INPUT_FILE} ${__TMP_CHART_DIR}/templates
+(
+    cd ${CHART_DIR}
+    cp ${GIG_RUN_HOME}/Chart.yaml .
+    if [[ ${EXTRA_VALUES_FILE} ]]
+    then
+        cp ${EXTRA_VALUES_FILE} .
+    fi
 
-    echo "GIG_ENV: $(keydb-cli --raw HGETALL GIG_ENV | paste -d '=' - - | jo)" \
-        > ${__TMP_CHART_DIR}/gig-env-values.yaml
+    mkdir -p templates
+    cp ${TEMPLATE_FILE} templates/template.yaml
 
-    helm template ${__TMP_CHART_DIR} \
-        -s ${__TMP_CHART_DIR}/templates/{FILE_NAME}.yaml \
-        -f ${__TMP_CHART_DIR}/gig-env-values.yaml \
-        --debug 2>/dev/null | sed '1,2d' \
-        > {OUTPUT_FILE}
+    echo '{ "gigEnv": '$(gigEnvToJson)' }, "stageEnv": '$(stageEnvToJson)' }' >values.yaml
 
-    rm -rf $(mktemp -d)
-}
-
-renderGoTemplate ${1} ${2}
+    helm template --debug -f values.yaml ${EXTRA_VALUES_FILE:+-f ${EXTRA_VALUES_FILE}} . 2>/dev/null | sed '1,2d' >${RENDERED_FILE}
+    echo 'TEMPLATE RENDERED:'
+    echo '==='
+    cat ${RENDERED_FILE}
+    echo '==='
+)

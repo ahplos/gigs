@@ -28,7 +28,7 @@
         export {{ iter.name }}
         {%- if iter.when %}
         local __WHEN_DIR=${GIG_RUN_HOME}/{{ GIG_MOD_DIR_NAME }}
-        (cd ${__WHEN_DIR} && npm link redis > /dev/null &> /dev/null)
+        (cd ${__WHEN_DIR} && npm link redis >/dev/null &>/dev/null)
             {%- if IS_STAGE %}
         local __WHEN_FILE_NAME=${__WHEN_DIR}/stage__{{ stage_or_step.name }}_{{ iter.name }}_when.js
             {%- else %}

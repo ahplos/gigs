@@ -1,10 +1,12 @@
 #!/usr/bin/bash
-set -e -o pipefail set
+set -e -o pipefail
+
+trap 'stepEnvSet LINENO ${LINENO}' ERR
 
 set -o allexport
 
-GIG_ENV="$(gigEnvGetJson)
-STAGE_ENV="$(stageEnvGetJson)
+GIG_ENV="$(gigEnvToJson)
+STAGE_ENV="$(stageEnvToJson)
 
 set -e - o pipefail +o allexport
 
@@ -20,29 +22,38 @@ function executeInterpreter() {
         ;;
 
         'Go')
-            go run $(stepEnvGet FILE_NAME) $(stepEnvGet CLI_ARGS)
+            go run $(stepEnvGet STEP_FILE) $(stepEnvGet CLI_ARGS)
         ;;
 
         JavaScript)
-            node$(stepEnvGet FILE_NAME) $(stepEnvGet CLI_ARGS)
+            node $(stepEnvGet STEP_FILE) $(stepEnvGet CLI_ARGS)
         ;;
 
         Python)
-            python -m trace -t$(stepEnvGet FILE_NAME) $(stepEnvGet CLI_ARGS)
+            python -m trace -t $(stepEnvGet STEP_FILE) $(stepEnvGet CLI_ARGS)
         ;;
 
         Shell)
-            $(stepEnvGet STEP_FILE_PATH) $(stepEnvGet CLI_ARGS)
+            $(stepEnvGet STEP_FILE) $(stepEnvGet CLI_ARGS)
         ;;
 
         Template)
-            renderTemplate
+            renderTemplate $(stepEnvGet STEP_FILE) $(stepEnvGet STEP_FILE)
         ;;
 
         UserInput)
-            renderTemplate
+            local USER_INPUT_VALUES=${HOME}/${STEP_ID}_user_input
+            local GIGRUN_PATCH_FILE=${STEP_ID}_gigrun_patch.yaml
 
-            __waitForUserInput
+            local CHART_DIR=$(mktemp -d)
+
+            renderTemplate $(stepEnvGet STEP_FILE) ${USER_INPUT_VALUES} ${CHART_DIR}
+
+            renderTemplate ${GIG_RUN_HOME}/user-input-patch.yaml ${GIGRUN_PATCH_FILE} ${CHART_DIR} ${USER_INPUT_VALUES}
+
+            __waitForUserInput ${CHART_DIR}/${STEP_ID}_gigrun_patch.yaml
+
+            rm -rf ${CHART_DIR}
         ;;
 
         *)
@@ -53,16 +64,16 @@ function executeInterpreter() {
 }
 
 function renderTemplate() {
-    echo 'TEMPLATE RENDERED:'
-    echo '==='
+    local TEMPLATE_FILE=${1}
+    local RENDERED_FILE=${2}
     echo
     case $(stepEnvGet TEMPLATE_TYPE) in
         Go)
-            ${GIG_RUN_HOME}/render-go-template.sh
+            ${GIG_RUN_HOME}/render-helm-template.sh ${TEMPLATE_FILE} ${RENDERED_FILE} ${3} ${4}
         ;;
 
         Helm)
-            ${GIG_RUN_HOME}/render-helm-template.sh
+            ${GIG_RUN_HOME}/render-helm-template.sh ${TEMPLATE_FILE} ${RENDERED_FILE} ${3} ${4}
         ;;
 
         JavaScriptLiteral)
@@ -80,9 +91,6 @@ function renderTemplate() {
             exit 1
         ;;
     esac
-    cat $(stepEnvGet FILE_NAME)
-    echo
-    echo '==='
 }
 
 executeInterpreter

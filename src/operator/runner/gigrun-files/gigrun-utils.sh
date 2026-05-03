@@ -35,7 +35,7 @@ function __saveInputParamsToEnv() {
         echo "${__HEADER_FOOTER_PREFIX}"
         echo "${INPUT_PARAMS}" | sed "s/^/${__HEADER_FOOTER_PREFIX} /g"
 
-        kubectl patch secret -n {{ gig_run.namespace }} {{ gig_run.name }} --patch 'data:' 2>&1 > /dev/null
+        kubectl patch secret -n {{ gig_run.namespace }} {{ gig_run.name }} --patch 'data:' 2>&1 >/dev/null
     else
         echo "${__HEADER_FOOTER_PREFIX} NO INPUT PARAMS RECEIVED"
     fi
@@ -44,15 +44,14 @@ function __saveInputParamsToEnv() {
 }
 
 function __waitForUserInput() {
-    export USER_INPUT_PATCH=${1}
-    python ${GIG_RUN_HOME}/jinja_stage.py ${GIG_RUN_HOME}/user_input_patch.j2 user_input_patch.yaml
+    local USER_INPUT_PATCH=${1}
 
-    kubectl patch gigrun ${GIG_RUN_NAME} -n ${GIG_RUN_NAMESPACE} --patch-file user_input_patch.yaml --type='merge' --warnings-as-errors 2>&1 > /dev/null
+    kubectl patch gigrun ${GIG_RUN_NAME} -n ${GIG_RUN_NAMESPACE} --patch-file ${USER_INPUT_PATCH} --type='merge' --warnings-as-errors >/dev/null
     if [[ $? == 0 ]]
     then
         echo 'Waiting for user input...'
 
-        kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} 2>&1 > /dev/null
+        kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} 2>&1 >/dev/null
 
         __saveInputParamsToEnv
 
@@ -80,17 +79,17 @@ function __checkMaxThreads() {
 function __checkForAbortSignal() {
     kubectl wait gigrun/{{ gig_run.name }} -n {{ gig_run.namespace }} \
         --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.spec.runState}=Aborting' \
-        2>&1 > /dev/null
+        2>&1 >/dev/null
 
     __killGigRun "==> ABORT RUN REQUESTED..."
 }
 
 function __killGigRun() {
-    sleep 1
     echo
     echo "${1:-==> FAILURE: TERMINATING DUE TO ERROR IN GIG}"
+    sleep 5
     local PID=$(gigEnvGet GIG_PID)
-    (timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}) > /dev/null
+    (timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}) >/dev/null
 }
 
 function __logOutput() {
@@ -107,7 +106,7 @@ function __logFilteredOutput() {
     while IFS='' read -r LOG_OUT
     do
         INPUT=$(echo "${LOG_OUT}" | sed -E "/${ECHO_XTRACE_REGEX}/d")
-        __filterSecrets "${INPUT}" >> "${1}"
+        __filterSecrets "${INPUT}" >>"${1}"
     done
 }
 
@@ -221,12 +220,13 @@ function __stepFooter() {
     local STAGE_NAME=${2}
     local STEP_NAME=${3}
     local STEP_RESULT=${4}
+    local ERROR_LINENO=${5}
 
     if [[ ${STEP_RESULT} == 0 ]]
     then
         echo "==> SUCCESS: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} <==" | __logOutput "${STEP_ID}"
     else
-        echo "==> FAIL [EXIT CODE ${STEP_RESULT}]: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} <==" | __logOutput "${STEP_ID}"
+        echo "==> FAIL [EXIT CODE ${STEP_RESULT}/LINE ${ERROR_LINENO:-Unknown}]: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} <==" | __logOutput "${STEP_ID}"
         __killGigRun
     fi
 }

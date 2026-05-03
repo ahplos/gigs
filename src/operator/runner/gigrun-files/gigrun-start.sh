@@ -20,6 +20,6 @@ __checkForAbortSignal |& __logOutput '--' &
 
 ${GIG_RUN_HOME}/{{ gig_mod.namespace }}_{{ gig_mod.name }}/gigrunner.sh | __logFilteredOutput ${__LOG_FILE} &
 sleep 1
-tail -q --pid $(gigEnvGet GIG_PID) -f ${__LOG_FILE} -n +1 2> /dev/null
+tail -q --pid $(gigEnvGet GIG_PID) -f ${__LOG_FILE} -n +1 2>/dev/null
 
 exit $(cat .stagerunner_exit_status 2>/dev/null || echo 1)

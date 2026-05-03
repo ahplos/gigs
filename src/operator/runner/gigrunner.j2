@@ -45,7 +45,7 @@ function __gigrunner() {
     let _STAGE_COUNTER+=1
     export -f {{ STAGE_FUNCTION_NAME }}
     local __WHEN_DIR=${GIG_RUN_HOME}/{{ GIG_MOD_DIR_NAME }}
-    (cd ${__WHEN_DIR} && npm link redis > /dev/null)
+    (cd ${__WHEN_DIR} && npm link redis >/dev/null)
     local __WHEN_FILE_NAME=${__WHEN_DIR}/stage__{{ stage.name }}_when.js
     if [[ ! -f ${__WHEN_FILE_NAME} || $(node ${__WHEN_FILE_NAME}) == 'true' ]]
     then

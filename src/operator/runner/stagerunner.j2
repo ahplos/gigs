@@ -36,13 +36,13 @@ function {{ STAGE_FUNCTION_NAME }}() {
         )
         echo "${__STEP_OUTPUT}"
 
-        __stepFooter ${STEP_ID} '{{ stage.name }}' '{{ step.name }}' $(stepEnvGet RESULT)
+        __stepFooter ${STEP_ID} '{{ stage.name }}' '{{ step.name }}' $(stepEnvGet RESULT) $(stepEnvGet LINENO)
     }
 
     let __STEP_COUNTER+=1
     local __STAGE_STEP_COUNTER="${STAGE_COUNTER}-${__STEP_COUNTER}"
     local __WHEN_DIR=${GIG_RUN_HOME}/{{ GIG_MOD_DIR_NAME }}
-    (cd ${__WHEN_DIR} && npm link redis > /dev/null &> /dev/null)
+    (cd ${__WHEN_DIR} && npm link redis >/dev/null &>/dev/null)
     local __WHEN_FILE_NAME=${__WHEN_DIR}/{{ GIG_MOD_DIR_NAME }}/set__{{ stage.name }}_{{ step.name}}_when.js
     if [[ ! -f ${__WHEN_FILE_NAME} || $(node ${__WHEN_FILE_NAME}) == 'true' ]]
     then
