@@ -1,5 +1,5 @@
 #!/usr/bin/bash -e
-set -e -o pipefail -o allexport
+set -e -E -o pipefail -o allexport
 
 LC_ALL=C
 source ${GIG_RUN_HOME}/gigdb-helper.sh

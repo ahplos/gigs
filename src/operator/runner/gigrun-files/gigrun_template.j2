@@ -1,0 +1,12 @@
+{%- raw %}
+apiVersion: batch.ahplos.org/v1beta1
+kind: GigRun
+metadata:
+  generateName: {{ gig.name }}-
+  namespace: {{ gig.namespace }}
+spec:
+  gigRef:
+    name: {{ gig.name }}
+  inputReceived: true
+  inputValues: JSON.stringify(inputValues)
+{%- endraw %}

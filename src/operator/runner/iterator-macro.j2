@@ -1,11 +1,14 @@
-{%- macro realize_iterators(stage_or_step, FUNCTION_NAME, STAGE_NAME=None) %}
+{%- macro realize_iterators(stage_or_step, FUNCTION_NAME, GIG_MOD_DIR_NAME, STAGE_NAME=None) %}
+
 {%- set INDENT = 4 %}
 {%- set INDENT_MOD = 0 if stage_or_step.when else 1 %}
+
 {%- set ITERATOR_ID = namespace(ID=[]) %}
 {%- for iter in stage_or_step.iterate.loops %}
     {%- set ITERATOR_ID.ID = ITERATOR_ID.ID + ['${{{}_COUNTER}}'.format(iter.name)] %}
 {%- endfor %}
 {%- set ITERATOR_ID = namespace(ID=ITERATOR_ID.ID|join('-')) %}
+
 {%- for iter in stage_or_step.iterate.loops %}
     {%- filter indent(width=(loop.index - INDENT_MOD)* INDENT ) %}
     {%- if iter.envVar %}
@@ -27,34 +30,35 @@
     do
         export {{ iter.name }}
         {%- if iter.when %}
+        unset __SHOULD_RUN
         local __WHEN_DIR=${GIG_RUN_HOME}/{{ GIG_MOD_DIR_NAME }}
         (cd ${__WHEN_DIR} && npm link redis >/dev/null &>/dev/null)
-            {%- if IS_STAGE %}
+          {%- if not STAGE_NAME %}
         local __WHEN_FILE_NAME=${__WHEN_DIR}/stage__{{ stage_or_step.name }}_{{ iter.name }}_when.js
-            {%- else %}
+          {%- else %}
         local __WHEN_FILE_NAME=${__WHEN_DIR}/step__{{ STAGE_NAME }}_{{ stage_or_step.name }}_{{ iter.name }}_when.js
-            {%- endif %}
-        if [[ $(node ${__WHEN_FILE_NAME}) != 'true' ]]
+          {%- endif %}
+        __SHOULD_RUN=$(node ${__WHEN_FILE_NAME}) || exit $?
+        if [[ "${__SHOULD_RUN}" != 'true' ]]
         then
-            {%- if IS_STAGE %}
+          {%- if not STAGE_NAME %}
             local CURRENT_PID=${BASHPID}
             __stageHeader "${__STAGE_COUNTER}({{ ITERATOR_ID.ID }})" '{{ stage_or_step.name }}' ${CURRENT_PID} 'SKIPPED' 2>&1
-            {%- else %}
+          {%- else %}
             __stepHeader "${__STEP_ID}({{ ITERATOR_ID.ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.interpreter }}' 'SKIPPED'
-            {%- endif %}
+          {%- endif %}
             continue
         fi
         {%- endif %}
     {%- endfilter %}
 {%- endfor %}
 
-{%- set IS_STAGE=(not STAGE_NAME) %}
 {%- set FUNCTION_INDENT = (stage_or_step.iterate|length - INDENT_MOD) * INDENT %}
 {%- filter indent(width=FUNCTION_INDENT) %}
     {% if stage_or_step.maxParallel -%}
     {{ '__checkMaxThreads ' ~ stage_or_step.maxParallel }}
     {%- endif %}
-    local __STAGE_OR_STEP_COUNTER={% if IS_STAGE %}"${_STAGE_COUNTER}({{ ITERATOR_ID.ID }})"{% else %}"${_STEP_ID}({{ ITERATOR_ID.ID }})"{% endif %}
+    local __STAGE_OR_STEP_COUNTER={% if not STAGE_NAME %}"${_STAGE_COUNTER}({{ ITERATOR_ID.ID }})"{% else %}"${_STEP_ID}({{ ITERATOR_ID.ID }})"{% endif %}
     {{ FUNCTION_NAME }} "${__STAGE_OR_STEP_COUNTER}" 2>&1 {{ RUN_PARALLEL }}
 {%- endfilter %}
 

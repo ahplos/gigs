@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 set -e -E -o pipefail
 
-trap 'stepEnvSet LINENO ${LINENO}' ERR
+trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
 
 TEMPLATE_FILE=${1}
 RENDERED_FILE=${2}

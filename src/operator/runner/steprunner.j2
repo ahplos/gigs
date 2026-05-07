@@ -1,23 +1,19 @@
 #!/usr/bin/bash
 # steprunner
 
+trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
+
 {%- set HAS_SECRETS = 'HAS_SECRETS' if step.secretVars else '' %}
 {%- if HAS_SECRETS %}
 gigSecretsAdd {{ step.secretVars|join(' ') }}
 {%- endif %}
 
-{%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
-{%- set STEP_NAME = step.name if not (step.stepRef and step.stepRef.name) else step.stepRef.name %}
-
-{%- set CLI_ARGS = step.args|join(' ') if step.args else '' %}
-{%- set CLI_ARGS = step.defaultArgs|join(' ') ~ ARGS if step.defaultArgs else ARGS %}
-
 stepEnvSet INTERPRETER {{ step.interpreter }}
 stepEnvSet TEMPLATE_TYPE '{{ step.templateType if step.templateType else '' }}'
-stepEnvSet STAGE_NAME {{ STAGE_NAME }}
-stepEnvSet STEP_NAME {{ STEP_NAME }}
-stepEnvSet STEP_FILE {{ '$GIG_RUN_HOME/{}/step__{}_{}'.format(GIG_MOD_DIR_NAME, STAGE_NAME, STEP_NAME) }}
-stepEnvSet CLI_ARGS '{{ CLI_ARGS }}'
+stepEnvSet STAGE_NAME {{ stage.name }}
+stepEnvSet STEP_NAME {{ step.name }}
+stepEnvSet STEP_FILE {{ '$GIG_RUN_HOME/{}/step__{}_{}'.format(GIG_MOD_DIR_NAME, stage.name, step.name) }}
+stepEnvSet PWD "$(pwd)"
 
 ${GIG_RUN_HOME}/execute-interpreter.sh
-return $?
+stepEnvSet __STEP_RESULT $?

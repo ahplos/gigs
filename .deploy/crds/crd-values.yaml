@@ -409,7 +409,6 @@ elCicdDefs-$<GIG_MODULE>:
                       The file type for the step. Files are mounted as files in the Pod and executed using the declared file type's interpreter;
                       i.e. in a subprocess. The 'Shell' (Bash .sh) file type is the default.
                     enum:
-                    - Custom
                     - GigRun
                     - Go
                     - JavaScript

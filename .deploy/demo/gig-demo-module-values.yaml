@@ -95,19 +95,19 @@ elCicdTemplates:
             SOME_VAR='Testing passing variables across stages and steps through the environment'
             gigEnvSet SOME_VAR "${SOME_VAR}"
             echo "SOME_VAR: $(gigEnvGet SOME_VAR)"
-            oc login --insecure-skip-tls-verify -u $(gigEnvGet CLUSTER_ADMIN_USER_NAME) -p $(gigEnvGet CLUSTER_ADMIN_PASSWORD) https://kubernetes.default.svc
-            sleep 2
+            oc login --insecure-skip-tls-verify -u $(gigEnvGet CLUSTER_ADMIN_USER_NAME) \
+                -p $(gigEnvGet CLUSTER_ADMIN_PASSWORD) https://kubernetes.default.svc
       - name: $<CHOOSE_DEMO_SOURCE_TYPES>
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_ASK_USER>
       - name: $<DEMONSTRATE_GO>
-        when: gigEnv.LANGS.includes('Go')
+        when: gigEnv.LANG_DEMO.includes('Go')
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
       - name: $<DEMONSTRATE_PYTHON>
-        when: gigEnv.LANGS.includes("Python")
+        when: gigEnv.LANG_DEMO.includes("Python")
         maxParallel: 2
         iterate:
           loops:
@@ -137,7 +137,6 @@ elCicdTemplates:
             JSONPATH='.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.stages.items.properties.steps.items.properties.interpreter.enum'
             LANGS="$(oc get crd gigmodules.batch.ahplos.org -o jsonpath="{${JSONPATH}}")"
             gigEnvSet LANGS ${LANGS}
-            sleep 2
         - name: gigrun-operator-supported-languages-patch.yaml
           interpreter: UserInput
           templateType: Helm
@@ -214,9 +213,10 @@ elCicdTemplates:
         steps:
         - name: $<PRINT_THE_DEMO_MSG>
           sourceCode: |-
+            { set +x; } 2> /dev/null
             TEXT_MSG=${1:-$(stageEnvGet TEXT_MESSAGE)}
-            TEXT_MSG=${TEXT_MSG:-$(gigEnvGet TEXT_MESSAGE)}
-            echo ${TEXT_MSG}
+            echo ${TEXT_MSG:-$(gigEnvGet TEXT_MESSAGE)}
+            set -x
             sleep 1
   template:
     spec: $<GIG_MOD_SPECS>

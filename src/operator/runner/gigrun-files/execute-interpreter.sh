@@ -1,18 +1,17 @@
 #!/usr/bin/bash
-set -e -o pipefail
-
-trap 'stepEnvSet LINENO ${LINENO}' ERR
+trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
 
 set -o allexport
 
 GIG_ENV="$(gigEnvToJson)
 STAGE_ENV="$(stageEnvToJson)
 
-set -e - o pipefail +o allexport
+set +o allexport
 
 function executeInterpreter() {
 
     local INTERPRETER=$(stepEnvGet INTERPRETER)
+    local CLI_ARGS="$(stepEnvGet CLI_ARGS)"
     case ${INTERPRETER} in
         Custom)
             bash -cxe $(stepEnvGet CLI_ARGS)
@@ -34,7 +33,7 @@ function executeInterpreter() {
         ;;
 
         Shell)
-            $(stepEnvGet STEP_FILE) $(stepEnvGet CLI_ARGS)
+            $(stepEnvGet STEP_FILE) ${CLI_ARGS:+"${CLI_ARGS}"}
         ;;
 
         Template)

@@ -8,10 +8,6 @@ function gigEnvGet() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET 'GIG_ENV' "${1}" )
 }
 
-function gigEnvToCsv() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw --csv HGETALL 'GIG_ENV' )
-}
-
 function gigEnvToJson() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL 'GIG_ENV' | paste -d "=" - - | jo )
 }
@@ -36,10 +32,6 @@ function stageEnvGet() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET ${STAGE_ID} "${1}" )
 }
 
-function stageEnvToCsv() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw --csv HGETALL ${STAGE_ID} )
-}
-
 function stageEnvToJson() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL ${STAGE_ID} | paste -d "=" - - | jo )
 }
@@ -62,10 +54,6 @@ function stepEnvExists() {
 
 function stepEnvGet() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET ${STEP_ID} "${1}" )
-}
-
-function stepEnvToCsv() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw --csv HGETALL ${STEP_ID} )
 }
 
 function stepEnvToJson() {

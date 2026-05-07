@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+trap 'gigEnvSet __ERR_LINENO ${LINENO}; gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
+
 ECHO_XTRACE_REGEX='^[+]+\s+echo(\s|$)'
 
 __HEADER_FOOTER_BORDER='******************************************************************'
@@ -51,8 +53,7 @@ function __waitForUserInput() {
     then
         echo 'Waiting for user input...'
 
-        kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} 2>&1 >/dev/null
-
+        kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} > /dev/null
         __saveInputParamsToEnv
 
         echo
@@ -86,28 +87,31 @@ function __checkForAbortSignal() {
 
 function __killGigRun() {
     echo
-    echo "${1:-==> FAILURE: TERMINATING DUE TO ERROR IN GIG}"
+    echo "${1:-==> GIG FAILURE[$(gigEnvGet __ERR_FILE_NAME)/ln $(gigEnvGet __ERR_LINENO)]: TERMINATING DUE TO ERROR IN GIG}"
     sleep 5
     local PID=$(gigEnvGet GIG_PID)
     (timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}) >/dev/null
 }
 
 function __logOutput() {
-    local LOG_HDR=$(printf "%s%18s" "$(__gigRunTime)" "[${1}] ")
-    local INPUT="$(set +e +o pipefail && timeout 1s cat || :)"
-
-    if [[ -n ${INPUT} ]]
-    then
-        echo "${INPUT}" | sed -E -e "s/^/${LOG_HDR}/g"
-    fi
+    local OUT=$(
+        while IFS='' read -r LOG_OUT
+        do
+            local LOG_HDR=$(printf "%s%18s" "$(__gigRunTime)" "[${1}] ")
+            echo "${LOG_OUT}" | sed -E -e "/${ECHO_XTRACE_REGEX}/d" -e "s/^/${LOG_HDR}/g"
+        done
+    )
+    echo "${OUT}"
 }
 
 function __logFilteredOutput() {
-    while IFS='' read -r LOG_OUT
-    do
-        INPUT=$(echo "${LOG_OUT}" | sed -E "/${ECHO_XTRACE_REGEX}/d")
-        __filterSecrets "${INPUT}" >>"${1}"
-    done
+    local OUT=$(
+        while IFS='' read -r LOG_OUT
+        do
+            __filterSecrets "${LOG_OUT}" >>"${1}"
+        done
+    )
+    echo "${OUT}"
 }
 
 function __filterSecrets() {
@@ -219,14 +223,18 @@ function __stepFooter() {
     local STEP_ID=${1}
     local STAGE_NAME=${2}
     local STEP_NAME=${3}
-    local STEP_RESULT=${4}
-    local ERROR_LINENO=${5}
+    local RESULT=$(stepEnvGet __STEP_RESULT)
 
-    if [[ ${STEP_RESULT} == 0 ]]
+    if [[ -z ${RESULT} || ${RESULT} == 0 ]]
     then
         echo "==> SUCCESS: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} <==" | __logOutput "${STEP_ID}"
     else
-        echo "==> FAIL [EXIT CODE ${STEP_RESULT}/LINE ${ERROR_LINENO:-Unknown}]: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} <==" | __logOutput "${STEP_ID}"
+        local LINENO=$(gigEnvGet __ERR_LINENO)
+        local FILE=$(gigEnvGet __ERR_FILE_NAME)
+        echo "$(
+            echo "==> STEP FAILURE: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME}"
+            echo "==>               Exit code ${RESULT}${FILE:+:file ${FILE}}${LINENO:+:ln ${LINENO}}"
+        )" | __logOutput "${STEP_ID}"
         __killGigRun
     fi
 }

@@ -48,8 +48,13 @@ RUN <<EOF
     python -m ensurepip --upgrade
     python -m pip install jinja2 pyyaml redis
 
-    go mod init github.com/ahplos/gigs
-    go get github.com/redis/go-redis/v9
+    mkdir /go-step-template
+    (
+        cd /go-step-template
+        go mod init github.com/ahplos/gigs
+        go get github.com/redis/go-redis/v9
+    )
+    chmod 644 /go-step-template
 EOF
 
 ENV HOME=/workDir
