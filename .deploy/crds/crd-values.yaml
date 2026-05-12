@@ -3,8 +3,8 @@ elCicdDefs:
   GIG_FORM: $<GIG>form
   GIG_HOOK: $<GIG>hook
   GIG_MODULE: $<GIG>module
-  GIG_RUN: $<GIG>run
-  GIG_TYPES: [$<GIG_MODULE>, $<GIG_FORM>, $<GIG_HOOK>, $<GIG>, $<GIG_RUN>]
+  GIGRUN: $<GIG>run
+  GIG_TYPES: [$<GIG_MODULE>, $<GIG_FORM>, $<GIG_HOOK>, $<GIG>, $<GIGRUN>]
 
   STAGE_STEP_PATTERN: '[a-z]+(?:-[a-z0-9]+)*'
 
@@ -13,24 +13,6 @@ elCicdDefs:
       type: string
     namespace:
       type: string
-
-  STEP_REF:
-    type: object
-    description: |-
-      Reference to another Step in a Stage in a GigModuleto be processed where referenced.  When clauses in the
-      referenced Step are ignored.
-    required:
-    - gigModuleRef
-    - stage
-    - name
-    properties:
-      gigModuleRef: $<GIG_MODULE_REF>
-      name:
-        type: string
-        pattern: $<STAGE_STEP_PATTERN>
-      stage:
-        type: string
-        pattern: $<STAGE_STEP_PATTERN>
 
   RUN_STATE:
     type: string
@@ -226,10 +208,14 @@ elCicdDefs-$<GIG_MODULE>:
               type: string
             envVar:
               type: object
-              description: Environment variable with values separated by a delimeter.  The default delimeter is whitespace.
+              description: |-
+                Environment variable of values to iterate over.
               properties:
                 name:
                   type: string
+                  description: |-
+                    Environment variable of values to iterate over. Precedence is given to local env, then STEP, STAGE, and GIG. the delim
+                    property refers to delimeter separating the values. A blank delim assumes spaces.
                 delim:
                   type: string
             range:
@@ -360,6 +346,8 @@ elCicdDefs-$<GIG_MODULE>:
                   pattern: $<STAGE_STEP_PATTERN>
             wait:
               type: boolean
+              description: |-
+                If true, all execution will pause until all parallel child subprocesses to the stage have completed.
             when:
               type: string
               description: |-
@@ -383,40 +371,23 @@ elCicdDefs-$<GIG_MODULE>:
                 - required:
                   - stepRef
                 - required:
-                  - sourceCode
+                  - script
                 properties:
-                  command:
-                    type: string
-                    descriptions: |-
-                      Command used to process the sourceCode. The 'command' is defined by the 'interpreter' and set by the Gigs controller
-                      unless the 'interpreter' is set to 'Custom'.
                   args:
                     type: array
-                    description: Extra arguments to be passed to each step's command.  Ignored when the step is referenced.
-                    items:
-                      type: string
-                  defaultArgs:
-                    type: array
-                    description: Extra arguments always passed to each step's command.
+                    description: |-
+                      List of arguments to pass to the runtime executable.  If the runtime is Custom, this field is ignored and arguments
+                      are passed in the runtimeScript.
                     items:
                       type: string
                   description:
                     type: string
                     description: Description of name's purpose.
-                  interpreter:
+                  filePath:
                     type: string
                     description: |-
-                      The file type for the step. Files are mounted as files in the Pod and executed using the declared file type's interpreter;
-                      i.e. in a subprocess. The 'Shell' (Bash .sh) file type is the default.
-                    enum:
-                    - GigRun
-                    - Go
-                    - JavaScript
-                    - Python
-                    - Shell
-                    - Template
-                    - UserInput
-                    default: Shell
+                      Path to file relative to the current working directory to process per the runtime. The use case would be pulling a Git
+                      repo of scripts in a prior step, and then referencing a file in the repo to run.
                   iterate: $<ITERATE_SPEC>
                   maxParallel:
                     type: integer
@@ -428,13 +399,13 @@ elCicdDefs-$<GIG_MODULE>:
                     type: string
                     description: |-
                       Name of the step. Must start and end with an alphanumeric character, and '-' and '.' may be used.
-                      The name will reflect the name of the file used to store the sourceCode, so name appropiately;
-                      e.g. <some-name>.py if the name is a Python sourceCode.
+                      The name will reflect the name of the file used to store the script, so name appropiately;
+                      e.g. <some-name>.py if the name is a Python script.
                     pattern: $<STAGE_STEP_PATTERN>
                   outputFile:
                     type: object
                     description: |-
-                      If the interpreter is TemplateFile and outputFile is defined, the output of the template will be saved
+                      If the runtime is TemplateFile and outputFile is defined, the output of the template will be saved
                       to the given path.  If not defined, the file will be named after the step and saved in the current
                       working directory.
                     required:
@@ -448,6 +419,34 @@ elCicdDefs-$<GIG_MODULE>:
                         description: Whether the file should be appended to or overwritten. Default is to overwrite.
                   private:
                     type: boolean
+                    description: |-
+                      Steps marked private cannot be referenced by other stages or GigModules.  This is evaluated at runtime only.
+                  runtime:
+                    type: string
+                    description: |-
+                      The execution environment the script should run in. script is mounted as files in the GigRun Pod and executed using the
+                      declared runtime; i.e. in a subprocess. 'Shell' (bash -ce <step name>.sh) is the default.
+                    enum:
+                    - Custom
+                    - GigRun
+                    - Go
+                    - JavaScript
+                    - Python
+                    - Shell
+                    - Template
+                    - UserInput
+                    default: Shell
+                  runtimeScript:
+                    type: string
+                    description: |-
+                      Bash shell script to define a Custom runtime.  Define how an runtime not supported directly by Gigs should be launched.
+                      If the runtime is NOT Custom, this field will be ignored. The following step environment values can be accessed through
+                      the stepEnvGet bash functions provided as part of the GigRun envrironment:defined
+                      - PWD: The current working directory
+                      - STAGE_NAME: Name of the executing stage
+                      - STEP_FILE: File where the step's script is defined.
+                      - STEP_NAME: Step name
+                      - TEMPLATE_TYPE: template type, if
                   secretVars:
                     type: array
                     description: |-
@@ -455,16 +454,28 @@ elCicdDefs-$<GIG_MODULE>:
                     items:
                       type: string
                     x-kubernetes-list-type: set
-                  sourceCode:
+                  script:
                     type: string
                     description: |-
-                      The sourceCode to execute. Can be writting in any language or template file supported by Ahplos Gigs,
-                      or as a sourceCode for a custom command to run.  Will take precedence over sourceFile.
-                  sourceFile:
-                    type: string
+                      The script to execute. Can be writting in any language or template file supported by Ahplos Gigs,
+                      or as a script for a custom command to run.  Will take precedence over filePath.
+                  stepRef:
+                    type: object
                     description: |-
-                      Path to file relative to the current working directory to process per the interpreter.
-                  stepRef: $<STEP_REF>
+                      Reference to another Step in a Stage in a GigModuleto be processed where referenced.  When clauses in the
+                      referenced Step are ignored.
+                    required:
+                    - gigModuleRef
+                    - stage
+                    - name
+                    properties:
+                      gigModuleRef: $<GIG_MODULE_REF>
+                      name:
+                        type: string
+                        pattern: $<STAGE_STEP_PATTERN>
+                      stage:
+                        type: string
+                        pattern: $<STAGE_STEP_PATTERN>
                   templateType:
                     type: string
                     enum:
@@ -474,6 +485,8 @@ elCicdDefs-$<GIG_MODULE>:
                     - Jinja
                   wait:
                     type: boolean
+                    description: |-
+                      If true, all execution will pause until all parallel child subprocesses to the step have completed.
                   when:
                     type: string
                     description: |-
@@ -535,11 +548,11 @@ elCicdDefs-$<GIG>:
           startedBy:
             type: string
 
-elCicdDefs-$<GIG_RUN>:
+elCicdDefs-$<GIGRUN>:
   TITLE_CASE_NAME: GigRun
   SHORT_NAMES:
-  - $<GIG_RUN>
-  - $<GIG_RUN>s
+  - $<GIGRUN>
+  - $<GIGRUN>s
   SPEC_DEFINITION:
     type: object
     description: |-
@@ -567,7 +580,7 @@ elCicdDefs-$<GIG_RUN>:
           InputValues are never preserved in a deployed GigRun, but rather used by the Gig Operator to create an associated Secret for
           the Pod to read and use.  The Secret will contain the JSON string of all inputValues, each subsequent update will be merged with
           any existing values for the life of the GigRun, and the JSON string all will be injected into an environment variable in the runner
-          as GIG_RUN_INPUT.
+          as GIGRUN_INPUT.
       runState: $<RUN_STATE>
       startedBy:
         type: string
@@ -605,12 +618,12 @@ elCicdDefs-$<GIG_HOOK>:
         type: array
         description: |-
           List of values to expected in hook.  Used to defined expected values and/or whether
-          they are to be passed onto the $<GIG_RUN> if it hook passes validation.
+          they are to be passed onto the $<GIGRUN> if it hook passes validation.
         items:
           type: object
           x-kubernetes-validations:
           - rule: "has(self.inputVar) || has(self.validation)"
-            message: "You must define a mapping to a $<GIG_RUN> inputVar and/or a validation for each listing"
+            message: "You must define a mapping to a $<GIGRUN> inputVar and/or a validation for each listing"
           required:
           - key
           - source
@@ -623,7 +636,7 @@ elCicdDefs-$<GIG_HOOK>:
             inputVar:
               type: string
               description:
-                Name of variable to pass the value from the hook event to the $<GIG_RUN>. If values need further processing,
+                Name of variable to pass the value from the hook event to the $<GIGRUN>. If values need further processing,
                 that logic belongs inside a GigModule.
             source:
               type: string

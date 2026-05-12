@@ -24,11 +24,15 @@ class _GIG_CONSTS(type):
         return 'gigs'
 
     @property
-    def GIG_RUN(self) -> str:
+    def GIGRUN(self) -> str:
         return 'gigrun'
 
     @property
-    def GIG_RUNS(self) -> str:
+    def GIGRUN_HOME(self) -> str:
+        return '/gigrun'
+
+    @property
+    def GIGRUNS(self) -> str:
         return 'gigruns'
 
     @property
@@ -108,7 +112,7 @@ class _GIG_CONSTS(type):
         return 'volumeMounts'
 
     @property
-    def LATEST_GIG_RUN(self) -> str:
+    def LATEST_GIGRUN(self) -> str:
         return 'latestGigRun'
 
     @property

@@ -7,7 +7,7 @@ import {
 
 import {
     Gig,
-    GIG_RUN_GVK,
+    GIGRUN_GVK,
 } from '../utilities/objectDefs';
 
 import GigK8sUtils from '../utilities/gigK8sUtils';
@@ -22,7 +22,7 @@ export const GigRunsListTab = (model, page, component) => {
     let gigRunsGetOption = {
         namespace: gig.metadata.namespace,
         selectors: {
-            [`${GIG_RUN_GVK.group.toLowerCase()}/${GIG_RUN_GVK.kind.toLowerCase()}`]: gig.metadata.name
+            [`${GIGRUN_GVK.group.toLowerCase()}/${GIGRUN_GVK.kind.toLowerCase()}`]: gig.metadata.name
         }
     };
     const [gigRuns, loaded, loadError] = GigK8sUtils.getGigRuns(gigRunsGetOption);

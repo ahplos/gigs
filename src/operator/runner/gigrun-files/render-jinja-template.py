@@ -5,8 +5,8 @@ from yaml import safe_load, safe_load_all
 
 from jinja2 import Environment, FileSystemLoader
 
-gigrun_home = os.environ['GIG_RUN_HOME']
-gigrun_working_dir = os.environ['GIG_RUN_WORKING_DIR']
+gigrun_home = os.environ['GIGRUN_HOME']
+gigrun_working_dir = os.environ['GIGRUN_WORKING_DIR']
 environment = Environment(loader = FileSystemLoader([gigrun_working_dir, gigrun_home, '/']))
 environment.filters['from_json'] = load
 environment.filters['from_yaml'] = safe_load

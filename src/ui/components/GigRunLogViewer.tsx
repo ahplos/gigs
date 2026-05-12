@@ -34,7 +34,7 @@ import {
 import {
     GigRun,
     GIG_MAP,
-    CURRENT_GIG_RUN
+    CURRENT_GIGRUN
 } from '../utilities/objectDefs';
 
 import {
@@ -249,7 +249,7 @@ export function GigRunLogViewer({ gigRun, pod }: GigRunLogViewerProps) {
     };
 
     if (!initialized) {
-        GIG_MAP.set(CURRENT_GIG_RUN, gigRun);
+        GIG_MAP.set(CURRENT_GIGRUN, gigRun);
 
         readLogs(pod);
         setInitialized(true);

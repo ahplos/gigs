@@ -10,7 +10,7 @@ EXTRA_VALUES_FILE=${4}
 
 (
     cd ${CHART_DIR}
-    cp ${GIG_RUN_HOME}/Chart.yaml .
+    cp ${GIGRUN_HOME}/Chart.yaml .
     if [[ ${EXTRA_VALUES_FILE} ]]
     then
         cp ${EXTRA_VALUES_FILE} .

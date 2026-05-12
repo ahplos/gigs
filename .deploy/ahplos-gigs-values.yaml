@@ -24,7 +24,7 @@ elCicdDefs:
 
   GIGS_OCP_CONSOLE_ROLE: $<OPERATOR_NAME>-openshift-console
 
-  AHPLOS_GIGS_INTERPRETER_MAP: ahplos-gigs-interpreters
+  AHPLOS_GIGS_INTERPRETER_MAP: ahplos-gigs-runtimes
 
 elCicdDefs-dev:
   IMAGE_PULL_POLICY: Always

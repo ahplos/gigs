@@ -24,7 +24,7 @@ function __gigrunner() {
         if (stage.stageRef and stage.stageRef.gigModuleRef.namespace) else gig_mod.namespace %}
       {%- set STAGE_GIG_MOD_NAME = stage.stageRef.gigModuleRef.name if stage.stageRef else gig_mod.name %}
 
-      {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
+      {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIGMOD_DIR_NAME, stage.name) %}
 
       {%- set RUN_PARALLEL = '&' if (stage.maxParallel and stage.maxParallel > 0) else '' %}
 
@@ -35,7 +35,7 @@ function __gigrunner() {
             export STAGE_ID=$(uuidgen)
             export STAGE_COUNTER=${__STAGE_COUNTER}
             __stageHeader ${STAGE_COUNTER} '{{ stage.name }}' ${CURRENT_PID}
-            ${GIG_RUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stage__{{ STAGE_NAME }}
+            ${GIGRUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stage__{{ STAGE_NAME }}
             (echo && echo "==> STAGE ${STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") |& __logOutput "${STAGE_COUNTER}"
         )
     }
@@ -48,15 +48,13 @@ function __gigrunner() {
     let _STAGE_COUNTER+=1
     unset __SHOULD_RUN
     {%- if stage.when %}
-    local __WHEN_DIR=${GIG_RUN_HOME}/{{ GIG_MOD_DIR_NAME }}
-    (cd ${__WHEN_DIR} && npm link redis >/dev/null)
-    local __WHEN_FILE_NAME=${__WHEN_DIR}/stage__{{ stage.name }}_when.js
+    local __WHEN_FILE_NAME=${GIGRUN_HOME}/{{ GIGMOD_DIR_NAME }}/stage__{{ stage.name }}_when.js
     __SHOULD_RUN=$(node ${__WHEN_FILE_NAME}) || exit $?
     {%- endif %}
     if [[ "${__SHOULD_RUN:-true}" == 'true' ]]
     then
       {%- if stage.iterate %}
-        {{- iter_macros.realize_iterators(stage, STAGE_FUNCTION_NAME, GIG_MOD_DIR_NAME) }}
+        {{- iter_macros.realize_iterators(stage, STAGE_FUNCTION_NAME, GIGMOD_DIR_NAME) }}
       {%- else %}
         {% if stage.maxParallel -%}
         {{ '__checkMaxThreads ' ~ stage.maxParallel }}

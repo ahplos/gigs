@@ -1,18 +1,12 @@
 #!/usr/bin/bash -e
 # stagerunner
 
-{%- macro cli_args(CLI_ARGS) %}
-cat <<'          EOF' | sed -E 's/^\s+//g'
-    {{ CLI_ARGS }}
-EOF
-{%- endmacro %}
-
 set -e -E -o pipefail
 
 trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
 
 {%- from 'iterator-macro.j2' import realize_iterators %}
-{%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIG_MOD_DIR_NAME, stage.name) %}
+{%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIGMOD_DIR_NAME, stage.name) %}
 
 function {{ STAGE_FUNCTION_NAME }}() {
     local __STEP_COUNTER=0
@@ -31,9 +25,6 @@ function {{ STAGE_FUNCTION_NAME }}() {
       {%- set STAGE_PREFIX = stage.name if not (step.stepRef and step.stepRef.stage) else step.stepRef.stage %}
       {%- set STEP_RUN_FILE = '{}_{}'.format(STAGE_PREFIX, STEP_SUFFIX) %}
 
-      {%- set CLI_ARGS = step.args|join(' ') if step.args else '' %}
-      {%- set CLI_ARGS = step.defaultArgs|join(' ') ~ CLI_ARGS if step.defaultArgs else CLI_ARGS %}
-
       {%- set RUN_PARALLEL = '&' if (step.maxParallel and step.maxParallel > 0) else '' %}
 
       {%- set STEP_FUNCTION_NAME = '{}_{}'.format(STAGE_FUNCTION_NAME, step.name) %}
@@ -41,19 +32,11 @@ function {{ STAGE_FUNCTION_NAME }}() {
     function {{ STEP_FUNCTION_NAME }}() {
         export STEP_ID=${1}
         local CURRENT_PID=${BASHPID}
-        local CLI_ARGS='{{ CLI_ARGS }}'
-        __stepHeader ${STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' ${CURRENT_PID}
+        local RUNTIME_CONFIG='{{ RUNTIME_CONFIG }}'
+        __stepHeader ${STEP_ID} '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' ${CURRENT_PID}
 
-        {%- if CLI_ARGS %}
-        CLI_ARGS=$(
-          {%- filter indent(width=10) %}
-          {{ cli_args(CLI_ARGS) }}
-          {%- endfilter %}
-          stepEnvSet CLI_ARGS "${CLI_ARGS}"
-        )
-        {%- endif %}
         local __STEP_OUTPUT=$(
-            {{ '${{GIG_RUN_HOME}}/{}/steprunner__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_FILE)  }} |& __logOutput "${STEP_ID}"
+            {{ '${{GIGRUN_HOME}}/{}/steprunner__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_FILE)  }} |& __logOutput "${STEP_ID}"
         )
         echo "${__STEP_OUTPUT}"
 
@@ -64,14 +47,13 @@ function {{ STAGE_FUNCTION_NAME }}() {
     unset __SHOULD_RUN
     local __STAGE_STEP_COUNTER="${STAGE_COUNTER}-${__STEP_COUNTER}"
     {%- if step.when %}
-    local __WHEN_DIR=${GIG_RUN_HOME}/{{ GIG_MOD_DIR_NAME }}
-    (cd ${__WHEN_DIR} && npm link redis >/dev/null &>/dev/null)
+    local __WHEN_FILE_NAME=${GIGRUN_HOME}/{{ GIGMOD_DIR_NAME }}/step__{{ STAGE_NAME }}_{{ stage_or_step.name }}_{{ iter.name }}_when.js
     __SHOULD_RUN=$(node ${__WHEN_FILE_NAME}) || exit $?
     {%- endif %}
     if [[ "${__SHOULD_RUN:-true}" == 'true' ]]
     then
       {%- if step.iterate %}
-        {{- realize_iterators(step, STEP_FUNCTION_NAME, stage.name, GIG_MOD_DIR_NAME) }}
+        {{- realize_iterators(step, STEP_FUNCTION_NAME, GIGMOD_DIR_NAME, stage.name) }}
       {%- else %}
         {% if step.maxParallel -%}
         {{ '__checkMaxThreads ' ~ step.maxParallel }}
@@ -79,7 +61,7 @@ function {{ STAGE_FUNCTION_NAME }}() {
         {{ STEP_FUNCTION_NAME }} ${__STAGE_STEP_COUNTER} {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stepHeader ${__STAGE_STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ step.interpreter }}' 'SKIPPED'
+        __stepHeader ${__STAGE_STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' 'SKIPPED'
     fi
     {%- if step.wait %}
 

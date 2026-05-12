@@ -1,4 +1,4 @@
-{%- macro realize_iterators(stage_or_step, FUNCTION_NAME, GIG_MOD_DIR_NAME, STAGE_NAME=None) %}
+{%- macro realize_iterators(stage_or_step, FUNCTION_NAME, GIGMOD_DIR_NAME, STAGE_NAME=None) %}
 
 {%- set INDENT = 4 %}
 {%- set INDENT_MOD = 0 if stage_or_step.when else 1 %}
@@ -12,8 +12,7 @@
 {%- for iter in stage_or_step.iterate.loops %}
     {%- filter indent(width=(loop.index - INDENT_MOD)* INDENT ) %}
     {%- if iter.envVar %}
-    OLD_IFS=${IFS}
-    IFS='{{ iter.envVar.delim }}' read -ra {{ iter.name }}_ARRAY <<< "${{ iter.envVar.name}}"
+    {{ "IFS='%s' ".format(iter.envVar.delim) if iter.envVar.delim else '' }}read -ra {{ iter.name }}_ARRAY <<< "${{ iter.envVar.name }}"
     {%- set VALUES = '${{{}_ARRAY[@]}}'.format(iter.name) %}
     {%- elif iter.range %}
       {%- set VALUES = '{{{}..{}..{}}}'.format(iter.range.first , iter.range.last , iter.range.incr) %}
@@ -31,12 +30,10 @@
         export {{ iter.name }}
         {%- if iter.when %}
         unset __SHOULD_RUN
-        local __WHEN_DIR=${GIG_RUN_HOME}/{{ GIG_MOD_DIR_NAME }}
-        (cd ${__WHEN_DIR} && npm link redis >/dev/null &>/dev/null)
           {%- if not STAGE_NAME %}
-        local __WHEN_FILE_NAME=${__WHEN_DIR}/stage__{{ stage_or_step.name }}_{{ iter.name }}_when.js
+        local __WHEN_FILE_NAME=${GIGRUN_HOME}/{{ GIGMOD_DIR_NAME }}/stage__{{ stage_or_step.name }}_{{ iter.name }}_when.js
           {%- else %}
-        local __WHEN_FILE_NAME=${__WHEN_DIR}/step__{{ STAGE_NAME }}_{{ stage_or_step.name }}_{{ iter.name }}_when.js
+        local __WHEN_FILE_NAME=${GIGRUN_HOME}/{{ GIGMOD_DIR_NAME }}/step__{{ STAGE_NAME }}_{{ stage_or_step.name }}_{{ iter.name }}_when.js
           {%- endif %}
         __SHOULD_RUN=$(node ${__WHEN_FILE_NAME}) || exit $?
         if [[ "${__SHOULD_RUN}" != 'true' ]]
@@ -45,7 +42,7 @@
             local CURRENT_PID=${BASHPID}
             __stageHeader "${__STAGE_COUNTER}({{ ITERATOR_ID.ID }})" '{{ stage_or_step.name }}' ${CURRENT_PID} 'SKIPPED' 2>&1
           {%- else %}
-            __stepHeader "${__STEP_ID}({{ ITERATOR_ID.ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.interpreter }}' 'SKIPPED'
+            __stepHeader "${__STEP_ID}({{ ITERATOR_ID.ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.runtime }}' 'SKIPPED'
           {%- endif %}
             continue
         fi

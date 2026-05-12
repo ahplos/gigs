@@ -20,14 +20,13 @@ function __verifyRequiredInputParams() {
 
 function __saveInputParamsToEnv() {
     local JSON_INPUT_VALUES=$(kubectl get secret --ignore-not-found -n {{ gig_run.namespace }} {{ gig_run.name }} -o jsonpath='{.data.inputValues}' | base64 --decode)
-    local GIG_RUN_INPUT=$(jq -s '.[0] + .[1] // empty' <(echo ${GIG_RUN_INPUT}) <(echo ${JSON_INPUT_VALUES}))
-    gigEnvSet __GIG_RUN_INPUT "${GIG_RUN_INPUT}"
+    local GIGRUN_INPUT=$(jq -s '.[0] + .[1] // empty' <(echo ${GIGRUN_INPUT}) <(echo ${JSON_INPUT_VALUES}))
 
     echo
     echo "${__HEADER_FOOTER_BORDER}"
-    if [[ -n ${GIG_RUN_INPUT} ]]
+    if [[ -n ${GIGRUN_INPUT} ]]
     then
-        INPUT_PARAMS=$(echo "${GIG_RUN_INPUT}" | jq -r 'to_entries[]|"\(.key)=\(.value)"')
+        INPUT_PARAMS=$(echo "${GIGRUN_INPUT}" | jq -r 'to_entries[]|"\(.key)=\(.value)"')
         for INPUT_PARAM in ${INPUT_PARAMS}
         do
             gigEnvSet $(echo ${INPUT_PARAM} | tr '=' ' ')
@@ -48,7 +47,7 @@ function __saveInputParamsToEnv() {
 function __waitForUserInput() {
     local USER_INPUT_PATCH=${1}
 
-    kubectl patch gigrun ${GIG_RUN_NAME} -n ${GIG_RUN_NAMESPACE} --patch-file ${USER_INPUT_PATCH} --type='merge' --warnings-as-errors >/dev/null
+    kubectl patch gigrun ${GIGRUN_NAME} -n ${GIGRUN_NAMESPACE} --patch-file ${USER_INPUT_PATCH} --type='merge' --warnings-as-errors >/dev/null
     if [[ $? == 0 ]]
     then
         echo 'Waiting for user input...'
@@ -134,10 +133,10 @@ function __generateSecretFilter() {
 }
 
 function __gigRunTime() {
-    local GIG_RUN_TIME=$(gigdb-cli INFO | grep uptime_in_seconds | sed 's/[^0-9]//g')
-    local HOURS=$((GIG_RUN_TIME/3600))
-    local MINUTES=$((GIG_RUN_TIME%3600/60))
-    local SECONDS=$((GIG_RUN_TIME%60))
+    local GIGRUN_TIME=$(gigdb-cli INFO | grep uptime_in_seconds | sed 's/[^0-9]//g')
+    local HOURS=$((GIGRUN_TIME/3600))
+    local MINUTES=$((GIGRUN_TIME%3600/60))
+    local SECONDS=$((GIGRUN_TIME%60))
     echo $(printf '%02d:%02d:%02d' ${HOURS} ${MINUTES} ${SECONDS})
 }
 
@@ -205,7 +204,7 @@ function __stepHeader() {
         echo
         echo "${__HEADER_FOOTER_BORDER}"
         echo "${__HEADER_FOOTER_PREFIX} Step ${STEP_ID}: ${STAGE_NAME}:${STEP_NAME}"
-        echo "${__HEADER_FOOTER_PREFIX}       Interpreter: ${STEP_INTERPRETER}"
+        echo "${__HEADER_FOOTER_PREFIX}       Runtime: ${STEP_INTERPRETER}"
         echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: ${CURRENT_PID}"
 
         if [[ ${STAGE_TYPE} == 'SKIPPED' ]]

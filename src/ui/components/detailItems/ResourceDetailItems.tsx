@@ -19,7 +19,7 @@ import {
     GIG_MODULE_GVK,
     GIG_FORM_GVK,
     GIG_MAP,
-    CURRENT_GIG_RUN
+    CURRENT_GIGRUN
 } from '../../utilities/objectDefs';
 
 import {
@@ -49,7 +49,7 @@ export const LatestGigRunDetail = (model) => {
 
 export const GigDetail = (model) => {
     let gigRun: GigRun = model.obj;
-    GIG_MAP.set(CURRENT_GIG_RUN, gigRun);
+    GIG_MAP.set(CURRENT_GIGRUN, gigRun);
 
     return <ResourceLink groupVersionKind={GIG_GVK} name={gigRun.spec.gigRef.name} namespace={model.obj.metadata.namespace} />
 }

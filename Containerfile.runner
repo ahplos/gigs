@@ -13,26 +13,25 @@ ARG OC_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/
 ENV PYTHON_VERSION=3.12 \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
-    APP_ROOT=/opt/app-root \
     PIP_NO_CACHE_DIR=off \
-    HOME=/opt/app-root/src \
+    HOME=/home/user \
     NPM_RUN=start \
-    PLATFORM="el9" \
-    NODEJS_VERSION=22 \
-    NPM_RUN=start \
-    NAME=nodejs \
-    NODE_PATH=/usr/local/lib/node_modules \
-    PATH=$PATH:${NODE_PATH}
+    GO_REDIS_MODULE=github.com/redis/go-redis/v9
 
-WORKDIR /opt/app-root/src
+ENV NPM_CONFIG_PREFIX=$HOME/.npm-global \
+    PATH=$HOME/node_modules/.bin/:$HOME/.npm-global/bin/:$PATH
+
+WORKDIR ${HOME}
 
 RUN <<EOF
     set -ex
+
     #### ADJUST FOLLOWING FOR OTHER BASE IMAGE DISTROS ####
     rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
-    microdnf install --assumeyes --nodocs jq jo go git helm python${PYTHON_VERSION} nodejs npm tar gzip procps-ng ${GIG_DB_PKG}
-    microdnf remove --assumeyes subversion mercurial nodejs-docs
+    microdnf install --assumeyes --nodocs --setopt=install_weak_deps=0 \
+        jq jo go git helm python${PYTHON_VERSION} nodejs npm tar gzip procps-ng ${GIG_DB_PKG} openssl
     microdnf clean all
+    rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
     #### END ADJUST FOLLOWING FOR OTHER DISTROS ####
 
     rm -f /usr/bin/${GIG_DB_BENCHMARK}
@@ -43,23 +42,22 @@ RUN <<EOF
     tar -C /usr/local/bin/ -xf /tmp/${OC_TAR_GZ_FILE} 'oc' 'kubectl'
     rm /tmp/${OC_TAR_GZ_FILE}
 
-    npm install -g redis --unsafe-perm
+    npm install -g redis
 
+    ln -s /usr/bin/python3 /usr/bin/python
     python -m ensurepip --upgrade
     python -m pip install jinja2 pyyaml redis
 
-    mkdir /go-step-template
-    (
-        cd /go-step-template
-        go mod init github.com/ahplos/gigs
-        go get github.com/redis/go-redis/v9
-    )
-    chmod 644 /go-step-template
+    go mod init steprun
+    go get ${GO_REDIS_MODULE}
+    echo 'package main' >> scratch.go
+    echo "import (\"${GO_REDIS_MODULE}\")" >> scratch.go
+    go clean -modcache
+    go mod tidy
+    rm go.*
+
+    chmod -R 777 ${HOME}
 EOF
-
-ENV HOME=/workDir
-
-WORKDIR /workDir
 
 USER 1001
 

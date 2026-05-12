@@ -54,6 +54,7 @@ elCicdTemplates:
     CHOOSE_DEMO_SOURCE_TYPES: choose-demo-source-types
     EXECUTE_DEMO_SOURCE_TYPES: execute-demo-source-types
     DEMONSTRATE_GO: demonstrate-go
+    DEMONSTRATE_JAVASCRIPT: demonstrate-javascript
     DEMONSTRATE_PYTHON: demonstrate-python
     PRINT_THE_DEMO_MSG: print-the-demo-msg
 
@@ -72,7 +73,7 @@ elCicdTemplates:
         maxParallel: 1
         steps:
         - name: sleep-in-the-background-in-first-stage
-          sourceCode: |-
+          script: |-
             sleep 25
         - name: print-message-from-first-stage
           stepRef:
@@ -81,17 +82,17 @@ elCicdTemplates:
             stage: $<PRINT_THE_DEMO_MSG>
             name: $<PRINT_THE_DEMO_MSG>
           args:
-          -  'PROVING PARALLEL PROCESSING BY STAGE WORKS BY PRINTING SECOND STEP OF FIRST STAGE AT THE END'
+          - 'PROVING PARALLEL PROCESSING BY STAGE WORKS BY PRINTING SECOND STEP OF FIRST STAGE AT THE END'
       - name: login
-        description: Login into cluster as cluster admin, and retrieve Gig supported Step interpreters.
+        description: Login into cluster as cluster admin, and retrieve Gig supported Step runtimes.
         steps:
         - name: prove-parallel-step
           maxParallel: 1
-          sourceCode: |-
+          script: |-
             sleep 25
             echo 'PROVING PARALLEL PROCESSING BY STEP WORKS BY PRINTING FIRST STEP OF SECOND STAGE AT THE END'
         - name: cluster-admin-login.sh
-          sourceCode: |-
+          script: |-
             SOME_VAR='Testing passing variables across stages and steps through the environment'
             gigEnvSet SOME_VAR "${SOME_VAR}"
             echo "SOME_VAR: $(gigEnvGet SOME_VAR)"
@@ -123,52 +124,69 @@ elCicdTemplates:
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_SOURCE_DEMO>
+      - name: $<DEMONSTRATE_JAVASCRIPT>
+        when: gigEnv.LANG_DEMO.includes("JavaScript")
+        # maxParallel: 2
+        # iterate:
+        #   loops:
+        #   - name: LANG
+        #     envVar:
+        #       name: LANGS
+        #     when: env.LANG == 'JavaScript'
+        stageRef:
+          gigModuleRef:
+            name: $<GIG_MOD_SOURCE_DEMO>
 
   elCicdDefs-$<GIG_MOD_ASK_USER>:
     GIG_MOD_SPECS:
       mode: Library
       stages:
       - name: $<CHOOSE_DEMO_SOURCE_TYPES>
-        description: Have user choose which Gig supported interpreters to demo.
+        description: Have user choose which Gig supported runtimes to demo.
         steps:
         - name: retrieve-gig-operator-supported-languages
-          sourceCode: |-
+          script: |-
             echo "SOME_VAR [set in completely different module, stage, & step]: $(gigEnvGet SOME_VAR)"
-            JSONPATH='.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.stages.items.properties.steps.items.properties.interpreter.enum'
-            LANGS="$(oc get crd gigmodules.batch.ahplos.org -o jsonpath="{${JSONPATH}}")"
-            gigEnvSet LANGS ${LANGS}
+            JSONPATH='.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.stages.items.properties.steps.items.properties.runtime.enum'
+            LANGS_JSON="$(oc get crd gigmodules.batch.ahplos.org -o jsonpath="{${JSONPATH}}")"
+            gigEnvSet LANGS_JSON ${LANGS_JSON}
+            gigEnvSet LANGS $(echo $LANGS_JSON | jq -r '.[]'  | tr "\n" " ")
         - name: gigrun-operator-supported-languages-patch.yaml
-          interpreter: UserInput
+          runtime: UserInput
           templateType: Helm
-          sourceCode: |-
+          script: |-
             formTitle:
-              title: 'Gig Interpreter(s) to demo'
+              title: 'Gig Runtime(s) to demo'
             inputForm:
             - attributes:
-                options: {{ .Values.gigEnv.LANGS | toYaml | nindent 4 }}
+                options: {{ .Values.gigEnv.LANGS_JSON | toYaml | nindent 4 }}
               inputType: CheckboxGroup
               var: LANG_DEMO
 
   elCicdDefs-$<GIG_MOD_SOURCE_DEMO>:
     GIG_MOD_SPECS:
-      mode: Library
       stages:
       - name: $<DEMONSTRATE_GO>
-        description: Set a test msg with a Go sourceCode and print it.
+        description: Set a test msg with a Go script and print it.
         steps:
         - name: set-test-msg-with.go
-          interpreter: Go
-          sourceCode: |-
+          runtime: Go
+          script: |-
             package main
 
             import (
+                "fmt"
                 "os"
             )
 
             func main() {
-                var f, _ = os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
-                defer f.Close()
-                f.WriteString("\nTEST_MSG='This test msg was set using Go'")
+                dir, _ := os.Getwd()
+                fmt.Println("CURRENT DIR: " + dir)
+                TEXT_MESSAGE := GigEnvGet("TEXT_MESSAGE")
+                if (len(TEXT_MESSAGE) > 0) {
+                  TEXT_MESSAGE = TEXT_MESSAGE + "\n"
+                }
+                GigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Go Interpretor")
             }
         - name: print-the-go-msg
           maxParallel: 2
@@ -188,14 +206,30 @@ elCicdTemplates:
               name: $<GIG_MOD_PRINT_MSG>
             stage: $<PRINT_THE_DEMO_MSG>
             name: $<PRINT_THE_DEMO_MSG>
+      - name: $<DEMONSTRATE_JAVASCRIPT>
+        description: Set a test msg with JavaScript script and print it.
+        steps:
+        - name: set-test-msg-with.js
+          runtime: JavaScript
+          script: |-
+            let TEXT_MESSAGE = await gigEnvGet("TEXT_MESSAGE")
+            TEXT_MESSAGE = TEXT_MESSAGE ? TEXT_MESSAGE + '\n' : ''
+            await gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Javascript Interpretor")
+        - name: print-the-javascript-msg
+          stepRef:
+            gigModuleRef:
+              name: $<GIG_MOD_PRINT_MSG>
+            stage: $<PRINT_THE_DEMO_MSG>
+            name: $<PRINT_THE_DEMO_MSG>
       - name: $<DEMONSTRATE_PYTHON>
-        description: Set a test msg with a Python sourceCode and print it.
+        description: Set a test msg with Python script and print it.
         steps:
         - name: set-test-msg-with.py
-          interpreter: Python
-          sourceCode: |-
-            with open('.env', 'a') as env_file:
-              env_file.write("\nTEST_MSG='This test msg was set using Python'")
+          runtime: Python
+          script: |-
+            TEXT_MESSAGE = gigEnvGet("TEXT_MESSAGE")
+            TEXT_MESSAGE = TEXT_MESSAGE + '\n' if TEXT_MESSAGE else ''
+            gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Python Interpretor")
         - name: print-the-python-msg
           stepRef:
             gigModuleRef:
@@ -212,11 +246,9 @@ elCicdTemplates:
         mode: Library
         steps:
         - name: $<PRINT_THE_DEMO_MSG>
-          sourceCode: |-
-            { set +x; } 2> /dev/null
+          script: |-
             TEXT_MSG=${1:-$(stageEnvGet TEXT_MESSAGE)}
             echo ${TEXT_MSG:-$(gigEnvGet TEXT_MESSAGE)}
-            set -x
             sleep 1
   template:
     spec: $<GIG_MOD_SPECS>

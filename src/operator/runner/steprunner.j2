@@ -8,12 +8,24 @@ trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && 
 gigSecretsAdd {{ step.secretVars|join(' ') }}
 {%- endif %}
 
-stepEnvSet INTERPRETER {{ step.interpreter }}
+{%- if step.runtime == 'Custom' %}
+RUNTIME_SCRIPT=$(cat <<'EOF'
+{{ step.runtimeScript }}
+EOF)
+stepEnvSet RUNTIME_SCRIPT ${RUNTIME_SCRIPT}
+{%- elif step.args %}
+CLI_ARGS=$(cat <<'EOF'
+{{ step.args|join(' ') }}
+EOF)
+stepEnvSet CLI_ARGS ${CLI_ARGS}
+{%- endif %}
+
+stepEnvSet RUNTIME {{ step.runtime }}
 stepEnvSet TEMPLATE_TYPE '{{ step.templateType if step.templateType else '' }}'
 stepEnvSet STAGE_NAME {{ stage.name }}
 stepEnvSet STEP_NAME {{ step.name }}
-stepEnvSet STEP_FILE {{ '$GIG_RUN_HOME/{}/step__{}_{}'.format(GIG_MOD_DIR_NAME, stage.name, step.name) }}
+stepEnvSet STEP_FILE {{ '$GIGRUN_HOME/{}/step__{}_{}'.format(GIGMOD_DIR_NAME, stage.name, step.name) if step.script else step.filePath }}
 stepEnvSet PWD "$(pwd)"
 
-${GIG_RUN_HOME}/execute-interpreter.sh
+${GIGRUN_HOME}/execute-runtime.sh
 stepEnvSet __STEP_RESULT $?

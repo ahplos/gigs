@@ -19,13 +19,12 @@ DATA = 'data'
 
 STRING_DATA = 'stringData'
 
-GIG_MOD_REFS = 'gig_def_refs'
+GIGMOD_REFS = 'gig_def_refs'
 
-GIG_RUN = 'gigrun'
-GIG_RUN_HOME = f'/{GIG_RUN}'
+GIGRUN = 'gigrun'
 GIG_START_SH = 'gigrun-start.sh'
 WORK_DIR = 'workDir'
-GIG_RUN_WORKING_DIR = f'/{WORK_DIR}'
+WORKDIR = f'/{WORK_DIR}'
 
 RUNNER_DIR = 'runner'
 GIGRUN_FILES_DIR = 'gigrun-files'
@@ -150,7 +149,7 @@ def update_gig_def_commands(gig_mod: GigModule):
 
     for stage in gig_mod.spec.stages:
         if (not stage.get('command')):
-            command = stage_processors.data.get(stage.interpreter, '')
+            command = stage_processors.data.get(stage.runtime, '')
             if (command):
                 stage.command = command
 
@@ -198,13 +197,13 @@ def get_container(job: Job, name: str) -> Box:
     return containers[0]
 
 def configure_container(job: Job, container: Box, gig_run: GigRun, gigrunner_secret: Secret, gig_def_secrets_map: dict, working_dir_size_limit: str):
-    mounted_volume = Box(name = GIG_RUN, emptyDir = Box(medium = 'Memory', sizeLimit = '50M'))
+    mounted_volume = Box(name = GIGRUN, emptyDir = Box(medium = 'Memory', sizeLimit = '50M'))
     job.spec.template.spec.setdefault(GIG_CONSTS.VOLUMES, BoxList()).append(mounted_volume)
 
-    mounted_volume_mount = Box(name = GIG_RUN, mountPath = GIG_RUN_HOME)
+    mounted_volume_mount = Box(name = GIGRUN, mountPath = GIG_CONSTS.GIGRUN_HOME)
     container.setdefault(GIG_CONSTS.VOLUME_MOUNTS, BoxList()).append(mounted_volume_mount)
 
-    mountedDirectory = f'/{GIG_RUN}-mounted'
+    mountedDirectory = f'/{GIGRUN}-mounted'
     gigrunner_secret_volume = Box(name = gigrunner_secret.name, secret = Box(secretName = gigrunner_secret.name, defaultMode = 0o777))
     job.spec.template.spec[GIG_CONSTS.VOLUMES].append(gigrunner_secret_volume)
 
@@ -227,14 +226,15 @@ def configure_container(job: Job, container: Box, gig_run: GigRun, gigrunner_sec
     set_job_working_dir(container, job, working_dir_size_limit)
 
     container.command = BoxList(['bash', '-ce'])
-    container.args = BoxList([f'cp -rL {mountedDirectory}/. {GIG_RUN_HOME}/; {GIG_RUN_HOME}/{GIG_START_SH}'])
+    container.args = BoxList([f'cp -rL {mountedDirectory}/. {GIG_CONSTS.GIGRUN_HOME}/ && {GIG_CONSTS.GIGRUN_HOME}/{GIG_START_SH}'])
 
 def create_env_vars(container: Box, gig_run: GigRun):
     env = BoxList()
-    env.append(Box(name = 'GIG_RUN_HOME', value = GIG_RUN_HOME))
-    env.append(Box(name = 'GIG_RUN_WORKING_DIR', value = GIG_RUN_WORKING_DIR))
-    env.append(Box(name = 'GIG_RUN_NAME', value = gig_run.name))
-    env.append(Box(name = 'GIG_RUN_NAMESPACE', value = gig_run.namespace))
+    env.append(Box(name = 'GIGRUN_HOME', value = GIG_CONSTS.GIGRUN_HOME))
+    env.append(Box(name = 'WORKDIR', value = WORKDIR))
+    env.append(Box(name = 'GIGRUN_EXTRAS_DIR', value = f'/{GIGRUN}-extra-files'))
+    env.append(Box(name = 'GIGRUN_NAME', value = gig_run.name))
+    env.append(Box(name = 'GIGRUN_NAMESPACE', value = gig_run.namespace))
     container.setdefault(GIG_CONSTS.ENV, env)
 
 def set_job_working_dir(container: Box, job: Job, working_dir_size_limit):
@@ -243,9 +243,9 @@ def set_job_working_dir(container: Box, job: Job, working_dir_size_limit):
         working_dir_volume = Box(name = WORK_DIR.lower(), emptyDir = Box(sizeLimit = working_dir_size_limit))
         volumes.append(working_dir_volume)
 
-        working_dir_volumemount = Box(name = WORK_DIR.lower(), mountPath = GIG_RUN_WORKING_DIR)
+        working_dir_volumemount = Box(name = WORK_DIR.lower(), mountPath = WORKDIR)
         container.volumeMounts.append(working_dir_volumemount)
-        container.workDir = GIG_RUN_WORKING_DIR
+        container.workDir = WORKDIR
 
 def create_gigrunner_secret(gig_run: GigRun, gig_mod: GigModule):
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{GIGRUN_FILES_DIR}']))

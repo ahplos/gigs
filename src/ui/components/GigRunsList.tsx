@@ -26,7 +26,7 @@ import {
     GigRun,
     GigRunState,
     GIG_GVK,
-    GIG_RUN_GVK,
+    GIGRUN_GVK,
     NS_GVK,
 } from '../utilities/objectDefs';
 
@@ -104,7 +104,7 @@ const GigRunsTable: React.FC<GigRunTableProps> = ({ data, unfilteredData, loaded
         return (
             <>
                 <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={GIG_RUN_GVK} name={obj.metadata.name} namespace={obj.metadata.namespace}/>
+                    <ResourceLink groupVersionKind={GIGRUN_GVK} name={obj.metadata.name} namespace={obj.metadata.namespace}/>
                 </TableData>
                 <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
                     <ResourceLink groupVersionKind={NS_GVK} name={obj.metadata.namespace} />

@@ -58,7 +58,7 @@ export const GIG_FORM_GVK: K8sGroupVersionKind = {
     kind: "GigForm",
 };
 
-export const GIG_RUN_GVK: K8sGroupVersionKind = {
+export const GIGRUN_GVK: K8sGroupVersionKind = {
     group: BATCH_AHPLOS_ORG,
     version: API_VERSION,
     kind: "GigRun",
@@ -71,7 +71,7 @@ export const GIG_HOOK_GVK: K8sGroupVersionKind = {
 };
 
 export const GIG_MAP: Map<string, GigRun> = new Map();
-export const CURRENT_GIG_RUN = "CURRENT_GIG_RUN";
+export const CURRENT_GIGRUN = "CURRENT_GIGRUN";
 
 export type InputCompGroupSpec = {
     inputType: string;
@@ -108,7 +108,7 @@ export type StageSpec = {
     name: string;
     description?: string;
     steps: StepSpec[];
-    interpreter: string;
+    runtime: string;
     stageRef: {
         name: string;
         gigModuleRef: {
@@ -120,7 +120,7 @@ export type StageSpec = {
 
 export type StepSpec = {
     name: string;
-    interpreter: string;
+    runtime: string;
     stageRef: {
         gigModuleRef: {
             name: string;

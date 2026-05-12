@@ -103,3 +103,19 @@ function stageSecrets() {
 function stageSecretsRemove() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw SREM ${STAGE_ID}_SECRETS $* >/dev/null )
 }
+
+function stepSecretsAdd() {
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SADD ${STEP_ID}_SECRETS $* >/dev/null )
+}
+
+function stepSecretExists() {
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SISMEMBER ${STEP_ID}_SECRETS "${1}" )
+}
+
+function stepSecrets() {
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SMEMBERS ${STEP_ID}_SECRETS )
+}
+
+function stepSecretsRemove() {
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SREM ${STEP_ID}_SECRETS $* >/dev/null )
+}

@@ -13,7 +13,7 @@ import {
     GIG_FORM_GVK,
     GIG_GVK,
     GIG_HOOK_GVK,
-    GIG_RUN_GVK,
+    GIGRUN_GVK,
     Gig,
     GigModule,
     GigForm,
@@ -179,14 +179,14 @@ export default class GigK8sUtils {
     public static getGigRun(
         options: WatchK8sResource = {}
     ) {
-        options.groupVersionKind = GIG_RUN_GVK;
+        options.groupVersionKind = GIGRUN_GVK;
         return GigK8sUtils.getK8sResource<GigRun>(options);
     }
 
     public static getGigRuns(
         options: WatchK8sResource = {}
     ) {
-        options.groupVersionKind = GIG_RUN_GVK;
+        options.groupVersionKind = GIGRUN_GVK;
         options.isList = true;
         return GigK8sUtils.getK8sResources<GigRun[]>(options);
     }

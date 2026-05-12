@@ -59,7 +59,7 @@ def on_job_completed(meta, status, logger, **_):
 
     gig.patch({
             GIG_CONSTS.STATUS: {
-                    GIG_CONSTS.LATEST_GIG_RUN: {
+                    GIG_CONSTS.LATEST_GIGRUN: {
                     GIG_CONSTS.NAME: gig_run.name,
                     GIG_CONSTS.STARTED_BY: gig_run.spec.startedBy,
                     GIG_CONSTS.CREATION_TIME_STAMP: gig_run.metadata.creationTimestamp,

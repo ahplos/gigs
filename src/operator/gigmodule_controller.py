@@ -7,11 +7,12 @@ import kopf
 from kr8s.objects import Secret
 
 from utilities.gig_types import GigModule
+from utilities.constants import GIG_CONSTS
 
 RUNNER_DIR = 'runner'
 RUNNER_TEMPLATES_DIR = 'templates'
 
-GIG_MOD_SECRET_TEMPLATE = 'gigmodule-secret.j2'
+GIGMOD_SECRET_TEMPLATE = 'gigmodule-secret.j2'
 
 COMMAND = 'command'
 
@@ -23,9 +24,11 @@ def on_create_or_update_gigmodule(body, logger, **_):
     env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
     template_data = {
         'gig_mod': gig_mod,
+        'GIGRUN_HOME': GIG_CONSTS.GIGRUN_HOME,
+        'GIGMOD_DIR_NAME': f'{gig_mod.namespace}_{gig_mod.name}'
     }
 
-    template = env.get_template(GIG_MOD_SECRET_TEMPLATE)
+    template = env.get_template(GIGMOD_SECRET_TEMPLATE)
     output = template.render(template_data)
     logger.debug(f'{output}')
 
