@@ -31,143 +31,199 @@ process.on('uncaughtException', async (err) => {
 });
 
 try {
-	await gigdb.connect();
+	gigdb.connect();
+	console.log('gigdb connected')
 } catch (err) {
     gigdbQuit(err);
 }
 
 global.gigEnvExists = async (field) => {
-	return gigdb.hExists(GIG_ENV, field)
+	let result = await gigdb.hExists(GIG_ENV, field);
+	console.log('gigEnvExists(' + field + ') => ' + result);
+	return result;
 }
 
-global.gigEnvGet = (field) => {
-	return gigdb.hGet(GIG_ENV, field)
+global.gigEnvGet = async (field) => {
+	let result = await gigdb.hGet(GIG_ENV, field);
+	console.log('gigEnvGet(' + field + ') => ' + result);
+	return result;
 }
 
 global.gigEnvToJson = async () => {
-	gig_env = gigEnvToDict()
-	return json.dumps(gig_env)
+	let result = json.dumps(await gigEnvToDict());
+	console.log('gigEnvToJson() => ' + result);
+	return result;
 }
 
 global.gigEnvKeys = async () => {
-	return gigdb.hKeys(GIG_ENV)
+	let result = await gigdb.hKeys(GIG_ENV);
+	console.log('gigEnvKeys() => ' + result);
+	return result;
 }
 
 global.gigEnvToDict = async () => {
-	return gigdb.hGetAll(GIG_ENV)
+	let result = await gigdb.hGetAll(GIG_ENV);
+	console.log('gigEnvToDict() => ' + result);
+	return result;
 }
 
-global.gigEnvSet = (field, value) => {
-	return gigdb.hSet(GIG_ENV, field, value)
+global.gigEnvSet = async (field, value) => {gigSecretsRemove
+	await gigdb.hSet(GIG_ENV, field, value)
+	console.log('gigEnvSet(' + field + ', ' + value + ')');
 }
 
 global.gigEnvValues = async () => {
-	return gigdb.hVals(GIG_ENV)
+	let result = await gigdb.hVals(GIG_ENV);
+	console.log('gigEnvValues() => ' + result);
+	return result;
 }
 
 global.stageEnvExists = async (field) => {
-	return gigdb.hExists(STAGE_ID, field)
+	let result = await gigdb.hExists(STAGE_ID, field);
+	console.log('stageEnvExists(' + field + ') => ' + result);
+	return result;
 }
 
 global.stageEnvGet = async (field) => {
-	return gigdb.hGet(STAGE_ID, field)
+	let result = await gigdb.hGet(STAGE_ID, field);
+	console.log('stageEnvGet(' + field + ') => ' + result);
+	return result;
 }
 
 global.stageEnvToJson = async () => {
-	gig_env = gigEnvToDict()
-	return json.dumps(gig_env)
+	let result = json.dumps(await stageEnvToDict());
+	console.log('stageEnvToJson() => ' + result);
+	return result;
 }
 
 global.stageEnvKeys = async () => {
-	return gigdb.hKeys(STAGE_ID)
+	let result = await gigdb.hKeys(STAGE_ID);
+	console.log('stageEnvKeys() => ' + result);
+	return result;
 }
 
 global.stageEnvToDict = async () => {
-	return gigdb.hGetAll(STAGE_ID)
+	let result = await gigdb.hGetAll(STAGE_ID);
+	console.log('stageEnvToDict() => ' + result);
+	return result;
 }
 
 global.stageEnvSet = async (field, value) => {
-	return gigdb.hSet(STAGE_ID, field, value)
+	await gigdb.hSet(STAGE_ID, field, value)
+	console.log('stageEnvSet(' + field + ', ' + value + ')');
 }
 
-global.stagegEnvValues = async () => {
-	return gigdb.hVals(STAGE_ID)
+global.stageEnvValues = async () => {
+	let result = await gigdb.hVals(STAGE_ID);
+	console.log('stageEnvValues() => ' + result);
+	return result;
 }
 
 global.stepEnvExists = async (field) => {
-	return gigdb.hExists(STEP_ID, field)
+	let result = await gigdb.hExists(STEP_ID, field);
+	console.log('stepEnvExists(' + field + ') => ' + result);
+	return result;
 }
 
 global.stepEnvGet = async (field) => {
-	return gigdb.hGet(STEP_ID, field)
+	let result = await gigdb.hGet(STEP_ID, field);
+	console.log('stepEnvGet(' + field + ') => ' + result);
+	return result;
 }
 
 global.stepEnvToJson = async () => {
-	gig_env = gigEnvToDict()
-	return json.dumps(gig_env)
+	let result = json.dumps(await gigEnvToDict());
+	console.log('stepEnvToJson() => ' + result);
+	return result;
 }
 
 global.stepEnvKeys = async () => {
-	return gigdb.hKeys(STEP_ID)
+	let result = await gigdb.hKeys(STEP_ID);
+	console.log('stepEnvKeys() => ' + result);
+	return result;
 }
 
 global.stepEnvToDict = async () => {
-	return gigdb.hGetAll(STEP_ID)
+	let result = await gigdb.hGetAll(STEP_ID);
+	console.log('stepEnvToDict() => ' + result);
+	return result;
 }
 
 global.stepEnvSet = async (field, value) => {
-	return gigdb.hSet(STEP_ID, field, value)
+	await gigdb.hSet(STEP_ID, field, value)
+	console.log('stepEnvSet(' + field + ', ' + value + ')');
 }
 
 global.stepEnvValues = async () => {
-	return gigdb.hVals(STEP_ID)
+	let result = await gigdb.hVals(STEP_ID);
+	console.log('stageEnvValues() => ' + result);
+	return result;
 }
 
 global.gigSecretsAdd = async (members) => {
-	await gigdb.sAdd(GIG_SECRETS, members)
+	await gigdb.sAdd(GIG_SECRETS, members);
+	console.log('gigSecretsAdd(*****)');
 }
 
 global.gigSecretExists = async (field) => {
-	return gigdb.sIsMember(GIG_SECRETS, field)
+	let result = await gigdb.sIsMember(GIG_SECRETS, field);
+	console.log('gigSecretExists(*****) => ' + result);
+	return result;
 }
 
 global.gigSecrets = async () => {
-	return gigdb.sMembers(GIG_SECRETS)
+	let result =  await gigdb.sMembers(GIG_SECRETS);
+	console.log('gigSecrets() => *****');
+	return result;
 }
 
 global.gigSecretsRemove = async (field) => {
-	return gigdb.sRem(GIG_SECRETS, field)
+	await gigdb.sRem(GIG_SECRETS, field);
+	console.log('gigSecretsRemove(*****)');
 }
 
 global.stageSecretsAdd = async (members) => {
-	await gigdb.sAdd(STAGE_SECRETS, members)
+	await gigdb.sAdd(STAGE_SECRETS, members);
+	console.log('stageSecretsAdd(*****)');
 }
 
 global.stageSecretExists = async (field) => {
-	return gigdb.sIsMember(STAGE_SECRETS, field)
+	let result = await gigdb.sIsMember(STAGE_SECRETS, field);
+	console.log('stageSecretExists(*****) => ' + result);
+	return result;
 }
 
 global.stageSecrets = async () => {
-	return gigdb.sMembers(STAGE_SECRETS)
+	let result =  await gigdb.sMembers(STAGE_SECRETS);
+	console.log('stageSecrets() => *****');
+	return result;
 }
 
 global.stageSecretsRemove = async (field) => {
-	return gigdb.sRem(STAGE_SECRETS, field)
+	await gigdb.sRem(STAGE_SECRETS, field);
+	console.log('stageSecretsRemove(*****)');
 }
 
 global.stepSecretsAdd = async (members) => {
-	return gigdb.sAdd(STEP_SECRETS, members)
+	await gigdb.sAdd(STEP_SECRETS, members);
+	console.log('stepSecretsAdd(*****)');
 }
 
 global.stepSecretExists = async (field) => {
-	return gigdb.sIsMember(STEP_SECRETS, field)
+	let result = await gigdb.sIsMember(STEP_SECRETS, field);
+	console.log('stepSecretExists(*****) => ' + result);
+	return result;
 }
 
 global.stepSecrets = async () => {
-	return gigdb.sMembers(STEP_SECRETS)
+	let result = await gigdb.sMembers(STEP_SECRETS);
+	console.log('stepSecrets() => *****');
+	return result;
 }
 
 global.stepSecretsRemove = async (field) => {
-	return gigdb.sRem(STEP_SECRETS, field)
+	await gigdb.sRem(STEP_SECRETS, field);
+	console.log('stepSecretsRemove(*****)');
 }
+
 

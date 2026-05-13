@@ -186,7 +186,7 @@ elCicdTemplates:
                 if (len(TEXT_MESSAGE) > 0) {
                   TEXT_MESSAGE = TEXT_MESSAGE + "\n"
                 }
-                GigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Go Interpretor")
+                GigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Go runtime")
             }
         - name: print-the-go-msg
           maxParallel: 2
@@ -214,7 +214,7 @@ elCicdTemplates:
           script: |-
             let TEXT_MESSAGE = await gigEnvGet("TEXT_MESSAGE")
             TEXT_MESSAGE = TEXT_MESSAGE ? TEXT_MESSAGE + '\n' : ''
-            await gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Javascript Interpretor")
+            await gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Javascript runtime")
         - name: print-the-javascript-msg
           stepRef:
             gigModuleRef:
@@ -229,7 +229,7 @@ elCicdTemplates:
           script: |-
             TEXT_MESSAGE = gigEnvGet("TEXT_MESSAGE")
             TEXT_MESSAGE = TEXT_MESSAGE + '\n' if TEXT_MESSAGE else ''
-            gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Python Interpretor")
+            gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Python runtime")
         - name: print-the-python-msg
           stepRef:
             gigModuleRef:

@@ -39,7 +39,7 @@ function executeRuntime() {
         JavaScript)
             (
                 set -x
-                node $(stepEnvGet STEP_FILE) $(stepEnvGet CLI_ARGS)
+                node --import=${GIGRUN_HOME}/gigdb-helper.js $(stepEnvGet STEP_FILE) $(stepEnvGet CLI_ARGS)
             )
         ;;
 
