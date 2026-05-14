@@ -32,14 +32,23 @@ export const GigRunFormTab = (model) => {
 
     if (model.obj.kind == GIG_GVK.kind) {
         gig = model.obj
-        const [gf, _, gfLoadError] = GigK8sUtils.getGigForm({
-            name: gig.spec.gigFormRef.name,
-            namespace: gig.spec.gigFormRef.namespace
-        });
+        if (gig.spec.gigFormRef) {
+            const [gf, _, gfLoadError] = GigK8sUtils.getGigForm({
+                name: gig.spec.gigFormRef.name,
+                namespace: gig.spec.gigFormRef.namespace
+            });
 
-        gigForm = gf;
-        formSpec = gigForm?.spec?.inputForm ?? [];
-        errorMessage = gfLoadError;
+            gigForm = gf;
+            formSpec = gigForm?.spec?.inputForm ?? [];
+            errorMessage = gfLoadError;
+        }
+        else {
+            gigForm = {
+                spec: {
+                    inputForm: []
+                }
+            };
+        }
     }
     else {
         gigForm = model.obj

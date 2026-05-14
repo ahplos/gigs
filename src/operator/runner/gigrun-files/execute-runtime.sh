@@ -25,13 +25,19 @@ function executeRuntime() {
 
         'Go')
             (
-                set -x
                 TEMP_DIR=$(mktemp -d)
                 cd ${TEMP_DIR}
-                cp $(stepEnvGet STEP_FILE) ${GIGRUN_HOME}/gigdb-helper.go .
-                go mod init ahplos.gig/steprun
-                go get ${GO_REDIS_MODULE}
+                cp ${GIGRUN_HOME}/gigdb-helper.go .
+                cp ${HOME} go.* ${STEPRUN_GO} .
+                LOCAL_STEPRUN_GO=$(basename ${STEPRUN_GO})
+                echo >> ${LOCAL_STEPRUN_GO}
+                echo 'func main() {' >> ${LOCAL_STEPRUN_GO}
+                cat $(stepEnvGet STEP_FILE) >> ${LOCAL_STEPRUN_GO}
+                echo '}'
+                goimports -w ${LOCAL_STEPRUN_GO}
+                set -x
                 go run . $(stepEnvGet CLI_ARGS)
+                { set +x; } 2>/dev/null
                 rm -rf pod${TEMP_DIR}
             )
         ;;

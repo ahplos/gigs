@@ -103,15 +103,16 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
                                   name={obj.spec.gigModuleRef.name}
                                   namespace={obj.spec.gigModuleRef.namespace ?? obj.metadata.namespace} />
                 </TableData>
-                <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={GIG_FORM_GVK}
-                                  name={obj.spec.gigFormRef.name}
-                                  namespace={obj.spec.gigFormRef.namespace ?? obj.metadata.namespace} />
-                </TableData>
                 <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={CRONJOB_GVK} name={obj.spec.cronJobRef.name} namespace={obj.metadata.namespace} />
+                    {obj.spec.gigFormRef &&
+                        <ResourceLink groupVersionKind={GIG_FORM_GVK}
+                                      name={obj.spec.gigFormRef.name}
+                                      namespace={obj.spec.gigFormRef?.namespace ?? obj.metadata.namespace} />}
                 </TableData>
                 <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
+                    <ResourceLink groupVersionKind={CRONJOB_GVK} name={obj.spec.cronJobRef.name} namespace={obj.metadata.namespace} />
+                </TableData>
+                <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
                     {obj?.status?.latestGigRun &&
                         <List isPlain>
                             <ListItem><GigRunStartedByDetail obj={obj}/></ListItem>
@@ -121,7 +122,7 @@ const GigsTable: React.FC<GigTableProps> = ({ data, unfilteredData, loaded, load
                         </List>
                     }
                 </TableData>
-                <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
+                <TableData id={columns[6].id} activeColumnIDs={activeColumnIDs}>
                     <Timestamp timestamp={obj.metadata.creationTimestamp} />
                 </TableData>
             </>

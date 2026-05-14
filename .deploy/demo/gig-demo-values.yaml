@@ -1,5 +1,8 @@
 elCicdDefs:
-  GIG_MOD_NAME: gig-mod-demo
+  GIG_MOD_DEMO: gig-mod-demo
+  GIG_MOD_GO_DEMO: gig-mod-go-demo
+  GIG_MOD_JS_DEMO: gig-mod-javascript-demo
+  GIG_MOD_PYTHON_DEMO: gig-mod-python-demo
   GIG_FORM_NAME: gig-form-demo-2
   GIG_ORG_NAMEPACE: gig-demo-org
 
@@ -23,11 +26,18 @@ elCicdDefs:
 
 elCicdTemplates:
 - templateName: cronjob
-  objNames: [$<OBJ_NAME_PREFIX>, $<OBJ_NAME_PREFIX>]
-  objName: $<OBJ_NAME_PREFIX>-$<#>
-  annotations:
-    batch.ahplos.org/gigmodule: $<GIG_ORG_NAMEPACE>/$<GIG_MOD_NAME>
-    batch.ahplos.org/gigform: $<GIG_ORG_NAMEPACE>/$<GIG_FORM_NAME>
+  elCicdDefs:
+    ANNOTATIONS:
+      batch.ahplos.org/gigmodule: $<GIG_ORG_NAMEPACE>/$<OBJ_NAME>
+  elCicdDefs-$<GIG_MOD_DEMO>:
+    ANNOTATIONS:
+      batch.ahplos.org/gigmodule: $<GIG_ORG_NAMEPACE>/$<OBJ_NAME>
+      batch.ahplos.org/gigform: $<GIG_ORG_NAMEPACE>/$<GIG_FORM_NAME>
+    ENV_FROM:
+    - secretRef:
+        name: $<SECRET_NAME>
+  objNames: [$<GIG_MOD_DEMO>, $<GIG_MOD_GO_DEMO>, $<GIG_MOD_JS_DEMO>, $<GIG_MOD_PYTHON_DEMO>]
+  annotations: $<ANNOTATIONS>
   failedJobsHistoryLimit: $<HISTORY_LIMIT>
   successfulJobsHistoryLimit: $<HISTORY_LIMIT>
   image: $<IMAGE>
@@ -36,9 +46,7 @@ elCicdTemplates:
   imagePullPolicy: IfNotPresent
   serviceAccountName: $<SERVICE_ACCOUNT_NAME>
   schedule: $<SCHEDULE>
-  envFrom:
-  - secretRef:
-      name: $<SECRET_NAME>
+  envFrom: $<ENV_FROM>
 
 - templateNames: [serviceAccount, roleBinding]
   objName: $<SERVICE_ACCOUNT_NAME>

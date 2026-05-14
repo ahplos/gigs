@@ -1,4 +1,5 @@
 {%- raw %}
+{%- if .Values.PATCH %}
 spec:
   {{- if .Values.formTitle }}
   formTitle: {{ .Values.formTitle | toYaml | nindent 4 }}
@@ -7,4 +8,12 @@ spec:
   inputForm: {{ .Values.inputForm | toYaml | nindent 2 }}
   {{- end }}
   runState: WaitingForInput
+{%- else %}
+  gigRef:
+    name: {{ .Values.gigRef.name }}
+  {{- end }}
+  {{- if .Values.inputValues }}
+  inputValues: {{ .Values.inputForm | toYaml | nindent 4 }}
+  {{- end }}
+{%- end %}
 {%- endraw %}

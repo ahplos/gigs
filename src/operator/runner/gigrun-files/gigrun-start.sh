@@ -23,7 +23,7 @@ done
 trap 'echo "$(__gigRunFooter $?)" |& __logOutput "--"' EXIT
 
 SECRETS_FILE="${GIGRUN_HOME}/{{ gig_mod.namespace }}_{{ gig_mod.name }}/.secrets"
-gigSecretsAdd $(cat ${SECRETS_FILE} | xargs)
+[[ -f ${SECRETS_FILE} ]] && gigSecretsAdd $(cat ${SECRETS_FILE} | xargs)
 
 export __LOG_FILE=$(mktemp)
 
@@ -33,4 +33,4 @@ ${GIGRUN_HOME}/{{ gig_mod.namespace }}_{{ gig_mod.name }}/gigrunner.sh | __logFi
 sleep 1
 tail -q --pid $(gigEnvGet GIG_PID) -f ${__LOG_FILE} -n +1 2>/dev/null
 
-exit $(cat .stagerunner_exit_status 2>/dev/null || echo 1)
+exit $(gigEnvGet EXIT_STATUS || echo 1)

@@ -62,15 +62,19 @@ def on_create_cronjob(body, meta, annotations, logger, **_):
     gig.spec.gigModuleRef.name = gig_mod.name
     gig.spec.gigModuleRef.namespace = gig_mod.namespace
 
-    gig_form_ref = get_name_namespace_from_anno(annotations.get(GigForm.GIG_LAUNCHFORM_ANNOTATION))
-    if (gig_form_ref or gig_mod.spec.gigFormRef):
+    formAnno = annotations.get(GigForm.GIG_LAUNCHFORM_ANNOTATION)
+    gig_form_ref = get_name_namespace_from_anno(formAnno) if formAnno else None
+    if (formAnno or gig_mod.spec.gigFormRef):
         gig.spec.gigFormRef.name = gig_form_ref.name if gig_form_ref else gig_mod.spec.gigFormRef
         gig.spec.gigFormRef.namespace = gig_form_ref.namespace if gig_form_ref else gig_mod.spec.gigFormRef.namespace
+    else:
+        gig.spec.gigFormRef = None
 
     gig.create()
     gig.set_owner(cron_job)
+    gig.refresh()
     cron_job.set_owner(gig)
-    logger.info(f'NEW Gig {gig.spec.name} CREATED, and owner set to CronJob {meta.name}')
+    logger.info(f'NEW Gig {gig.metadata.name} CREATED, and owner set to CronJob {meta.name}')
 
 @kopf.on.update(
     CronJob.version,
@@ -88,7 +92,8 @@ def on_update_cronjob(old, new, patch, logger, **_):
         }
 
 def get_name_namespace_from_anno(annotation_val):
-    ref = annotation_val.split('/')
-    name = ref[0] if len(ref) == 1 else ref[1]
-    namespace = '' if len(ref) == 1 else ref[0]
-    return Box(name = name, namespace = namespace)
+    if (annotation_val):
+        ref = annotation_val.split('/')
+        name = ref[0] if len(ref) == 1 else ref[1]
+        namespace = '' if len(ref) == 1 else ref[0]
+        return Box(name = name, namespace = namespace)

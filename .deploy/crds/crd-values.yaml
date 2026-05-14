@@ -37,8 +37,6 @@ elCicdDefs:
     type: object
     description: Reference to a GigForm.
     properties: $<NAME_NAMESPACE_PROPS>
-    required:
-    - name
 
   GIG_MODULE_REF:
     type: object
@@ -511,6 +509,9 @@ elCicdDefs-$<GIG>:
     description: |-
       $<TITLE_CASE_NAME>Spec defines a $<TITLE_CASE_NAME>. $<TITLE_CASE_NAME>s represent the relationship between a
       GigModule, CronJob, and GigForm.
+    required:
+    - cronJobRef
+    - gigModuleRef
     properties:
       cronJobRef:
         type: object
@@ -528,10 +529,6 @@ elCicdDefs-$<GIG>:
         required:
         - name
       gigFormRef: $<GIG_FORM_REF>
-
-    required:
-    - cronJobRef
-    - gigModuleRef
   STATUS_DEFINITION:
     type: object
     properties:

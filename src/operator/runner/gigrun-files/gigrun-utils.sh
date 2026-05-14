@@ -153,6 +153,7 @@ function __gigRunHeader() {
         [[ -z $(type -p oc) ]] && KUBE_EXEC=kubectl || KUBE_EXEC=oc
         echo "${__HEADER_FOOTER_PREFIX} ${KUBE_EXEC} version"
         ${KUBE_EXEC} version | sed "s/^\(.*\)/${__HEADER_FOOTER_PREFIX} \1/g"
+        echo "${__HEADER_FOOTER_PREFIX} Helm: $(helm version --short)"
         echo "${__HEADER_FOOTER_BORDER}"
     )
     echo "${GIG_HEADER}" | __logOutput '--'

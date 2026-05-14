@@ -1,9 +1,11 @@
 elCicdDefs:
   GIG_MOD_DEMO: gig-mod-demo
   GIG_MOD_ASK_USER: gig-dif-ask-user
-  GIG_MOD_SOURCE_DEMO: gig-mod-source-demo
+  GIG_MOD_GO_DEMO: gig-mod-go-demo
+  GIG_MOD_JS_DEMO: gig-mod-javascript-demo
+  GIG_MOD_PYTHON_DEMO: gig-mod-python-demo
   GIG_MOD_PRINT_MSG: gig-mod-print-msg-demo
-  GIG_MOD_NAMES: [$<GIG_MOD_DEMO>, $<GIG_MOD_ASK_USER>, $<GIG_MOD_SOURCE_DEMO>, $<GIG_MOD_PRINT_MSG>]
+  GIG_MOD_NAMES: [$<GIG_MOD_DEMO>, $<GIG_MOD_ASK_USER>, $<GIG_MOD_GO_DEMO>, $<GIG_MOD_JS_DEMO>, $<GIG_MOD_PYTHON_DEMO>, $<GIG_MOD_PRINT_MSG>]
 
   GIG_FORM_NAME: gig-form-demo
 
@@ -39,13 +41,13 @@ elCicdTemplates:
         var: CLUSTER_ADMIN_PASSWORD
       - attributes:
           isInline: true
-          label: Visual Mode
+          label: Run inline or in separate GigRuns?
           options:
-          - Graphical
-          - Logs
-          defaultValue: Logs
+          - Inline
+          - Separate GigRuns
+          defaultValue: Inline
         inputType: RadioGroup
-        var: RUN_DEBUG_MODE
+        var: RUN_INLINE
 
 - apiVersion: batch.ahplos.org/v1beta1
   kind: GigModule
@@ -106,7 +108,7 @@ elCicdTemplates:
         when: gigEnv.LANG_DEMO.includes('Go')
         stageRef:
           gigModuleRef:
-            name: $<GIG_MOD_SOURCE_DEMO>
+            name: $<GIG_MOD_GO_DEMO>
       - name: $<DEMONSTRATE_PYTHON>
         when: gigEnv.LANG_DEMO.includes("Python")
         maxParallel: 2
@@ -123,7 +125,7 @@ elCicdTemplates:
             - bar
         stageRef:
           gigModuleRef:
-            name: $<GIG_MOD_SOURCE_DEMO>
+            name: $<GIG_MOD_PYTHON_DEMO>
       - name: $<DEMONSTRATE_JAVASCRIPT>
         when: gigEnv.LANG_DEMO.includes("JavaScript")
         # maxParallel: 2
@@ -135,7 +137,7 @@ elCicdTemplates:
         #     when: env.LANG == 'JavaScript'
         stageRef:
           gigModuleRef:
-            name: $<GIG_MOD_SOURCE_DEMO>
+            name: $<GIG_MOD_JS_DEMO>
 
   elCicdDefs-$<GIG_MOD_ASK_USER>:
     GIG_MOD_SPECS:
@@ -163,8 +165,10 @@ elCicdTemplates:
               inputType: CheckboxGroup
               var: LANG_DEMO
 
-  elCicdDefs-$<GIG_MOD_SOURCE_DEMO>:
+  elCicdDefs-$<GIG_MOD_GO_DEMO>:
     GIG_MOD_SPECS:
+      requiredInputParams:
+      - TEST_MESSAGE
       stages:
       - name: $<DEMONSTRATE_GO>
         description: Set a test msg with a Go script and print it.
@@ -172,22 +176,10 @@ elCicdTemplates:
         - name: set-test-msg-with.go
           runtime: Go
           script: |-
-            package main
-
-            import (
-                "fmt"
-                "os"
-            )
-
-            func main() {
-                dir, _ := os.Getwd()
-                fmt.Println("CURRENT DIR: " + dir)
-                TEXT_MESSAGE := GigEnvGet("TEXT_MESSAGE")
-                if (len(TEXT_MESSAGE) > 0) {
-                  TEXT_MESSAGE = TEXT_MESSAGE + "\n"
-                }
-                GigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Go runtime")
-            }
+            dir, _ := os.Getwd()
+            fmt.Println("CURRENT DIR: " + dir)
+            TEXT_MESSAGE := GigEnvGet("TEST_MESSAGE")
+            GigEnvSet("TEXT_MESSAGE", ${TEST_MESSAGE})
         - name: print-the-go-msg
           maxParallel: 2
           iterate:
@@ -206,6 +198,10 @@ elCicdTemplates:
               name: $<GIG_MOD_PRINT_MSG>
             stage: $<PRINT_THE_DEMO_MSG>
             name: $<PRINT_THE_DEMO_MSG>
+
+  elCicdDefs-$<GIG_MOD_JS_DEMO>:
+    GIG_MOD_SPECS:
+      stages:
       - name: $<DEMONSTRATE_JAVASCRIPT>
         description: Set a test msg with JavaScript script and print it.
         steps:
@@ -221,6 +217,10 @@ elCicdTemplates:
               name: $<GIG_MOD_PRINT_MSG>
             stage: $<PRINT_THE_DEMO_MSG>
             name: $<PRINT_THE_DEMO_MSG>
+
+  elCicdDefs-$<GIG_MOD_PYTHON_DEMO>:
+    GIG_MOD_SPECS:
+      stages:
       - name: $<DEMONSTRATE_PYTHON>
         description: Set a test msg with Python script and print it.
         steps:
@@ -247,8 +247,9 @@ elCicdTemplates:
         steps:
         - name: $<PRINT_THE_DEMO_MSG>
           script: |-
+            { set +x; } 2>/dev/null
             TEXT_MSG=${1:-$(stageEnvGet TEXT_MESSAGE)}
-            echo ${TEXT_MSG:-$(gigEnvGet TEXT_MESSAGE)}
+            echo "${TEXT_MSG:-$(gigEnvGet TEXT_MESSAGE)}"
             sleep 1
   template:
     spec: $<GIG_MOD_SPECS>

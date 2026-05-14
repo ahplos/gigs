@@ -138,7 +138,7 @@ export type Gig = K8sResourceCommon & {
             name: string;
             namespace: string;
         };
-        gigFormRef: {
+        gigFormRef?: {
             name: string;
             namespace: string;
         };

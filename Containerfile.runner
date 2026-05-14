@@ -2,6 +2,7 @@
 FROM registry.access.redhat.com/ubi10/ubi-minimal:latest
 USER root
 
+
 ARG GIG_DB_PKG=keydb
 ARG GIG_DB_CLI=keydb-cli
 ARG GIG_DB_SERVER=keydb-server
@@ -10,26 +11,44 @@ ARG GIG_DB_BENCHMARK=keydb-benchmark
 ARG OC_TAR_GZ_FILE=openshift-client-linux.tar.gz
 ARG OC_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/${OC_TAR_GZ_FILE}
 
+ARG RH_LINUX_PACKAGES="jq jo go git helm python${PYTHON_VERSION} nodejs npm tar gzip procps-ng ${GIG_DB_PKG}"
+ARG RH_LINUX_EXTRA_PACKAGES
+
+ARG NPM_GIG_PACKAGES="redis"
+ARG NPM_EXTRA_GIG_PACKAGES
+
+ARG PYTHON_GIG_WHEELS="jinja2 pyyaml redis"
+ARG PYTHON_EXTRA_GIG_WHEELS="jinja2 pyyaml redis"
+
+ENV GO_GIG_MODULES="github.com/redis/go-redis/v9" \
+    GO_EXTRA_GIG_MODULES="fmt"\ "os"
+
 ENV PYTHON_VERSION=3.12 \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
     PIP_NO_CACHE_DIR=off \
     HOME=/home/user \
-    NPM_RUN=start \
-    GO_REDIS_MODULE=github.com/redis/go-redis/v9
+    NPM_RUN=start
 
 ENV NPM_CONFIG_PREFIX=$HOME/.npm-global \
-    PATH=$HOME/node_modules/.bin/:$HOME/.npm-global/bin/:$PATH
+    PATH=${HOME}/node_modules/.bin/:${HOME}/.npm-global/bin/:${PATH} \
+    STEPRUN_GO=${HOME}/steprun.go
 
 WORKDIR ${HOME}
+
+COPY <<EOF ${STEPRUN_GO}
+    package main
+    import (
+        "github.com/redis/go-redis/v9" "fmt" "os"
+    )
+EOF
 
 RUN <<EOF
     set -ex
 
     #### ADJUST FOLLOWING FOR OTHER BASE IMAGE DISTROS ####
     rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
-    microdnf install --assumeyes --nodocs --setopt=install_weak_deps=0 \
-        jq jo go git helm python${PYTHON_VERSION} nodejs npm tar gzip procps-ng ${GIG_DB_PKG} openssl
+    microdnf install --assumeyes --nodocs --setopt=install_weak_deps=0 ${RH_LINUX_PACKAGES} ${RH_LINUX_EXTRA_PACKAGES}
     microdnf clean all
     rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
     #### END ADJUST FOLLOWING FOR OTHER DISTROS ####
@@ -42,19 +61,18 @@ RUN <<EOF
     tar -C /usr/local/bin/ -xf /tmp/${OC_TAR_GZ_FILE} 'oc' 'kubectl'
     rm /tmp/${OC_TAR_GZ_FILE}
 
-    npm install -g redis
+    npm install -g ${NPM_GIG_PACKAGES} ${NPM_EXTRA_GIG_PACKAGES}
 
-    ln -s /usr/bin/python3 /usr/bin/python
+    ln -sf /usr/bin/python3 /usr/bin/python
     python -m ensurepip --upgrade
-    python -m pip install jinja2 pyyaml redis
+    python -m pip install ${PYTHON_GIG_WHEELS} ${PYTHON_EXTRA_GIG_WHEELS}
 
+    go install golang.org/x/tools/cmd/goimports@latest
     go mod init steprun
-    go get ${GO_REDIS_MODULE}
-    echo 'package main' >> scratch.go
-    echo "import (\"${GO_REDIS_MODULE}\")" >> scratch.go
+    go get ${GO_GIG_MODULES} ${GO_EXTRA_GIG_MODULES}
+    cat steprun.go
     go clean -modcache
     go mod tidy
-    rm go.*
 
     chmod -R 777 ${HOME}
 EOF
