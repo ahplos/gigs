@@ -12,11 +12,14 @@ function __gigrunner() {
 
     local _STAGE_COUNTER=0
 
+    __GIG_MOD_SECRETS='{{ gig_mod.spec.inputParams | selectattr('secret', 'equalto', True) | map(attribute='name') | join(' ') }}'
+    [[ -n ${__GIG_MOD_SECRETS} ]] && gigSecretsAdd ${__GIG_MOD_SECRETS}
+
     __gigRunHeader
 
-    echo "$(__saveInputParamsToEnv)" |& __logOutput '--'
+    echo "$(__saveInputParamsToEnv)"  |& __logOutput '--'
 
-    __verifyRequiredInputParams
+    __verifyInputParams
 
     {%- for stage in gig_mod.spec.stages %}
       {%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
@@ -29,11 +32,10 @@ function __gigrunner() {
       {%- set RUN_PARALLEL = '&' if (stage.maxParallel and stage.maxParallel > 0) else '' %}
 
     function {{ STAGE_FUNCTION_NAME }}() {
-        local __STAGE_COUNTER="${1}"
         local CURRENT_PID=${BASHPID}
         (
             export STAGE_ID=$(uuidgen)
-            export STAGE_COUNTER=${__STAGE_COUNTER}
+            export STAGE_COUNTER="${1}"
             __stageHeader ${STAGE_COUNTER} '{{ stage.name }}' ${CURRENT_PID}
             ${GIGRUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stage__{{ STAGE_NAME }}
             (echo && echo "==> STAGE ${STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") |& __logOutput "${STAGE_COUNTER}"
@@ -42,7 +44,7 @@ function __gigrunner() {
 
       {%- if stage.secretVars %}
     local NEW_SECRET_VARS={{ stage.secretVars|join(' ') }}
-    gigSecretsSet ${NEW_SECRET_VARS}
+    gigSecretsAdd ${NEW_SECRET_VARS}
       {%- endif %}
 
     let _STAGE_COUNTER+=1

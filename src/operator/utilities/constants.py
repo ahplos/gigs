@@ -92,10 +92,6 @@ class _GIG_CONSTS(type):
         return 'inputForm'
 
     @property
-    def SECRET_ENV_VARS(self) -> str:
-        return 'secretVars'
-
-    @property
     def SECRETS(self) -> str:
         return 'secrets'
 
@@ -170,6 +166,10 @@ class _GIG_CONSTS(type):
     @property
     def FAILED(self) -> str:
         return 'failed'
+
+    @property
+    def GIG_FORM_REF(self) -> str:
+        return 'gigFormRef'
 
     @property
     def GIG_REF(self) -> str:

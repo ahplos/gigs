@@ -1,3 +1,24 @@
+{%- macro when_check(stage_or_step, GIGMOD_DIR_NAME, ITERATOR_ID) %}
+    unset __SHOULD_RUN
+      {%- if not STAGE_NAME %}
+    local __WHEN_FILE_NAME=${GIGRUN_HOME}/{{ GIGMOD_DIR_NAME }}/stage__{{ stage_or_step.name }}_iterate_when.js
+      {%- else %}
+    local __WHEN_FILE_NAME=${GIGRUN_HOME}/{{ GIGMOD_DIR_NAME }}/step__{{ STAGE_NAME }}_{{ stage_or_step.name }}_iterate_when.js
+      {%- endif %}
+    __SHOULD_RUN=$(node ${__WHEN_FILE_NAME}) || exit $?
+    if [[ "${__SHOULD_RUN}" != 'true' ]]
+    then
+      {%- if not STAGE_NAME %}
+        local CURRENT_PID=${BASHPID}
+        __stageHeader "${_STAGE_COUNTER}({{ ITERATOR_ID }})" '{{ stage_or_step.name }}' ${CURRENT_PID} 'SKIPPED' 2>&1
+      {%- else %}
+        __stepHeader "${__STEP_ID}({{ ITERATOR_ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.runtime }}' 'SKIPPED'
+      {%- endif %}
+        continue
+    fi
+{%- endmacro %}
+
+
 {%- macro realize_iterators(stage_or_step, FUNCTION_NAME, GIGMOD_DIR_NAME, STAGE_NAME=None) %}
 
 {%- set INDENT = 4 %}
@@ -28,34 +49,19 @@
     for {{ iter.name }} in {{ VALUES }}
     do
         export {{ iter.name }}
-        {%- if iter.when %}
-        unset __SHOULD_RUN
-          {%- if not STAGE_NAME %}
-        local __WHEN_FILE_NAME=${GIGRUN_HOME}/{{ GIGMOD_DIR_NAME }}/stage__{{ stage_or_step.name }}_{{ iter.name }}_when.js
-          {%- else %}
-        local __WHEN_FILE_NAME=${GIGRUN_HOME}/{{ GIGMOD_DIR_NAME }}/step__{{ STAGE_NAME }}_{{ stage_or_step.name }}_{{ iter.name }}_when.js
-          {%- endif %}
-        __SHOULD_RUN=$(node ${__WHEN_FILE_NAME}) || exit $?
-        if [[ "${__SHOULD_RUN}" != 'true' ]]
-        then
-          {%- if not STAGE_NAME %}
-            local CURRENT_PID=${BASHPID}
-            __stageHeader "${__STAGE_COUNTER}({{ ITERATOR_ID.ID }})" '{{ stage_or_step.name }}' ${CURRENT_PID} 'SKIPPED' 2>&1
-          {%- else %}
-            __stepHeader "${__STEP_ID}({{ ITERATOR_ID.ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.runtime }}' 'SKIPPED'
-          {%- endif %}
-            continue
-        fi
-        {%- endif %}
     {%- endfilter %}
 {%- endfor %}
 
-{%- set FUNCTION_INDENT = (stage_or_step.iterate|length - INDENT_MOD) * INDENT %}
+{%- set FUNCTION_INDENT = (stage_or_step.iterate|length) * INDENT %}
 {%- filter indent(width=FUNCTION_INDENT) %}
+    local __STAGE_OR_STEP_COUNTER=
+      {%- if not STAGE_NAME %}"${STAGE_COUNTER}({{ ITERATOR_ID.ID }})"
+      {%- else %}"${STAGE_COUNTER}-${__STEP_COUNTER}({{ ITERATOR_ID.ID }})"
+      {%- endif %}
+    {{- when_check(stage_or_step, GIGMOD_DIR_NAME, ITERATOR_ID.ID) if stage_or_step.when else '' }}
     {% if stage_or_step.maxParallel -%}
     {{ '__checkMaxThreads ' ~ stage_or_step.maxParallel }}
     {%- endif %}
-    local __STAGE_OR_STEP_COUNTER={% if not STAGE_NAME %}"${_STAGE_COUNTER}({{ ITERATOR_ID.ID }})"{% else %}"${_STEP_ID}({{ ITERATOR_ID.ID }})"{% endif %}
     {{ FUNCTION_NAME }} "${__STAGE_OR_STEP_COUNTER}" 2>&1 {{ RUN_PARALLEL }}
 {%- endfilter %}
 

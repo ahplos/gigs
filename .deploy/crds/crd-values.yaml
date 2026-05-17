@@ -196,6 +196,8 @@ elCicdDefs-$<GIG_MODULE>:
   ITERATE_SPEC:
     type: object
     properties:
+      when:
+        type: string
       loops:
         type: array
         description: One or more for loops.
@@ -236,8 +238,6 @@ elCicdDefs-$<GIG_MODULE>:
               items:
                 x-kubernetes-int-or-string: true
               minLength: 1
-            when:
-              type: string
           anyOne:
           - required:
             - envVar
@@ -269,11 +269,32 @@ elCicdDefs-$<GIG_MODULE>:
       inputParams:
         type: array
         description: |-
-          List of input params used by the module.  This list has no functional value and is not verified. Use it for
-          documentation purposes only.
+          List of input params used by the module.  All input params used by a module must be declared or they will be ignored.
+          Variables marked as required will result in an error if they're missing when the GigRun starts. Input params will be
+          added the the Gig environment on startup.
         items:
-          type: string
-        x-kubernetes-list-type: set
+          type: object
+          required:
+          - name
+          properties:
+            name:
+              type: string
+              pattern: ^[a-zA-Z_]\w*$
+            default:
+              type: string
+              description: |-
+                Optional default value for the param.
+            required:
+              type: boolean
+              description: |-
+                True if the variable cannot be empty.
+            secret:
+              type: boolean
+              description: |-
+                True if the variable references a secret.  Needed for proper filtering of logs.
+        x-kubernetes-list-type: map
+        x-kubernetes-list-map-keys:
+        - name
       mode: $<MODE_SPEC>
       requiredInputParams:
         type: array

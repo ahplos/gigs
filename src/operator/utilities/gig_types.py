@@ -30,7 +30,7 @@ class GigModule(new_class('GigModule', version=f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/{
         self.raw.metadata.setdefault('annotations', self.__create_box())
         self.raw.setdefault('spec', self.__create_box()).setdefault('gigFormRef', self.__create_box())
         self.raw.spec.setdefault('inputParams', BoxList())
-        self.raw.spec.setdefault('requiredInputParams', BoxList())
+        self.raw.spec.setdefault('inputParams', BoxList())
         self.raw.spec.setdefault('secretVars', BoxList())
         self.raw.spec.setdefault('stages', BoxList())
         self.raw.setdefault('status', self.__create_box())

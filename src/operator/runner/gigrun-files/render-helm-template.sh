@@ -11,9 +11,9 @@ EXTRA_VALUES_FILE=${4}
 (
     cd ${CHART_DIR}
     cp ${GIGRUN_HOME}/Chart.yaml .
-    if [[ ${EXTRA_VALUES_FILE} ]]
+    if [[ ${EXTRA_VALUES_FILE} && ! -f $(basename ${EXTRA_VALUES_FILE}) ]]
     then
-        cp ${EXTRA_VALUES_FILE} .
+        cat ${EXTRA_VALUES_FILE}
     fi
 
     mkdir -p templates

@@ -1,6 +1,6 @@
 import yaml
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, FileSystemBytecodeCache
 
 import kopf
 
@@ -16,19 +16,34 @@ GIGMOD_SECRET_TEMPLATE = 'gigmodule-secret.j2'
 
 COMMAND = 'command'
 
+JINJA_BCC = FileSystemBytecodeCache(directory='/tmp', pattern='__jinja2_%s.cache')
+JINJA_ENV = Environment(
+    loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']),
+    bytecode_cache=JINJA_BCC,
+    cache_size=400
+)
+
+@kopf.on.mutate(GigModule.version, GigModule.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
+def onmutategigmodule(userinfo, patch, body, logger, **_):
+    gig_mod: GigModule = GigModule(body)
+    if (gig_mod.spec.gigFormRef and not gig_mod.spec.gigFormRef.namespace):
+        patch.setdefault(GIG_CONSTS.SPEC, {})[GIG_CONSTS.GIG_FORM_REF] = {
+            GIG_CONSTS.NAME: gig_mod.spec.gigFormRef.name,
+            GIG_CONSTS.NAMESPACE: gig_mod.metadata.namespace,
+        }
+
 @kopf.on.update(GigModule.version, GigModule.plural)  # type: ignore
 @kopf.on.create(GigModule.version, GigModule.plural)  # type: ignore
 def on_create_or_update_gigmodule(body, logger, **_):
     gig_mod: GigModule = GigModule(body)
 
-    env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{RUNNER_TEMPLATES_DIR}']))
     template_data = {
         'gig_mod': gig_mod,
         'GIGRUN_HOME': GIG_CONSTS.GIGRUN_HOME,
         'GIGMOD_DIR_NAME': f'{gig_mod.namespace}_{gig_mod.name}'
     }
 
-    template = env.get_template(GIGMOD_SECRET_TEMPLATE)
+    template = JINJA_ENV.get_template(GIGMOD_SECRET_TEMPLATE)
     output = template.render(template_data)
     logger.debug(f'{output}')
 

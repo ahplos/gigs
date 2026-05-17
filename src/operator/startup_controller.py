@@ -55,7 +55,8 @@ def on_startup(settings: kopf.OperatorSettings, logger, **_):
     settings.admission.managed = 'batch.ahplos.gigs'
 
     # sensible number of workers so as to not overload the k8s API server
-    settings.batching.worker_limit = 5
+    settings.batching.worker_limit = 20
+    settings.execution.max_workers = 20
 
     # all logs by default go to the k8s event api making api server flooding even more likely
     settings.posting.enabled = False

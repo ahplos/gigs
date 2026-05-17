@@ -9,21 +9,15 @@ export PYTHONPATH=$PYTHONPATH:${GIGRUN_HOME}
 
 set +o allexport
 
-gigdb-server --daemonize yes
+gigdb-server --daemonize yes --protected-mode yes --appendonly no
+(
+    gigdb-cli CONFIG SET save ""
+    gigdb-cli CLIENT TRACKING off
+) >/dev/null
 
-ALL_NPM_PACKAGES=$(ls $(npm root -g))
-for FOLDER in ${GIGRUN_HOME} $(ls -d ${GIGRUN_HOME}/*/)
-do
-    (
-        cd ${FOLDER}
-        echo ${ALL_NPM_PACKAGES} | xargs -I {} npm link {} >/dev/null
-    )
-done
+__initNode
 
 trap 'echo "$(__gigRunFooter $?)" |& __logOutput "--"' EXIT
-
-SECRETS_FILE="${GIGRUN_HOME}/{{ gig_mod.namespace }}_{{ gig_mod.name }}/.secrets"
-[[ -f ${SECRETS_FILE} ]] && gigSecretsAdd $(cat ${SECRETS_FILE} | xargs)
 
 export __LOG_FILE=$(mktemp)
 

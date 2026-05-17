@@ -28,7 +28,8 @@ ENV PYTHON_VERSION=3.12 \
     PYTHONIOENCODING=UTF-8 \
     PIP_NO_CACHE_DIR=off \
     HOME=/home/user \
-    NPM_RUN=start
+    NPM_RUN=start\
+    GOBIN=/usr/local/bin
 
 ENV NPM_CONFIG_PREFIX=$HOME/.npm-global \
     PATH=${HOME}/node_modules/.bin/:${HOME}/.npm-global/bin/:${PATH} \
@@ -37,10 +38,12 @@ ENV NPM_CONFIG_PREFIX=$HOME/.npm-global \
 WORKDIR ${HOME}
 
 COPY <<EOF ${STEPRUN_GO}
-    package main
-    import (
-        "github.com/redis/go-redis/v9" "fmt" "os"
-    )
+package main
+import (
+    "github.com/redis/go-redis/v9"
+    "fmt"
+    "os"
+)
 EOF
 
 RUN <<EOF
@@ -76,6 +79,8 @@ RUN <<EOF
 
     chmod -R 777 ${HOME}
 EOF
+
+WORKDIR /workDir
 
 USER 1001
 

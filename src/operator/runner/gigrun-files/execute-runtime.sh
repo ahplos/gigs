@@ -9,7 +9,6 @@ STAGE_ENV="$(stageEnvToJson)
 set +o allexport
 
 function executeRuntime() {
-
     export CURRENT_WORKDIR=$(pwd)
     local RUNTIME=$(stepEnvGet RUNTIME)
     case ${RUNTIME} in
@@ -25,20 +24,31 @@ function executeRuntime() {
 
         'Go')
             (
-                TEMP_DIR=$(mktemp -d)
-                cd ${TEMP_DIR}
-                cp ${GIGRUN_HOME}/gigdb-helper.go .
-                cp ${HOME} go.* ${STEPRUN_GO} .
-                LOCAL_STEPRUN_GO=$(basename ${STEPRUN_GO})
-                echo >> ${LOCAL_STEPRUN_GO}
-                echo 'func main() {' >> ${LOCAL_STEPRUN_GO}
-                cat $(stepEnvGet STEP_FILE) >> ${LOCAL_STEPRUN_GO}
-                echo '}'
-                goimports -w ${LOCAL_STEPRUN_GO}
-                set -x
-                go run . $(stepEnvGet CLI_ARGS)
-                { set +x; } 2>/dev/null
-                rm -rf pod${TEMP_DIR}
+                TEMP_DIR=/tmp/${STEP_ID}
+                TMP_STEPRUN=${TEMP_DIR}/steprun
+                TMP_STEPRUN_GO=${TEMP_DIR}/steprun.go
+                if [[ ! -f ${TMP_STEPRUN} ]]
+                then
+                    (
+                        mkdir -p ${TEMP_DIR} >/dev/null
+                        cd ${TEMP_DIR}
+                        cp ${GIGRUN_HOME}/gigdb-helper.go ${HOME}/go.* ${HOME}/steprun.go .
+                        echo >> ${TMP_STEPRUN_GO}
+                        echo 'func main() {' >> ${TMP_STEPRUN_GO}
+                        cat $(stepEnvGet STEP_FILE) >> ${TMP_STEPRUN_GO}
+                        echo '}' >> ${TMP_STEPRUN_GO}
+                        goimports -w ${TMP_STEPRUN_GO}
+                        go build . $(stepEnvGet CLI_ARGS)
+                    )
+                fi
+                local OUTPUT=$(${TMP_STEPRUN})
+                echo 'EXECUTING:'
+                echo
+                cat ${TMP_STEPRUN_GO}
+                echo
+                echo 'OUTPUT:'
+                echo
+                echo ${OUTPUT:-'=> <NONE> <='}
             )
         ;;
 
@@ -63,16 +73,15 @@ function executeRuntime() {
         ;;
 
         UserInput)
-            local USER_INPUT_VALUES=${HOME}/${STEP_ID}_user_input
-            local GIGRUN_PATCH_FILE=${STEP_ID}_gigrun_patch.yaml
-
             local CHART_DIR=$(mktemp -d)
+            local USER_INPUT_VALUES=${CHART_DIR}/${STEP_COUNTER}_user_input
+            local GIGRUN_PATCH_FILE=${CHART_DIR}/${STEP_COUNTER}_gigrun_patch.yaml
 
-            renderTemplate $(stepEnvGet STEP_FILE) ${USER_INPUT_VALUES} ${CHART_DIR} > /dev/null
+            renderTemplate $(stepEnvGet STEP_FILE) ${USER_INPUT_VALUES} ${CHART_DIR} >/dev/null
 
             renderTemplate ${GIGRUN_HOME}/user-input-patch.yaml ${GIGRUN_PATCH_FILE} ${CHART_DIR} ${USER_INPUT_VALUES}
 
-            __waitForUserInput ${CHART_DIR}/${STEP_ID}_gigrun_patch.yaml
+            __waitForUserInput ${GIGRUN_PATCH_FILE}
 
             rm -rf ${CHART_DIR}
         ;;

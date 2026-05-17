@@ -7,13 +7,13 @@ elCicdDefs:
   GIG_MOD_PRINT_MSG: gig-mod-print-msg-demo
   GIG_MOD_NAMES: [$<GIG_MOD_DEMO>, $<GIG_MOD_ASK_USER>, $<GIG_MOD_GO_DEMO>, $<GIG_MOD_JS_DEMO>, $<GIG_MOD_PYTHON_DEMO>, $<GIG_MOD_PRINT_MSG>]
 
-  GIG_FORM_NAME: gig-form-demo
+  GIG_MOD_DEMO_FORM: gig-mod-demo-form
+  GIG_MOD_SOURCE_DEMO_FORM: gig-mod-source-demo-form
 
 elCicdTemplates:
 - apiVersion: batch.ahplos.org/v1beta1
   kind: GigForm
-  objNames: [$<GIG_FORM_NAME>, $<GIG_FORM_NAME>]
-  objName: $<GIG_FORM_NAME>-$<#>
+  objName: $<GIG_MOD_DEMO_FORM>
   template:
     spec:
       formTitle:
@@ -45,9 +45,25 @@ elCicdTemplates:
           options:
           - Inline
           - Separate GigRuns
-          defaultValue: Inline
+          defaultValue: Separate GigRuns
         inputType: RadioGroup
         var: RUN_INLINE
+
+- apiVersion: batch.ahplos.org/v1beta1
+  kind: GigForm
+  objName: $<GIG_MOD_SOURCE_DEMO_FORM>
+  template:
+    spec:
+      formTitle:
+        title:  Enter the test message to set, get, and print
+      inputForm:
+      - attributes:
+          label: Test Message
+          isRequired: true
+          style:
+            maxWidth: 50%
+        inputType: Text
+        var: TEST_MESSAGE
 
 - apiVersion: batch.ahplos.org/v1beta1
   kind: GigModule
@@ -60,15 +76,24 @@ elCicdTemplates:
     DEMONSTRATE_PYTHON: demonstrate-python
     PRINT_THE_DEMO_MSG: print-the-demo-msg
 
+    PRINT_THE_DEMO_MSG_REF:
+      gigModuleRef:
+        name: $<GIG_MOD_PRINT_MSG>
+      stage: $<PRINT_THE_DEMO_MSG>
+      name: $<PRINT_THE_DEMO_MSG>
+
   elCicdDefs-$<GIG_MOD_DEMO>:
     GIG_MOD_SPECS:
       gigFormRef:
-        name: $<GIG_FORM_NAME>-1
-      requiredInputParams:
-      - CLUSTER_ADMIN_USER_NAME
-      - CLUSTER_ADMIN_PASSWORD
-      secretVars:
-      - CLUSTER_ADMIN_PASSWORD
+        name: $<GIG_MOD_DEMO_FORM>
+      inputParams:
+      - name: CLUSTER_ADMIN_PASSWORD
+        required: true
+        secret: true
+      - name: CLUSTER_ADMIN_USER_NAME
+        required: true
+      - name: FOR_TESTING_ONLY
+        secret: true
       stages:
       - name: prove-parallel-stage
         description: Prove parallel processing works by making this step take longer than the rest of the Gig.
@@ -78,11 +103,7 @@ elCicdTemplates:
           script: |-
             sleep 25
         - name: print-message-from-first-stage
-          stepRef:
-            gigModuleRef:
-              name: $<GIG_MOD_PRINT_MSG>
-            stage: $<PRINT_THE_DEMO_MSG>
-            name: $<PRINT_THE_DEMO_MSG>
+          stepRef: $<PRINT_THE_DEMO_MSG_REF>
           args:
           - 'PROVING PARALLEL PROCESSING BY STAGE WORKS BY PRINTING SECOND STEP OF FIRST STAGE AT THE END'
       - name: login
@@ -113,11 +134,11 @@ elCicdTemplates:
         when: gigEnv.LANG_DEMO.includes("Python")
         maxParallel: 2
         iterate:
+          when: env.INDEX != 2
           loops:
           - name: INDEX
             range:
               last: 2
-            when: env.INDEX != 2
           - name: VALS
             vector:
             - foo
@@ -130,11 +151,11 @@ elCicdTemplates:
         when: gigEnv.LANG_DEMO.includes("JavaScript")
         # maxParallel: 2
         # iterate:
+        #   when: env.LANG == 'JavaScript'
         #   loops:
         #   - name: LANG
         #     envVar:
         #       name: LANGS
-        #     when: env.LANG == 'JavaScript'
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_JS_DEMO>
@@ -167,8 +188,11 @@ elCicdTemplates:
 
   elCicdDefs-$<GIG_MOD_GO_DEMO>:
     GIG_MOD_SPECS:
-      requiredInputParams:
-      - TEST_MESSAGE
+      gigFormRef:
+        name: $<GIG_MOD_SOURCE_DEMO_FORM>
+      inputParams:
+      - name: TEST_MESSAGE
+        required: true
       stages:
       - name: $<DEMONSTRATE_GO>
         description: Set a test msg with a Go script and print it.
@@ -179,28 +203,26 @@ elCicdTemplates:
             dir, _ := os.Getwd()
             fmt.Println("CURRENT DIR: " + dir)
             TEXT_MESSAGE := GigEnvGet("TEST_MESSAGE")
-            GigEnvSet("TEXT_MESSAGE", ${TEST_MESSAGE})
+            GigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE)
         - name: print-the-go-msg
           maxParallel: 2
           iterate:
+            when: env.INDEX != 1
             loops:
             - name: INDEX
               range:
                 last: 2
-              when: env.INDEX != 1
             - name: VALS
               vector:
               - foo
               - 6
               - bar
-          stepRef:
-            gigModuleRef:
-              name: $<GIG_MOD_PRINT_MSG>
-            stage: $<PRINT_THE_DEMO_MSG>
-            name: $<PRINT_THE_DEMO_MSG>
+          stepRef: $<PRINT_THE_DEMO_MSG_REF>
 
   elCicdDefs-$<GIG_MOD_JS_DEMO>:
     GIG_MOD_SPECS:
+      gigFormRef:
+        name: $<GIG_MOD_SOURCE_DEMO_FORM>
       stages:
       - name: $<DEMONSTRATE_JAVASCRIPT>
         description: Set a test msg with JavaScript script and print it.
@@ -212,14 +234,12 @@ elCicdTemplates:
             TEXT_MESSAGE = TEXT_MESSAGE ? TEXT_MESSAGE + '\n' : ''
             await gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Javascript runtime")
         - name: print-the-javascript-msg
-          stepRef:
-            gigModuleRef:
-              name: $<GIG_MOD_PRINT_MSG>
-            stage: $<PRINT_THE_DEMO_MSG>
-            name: $<PRINT_THE_DEMO_MSG>
+          stepRef: $<PRINT_THE_DEMO_MSG_REF>
 
   elCicdDefs-$<GIG_MOD_PYTHON_DEMO>:
     GIG_MOD_SPECS:
+      gigFormRef:
+        name: $<GIG_MOD_SOURCE_DEMO_FORM>
       stages:
       - name: $<DEMONSTRATE_PYTHON>
         description: Set a test msg with Python script and print it.
@@ -231,11 +251,7 @@ elCicdTemplates:
             TEXT_MESSAGE = TEXT_MESSAGE + '\n' if TEXT_MESSAGE else ''
             gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Python runtime")
         - name: print-the-python-msg
-          stepRef:
-            gigModuleRef:
-              name: $<GIG_MOD_PRINT_MSG>
-            stage: $<PRINT_THE_DEMO_MSG>
-            name: $<PRINT_THE_DEMO_MSG>
+          stepRef: $<PRINT_THE_DEMO_MSG_REF>
 
   elCicdDefs-$<GIG_MOD_PRINT_MSG>:
     GIG_MOD_SPECS:
@@ -250,6 +266,5 @@ elCicdTemplates:
             { set +x; } 2>/dev/null
             TEXT_MSG=${1:-$(stageEnvGet TEXT_MESSAGE)}
             echo "${TEXT_MSG:-$(gigEnvGet TEXT_MESSAGE)}"
-            sleep 1
   template:
     spec: $<GIG_MOD_SPECS>

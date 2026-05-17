@@ -64,8 +64,8 @@ def on_create_cronjob(body, meta, annotations, logger, **_):
 
     formAnno = annotations.get(GigForm.GIG_LAUNCHFORM_ANNOTATION)
     gig_form_ref = get_name_namespace_from_anno(formAnno) if formAnno else None
-    if (formAnno or gig_mod.spec.gigFormRef):
-        gig.spec.gigFormRef.name = gig_form_ref.name if gig_form_ref else gig_mod.spec.gigFormRef
+    if (gig_form_ref or gig_mod.spec.gigFormRef):
+        gig.spec.gigFormRef.name = gig_form_ref.name if gig_form_ref else gig_mod.spec.gigFormRef.name
         gig.spec.gigFormRef.namespace = gig_form_ref.namespace if gig_form_ref else gig_mod.spec.gigFormRef.namespace
     else:
         gig.spec.gigFormRef = None

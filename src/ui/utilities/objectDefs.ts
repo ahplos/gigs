@@ -89,22 +89,25 @@ export type GigForm = K8sResourceCommon & {
     };
 };
 
-export type GigModule = K8sResourceCommon & {
-    spec: {
-        activeDeadlineSeconds: number;
-        gigFormRef: {
+type InputParamsSpec = {
+    name: string;
+    required: boolean;
+    secret: boolean
+    default: string;
+}
+
+type StepSpec = {
+    name: string;
+    runtime: string;
+    stageRef: {
+        gigModuleRef: {
             name: string;
             namespace: string;
-        };
-        mode: boolean;
-        name: string;
-        requiredInputParams: string[];
-        stages: StageSpec[];
-        workDirSizeLimit: string;
-    };
-};
+        }
+    }
+}
 
-export type StageSpec = {
+type StageSpec = {
     name: string;
     description?: string;
     steps: StepSpec[];
@@ -118,16 +121,20 @@ export type StageSpec = {
     }
 };
 
-export type StepSpec = {
-    name: string;
-    runtime: string;
-    stageRef: {
-        gigModuleRef: {
+export type GigModule = K8sResourceCommon & {
+    spec: {
+        activeDeadlineSeconds: number;
+        gigFormRef: {
             name: string;
             namespace: string;
-        }
-    }
-}
+        };
+        mode: boolean;
+        name: string;
+        inputParams: InputParamsSpec[];
+        stages: StageSpec[];
+        workDirSizeLimit: string;
+    };
+};
 
 export type Gig = K8sResourceCommon & {
     spec: {

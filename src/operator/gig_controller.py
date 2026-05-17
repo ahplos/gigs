@@ -1,3 +1,5 @@
+from box import Box
+
 import kopf
 from kopf import AdmissionError
 
@@ -6,6 +8,17 @@ from kr8s.objects import CronJob
 from utilities.gig_types import Gig, GigModule, GigForm
 
 from utilities.constants import GIG_CONSTS
+
+@kopf.on.mutate(Gig.version, Gig.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
+def onmutategig(userinfo, patch, body, logger, **_):
+    gig = Gig(body)
+    if (not gig.spec.gigFormRef):
+        gig_mod = GigModule(gig.spec.gigModuleRef.name, gig.spec.gigModuleRef.namespace)
+        if (gig_mod.spec.gigFormRef):
+            patch.setdefault(GIG_CONSTS.SPEC, {})[GIG_CONSTS.GIG_FORM_REF] = {
+                GIG_CONSTS.NAME: gig_mod.spec.gigFormRef.name,
+                GIG_CONSTS.NAMESPACE: gig_mod.spec.gigFormRef.namespace,
+            }
 
 @kopf.on.validate(Gig.version, Gig.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
 def onvalidategig(body, meta, logger, **_):

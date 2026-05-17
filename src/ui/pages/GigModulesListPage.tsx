@@ -50,8 +50,8 @@ const GigModulesTable: React.FC<GigModuleTableProps> = ({ data, unfilteredData, 
             id: 'mode',
         },
         {
-            title: 'Required Input Variables',
-            id: 'required-input-vars',
+            title: 'Input Parameters',
+            id: 'input-parameters',
         },
         {
             title: 'Stages',
@@ -99,7 +99,10 @@ const GigModulesTable: React.FC<GigModuleTableProps> = ({ data, unfilteredData, 
                 </TableData>
                 <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
                     <List isPlain>
-                        {gigMod.spec.requiredInputParams?.map((param) => <ListItem><b>{param}</b></ListItem>)}
+                        { gigMod.spec.inputParams?.map((param) => param.required ?
+                            <ListItem><b>{param.name}</b></ListItem> :
+                            <ListItem>{param.name}</ListItem>)
+                        }
                     </List>
                 </TableData>
                 <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>

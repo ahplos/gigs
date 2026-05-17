@@ -1,75 +1,75 @@
 #!/usr/bin/bash
 
 function gigEnvExists() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HISMEMBER 'GIG_ENV' "${1}" )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HISMEMBER GIG_ENV "${1}" )
 }
 
 function gigEnvGet() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET 'GIG_ENV' "${1}" )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET GIG_ENV "${1}")
 }
 
 function gigEnvToJson() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL 'GIG_ENV' | paste -d "=" - - | jo )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL GIG_ENV | paste -d "=" - - | jo )
 }
 
 function gigEnvKeys() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HKEYS 'GIG_ENV' )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HKEYS GIG_ENV )
 }
 
 function gigEnvSet() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET 'GIG_ENV' "${1}" "${2}" >/dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET GIG_ENV "${1}" "${2}" >/dev/null )
 }
 
 function gigEnvValues() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HVALS 'GIG_ENV' )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HVALS GIG_ENV )
 }
 
 function stageEnvExists() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HISMEMBER ${STAGE_ID} "${1}" )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HISMEMBER ${STAGE_ID:-___} "${1}" )
 }
 
 function stageEnvGet() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET ${STAGE_ID} "${1}" )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET ${STAGE_ID:-___} "${1}" )
 }
 
 function stageEnvToJson() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL ${STAGE_ID} | paste -d "=" - - | jo )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL ${STAGE_ID:-___} | paste -d "=" - - | jo )
 }
 
 function stageEnvKeys() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HKEYS ${STAGE_ID} )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HKEYS ${STAGE_ID:-___} )
 }
 
 function stageEnvSet() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET ${STAGE_ID} "${1}" "${2}" >/dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET ${STAGE_ID:-___} "${1}" "${2}" >/dev/null )
 }
 
 function stageEnvValues() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HVALS ${STAGE_ID} )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HVALS ${STAGE_ID:-___} )
 }
 
 function stepEnvExists() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HISMEMBER ${STEP_ID} "${1}" )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HISMEMBER ${STEP_ID:-___} "${1}" )
 }
 
 function stepEnvGet() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET ${STEP_ID} "${1}" )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGET ${STEP_ID:-___} "${1}" )
 }
 
 function stepEnvToJson() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL ${STEP_ID} | paste -d "=" - - | jo )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HGETALL ${STEP_ID:-___} | paste -d "=" - - | jo )
 }
 
 function stepEnvKeys() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HKEYS ${STEP_ID} )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HKEYS ${STEP_ID:-___} )
 }
 
 function stepEnvSet() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET ${STEP_ID} "${1}" "${2}" >/dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HSET ${STEP_ID:-___} "${1}" "${2}" >/dev/null )
 }
 
 function stepEnvValues() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw HVALS ${STEP_ID} )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HVALS ${STEP_ID:-___} )
 }
 
 function gigSecretsAdd() {
@@ -89,33 +89,33 @@ function gigSecretsRemove() {
 }
 
 function stageSecretsAdd() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SADD ${STAGE_ID}_SECRETS $* >/dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SADD ${STAGE_ID:-___}_SECRETS $* >/dev/null )
 }
 
 function stageSecretExists() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SISMEMBER ${STAGE_ID}_SECRETS "${1}" )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SISMEMBER ${STAGE_ID:-___}_SECRETS "${1}" )
 }
 
 function stageSecrets() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SMEMBERS ${STAGE_ID}_SECRETS )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SMEMBERS ${STAGE_ID:-___}_SECRETS )
 }
 
 function stageSecretsRemove() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SREM ${STAGE_ID}_SECRETS $* >/dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SREM ${STAGE_ID:-___}_SECRETS $* >/dev/null )
 }
 
 function stepSecretsAdd() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SADD ${STEP_ID}_SECRETS $* >/dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SADD ${STEP_ID:-___}_SECRETS $* >/dev/null )
 }
 
 function stepSecretExists() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SISMEMBER ${STEP_ID}_SECRETS "${1}" )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SISMEMBER ${STEP_ID:-___}_SECRETS "${1}" )
 }
 
 function stepSecrets() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SMEMBERS ${STEP_ID}_SECRETS )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SMEMBERS ${STEP_ID:-___}_SECRETS )
 }
 
 function stepSecretsRemove() {
-    ( { set +x; } 2>/dev/null; gigdb-cli --raw SREM ${STEP_ID}_SECRETS $* >/dev/null )
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw SREM ${STEP_ID:-___}_SECRETS $* >/dev/null )
 }

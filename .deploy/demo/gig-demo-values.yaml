@@ -3,7 +3,7 @@ elCicdDefs:
   GIG_MOD_GO_DEMO: gig-mod-go-demo
   GIG_MOD_JS_DEMO: gig-mod-javascript-demo
   GIG_MOD_PYTHON_DEMO: gig-mod-python-demo
-  GIG_FORM_NAME: gig-form-demo-2
+  GIG_FORM_NAME: gig-mod-demo-form
   GIG_ORG_NAMEPACE: gig-demo-org
 
   AHPLOS_GIGS_OPERATOR: ahplos-gigs-operator

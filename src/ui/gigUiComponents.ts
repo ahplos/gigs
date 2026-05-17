@@ -13,7 +13,7 @@ export { GigFormType } from './components/GigInputForm';
 export { GigRunsList } from './components/GigRunsList';
 export { GigRunLogViewer } from './components/GigRunLogViewer';
 
-export { GigModRequiredInputVarsDetail } from './components/detailItems/GigModRequiredInputVarsDetail';
+export { GigModInputParamsDetail } from './components/detailItems/GigModInputParamsDetail';
 export { GigModStagesDetail } from './components/detailItems/GigModStagesDetail';
 
 export { GigFormSummaryDetail } from './components/detailItems/GigFormSummaryDetail';

@@ -7,18 +7,19 @@ ECHO_XTRACE_REGEX='^[+]+\s+echo(\s|$)'
 __HEADER_FOOTER_BORDER='******************************************************************'
 __HEADER_FOOTER_PREFIX='**'
 
-function __verifyRequiredInputParams() {
-    for REQ_INPUT_PARAM in {{ ' '.join(gig_mod.spec.requiredInputParams) }}
+function __initNode() {
+    ALL_NPM_PACKAGES=$(ls $(npm root -g))
+    for FOLDER in ${GIGRUN_HOME} $(ls -d ${GIGRUN_HOME}/*/)
     do
-        if [[ -z $(gigEnvGet ${REQ_INPUT_PARAM}) ]]
-        then
-            echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" |& __logOutput '--'
-            exit 1
-        fi
+        (
+            cd ${FOLDER}
+            echo ${ALL_NPM_PACKAGES} | xargs -I {} npm link {} >/dev/null
+        )
     done
 }
 
 function __saveInputParamsToEnv() {
+    local MODULE_INPUT_PARAMS=({{ gig_mod.spec.inputParams | map(attribute='name') | join(' ') }})
     local JSON_INPUT_VALUES=$(kubectl get secret --ignore-not-found -n {{ gig_run.namespace }} {{ gig_run.name }} -o jsonpath='{.data.inputValues}' | base64 --decode)
     local GIGRUN_INPUT=$(jq -s '.[0] + .[1] // empty' <(echo ${GIGRUN_INPUT}) <(echo ${JSON_INPUT_VALUES}))
 
@@ -26,15 +27,18 @@ function __saveInputParamsToEnv() {
     echo "${__HEADER_FOOTER_BORDER}"
     if [[ -n ${GIGRUN_INPUT} ]]
     then
-        INPUT_PARAMS=$(echo "${GIGRUN_INPUT}" | jq -r 'to_entries[]|"\(.key)=\(.value)"')
-        for INPUT_PARAM in ${INPUT_PARAMS}
-        do
-            gigEnvSet $(echo ${INPUT_PARAM} | tr '=' ' ')
-        done
-
         echo "${__HEADER_FOOTER_PREFIX} INPUT PARAMS RECEIVED:"
-        echo "${__HEADER_FOOTER_PREFIX}"
-        echo "${INPUT_PARAMS}" | sed "s/^/${__HEADER_FOOTER_PREFIX} /g"
+        for INPUT_PARAM in $(echo "${GIGRUN_INPUT}" | jq -r 'keys | join(" ")')
+        do
+            if [[ -n ${STEP_COUNTER} || " ${MODULE_INPUT_PARAMS[@]} " =~ " ${INPUT_PARAM} " ]]
+            then
+                local INPUT_VALUE=$(echo "${GIGRUN_INPUT}" | jq -r ".${INPUT_PARAM}")
+                gigEnvSet ${INPUT_PARAM} "${INPUT_VALUE}"
+                echo "${__HEADER_FOOTER_PREFIX}    ${INPUT_PARAM}: $(gigEnvGet ${INPUT_PARAM})"
+            else
+                echo "${__HEADER_FOOTER_PREFIX}    ${INPUT_PARAM}[IGNORED]: not declared in module"
+            fi
+        done
 
         kubectl patch secret -n {{ gig_run.namespace }} {{ gig_run.name }} --patch 'data:' 2>&1 >/dev/null
     else
@@ -42,6 +46,20 @@ function __saveInputParamsToEnv() {
     fi
 
     echo "${__HEADER_FOOTER_BORDER}"
+}
+
+function __verifyInputParams() {
+    local MODULE_INPUT_PARAMS=({{ gig_mod.spec.inputParams | map(attribute='name') | join(' ') | lower }})
+    local REQUIRED=({{ gig_mod.spec.inputParams | map(attribute='required', default='false') | join(' ') }})
+
+    for INDEX in ${!MODULE_INPUT_PARAMS[@]}
+    do
+        if [[ -z $(gigEnvGet ${MODULE_INPUT_PARAMS[${INDEX}]}) && ${REQUIRED[${INDEX}]} == 'true' ]]
+        then
+            echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" |& __logOutput '--'
+            exit 1
+        fi
+    done
 }
 
 function __waitForUserInput() {
@@ -93,51 +111,41 @@ function __killGigRun() {
 }
 
 function __logOutput() {
-    local OUT=$(
-        while IFS='' read -r LOG_OUT
-        do
-            local LOG_HDR=$(printf "%s%18s" "$(__gigRunTime)" "[${1}] ")
-            echo "${LOG_OUT}" | sed -E -e "/${ECHO_XTRACE_REGEX}/d" -e "s/^/${LOG_HDR}/g"
-        done
+    (
+        { set +x; } 2>/dev/null
+        local OUT=$(
+            while IFS='' read -r LOG_OUT
+            do
+                local LOG_HDR=$(printf "%s%18s" "$(__gigRunTime)" "[${1}] ")
+                echo "${LOG_OUT}" | sed -E -e "/${ECHO_XTRACE_REGEX}/d" -e "s/^/${LOG_HDR}/g"
+            done
+        )
+        echo "${OUT}"
     )
-    echo "${OUT}"
 }
 
 function __logFilteredOutput() {
-    local OUT=$(
+    echo $(
+        { set +x; } 2>/dev/null
+        __DELIM=$'\x1F'
+        SECRETS_REGEX=$(echo "$(gigSecrets) $(stageSecrets) $(stageSecrets)" | xargs | sed -e 's/ /|/g')
+        SECRETS_REGEX=${SECRETS_REGEX:-$(echo -e '\u2654')}
         while IFS='' read -r LOG_OUT
         do
-            __filterSecrets "${LOG_OUT}" >>"${1}"
+            echo "${LOG_OUT}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g" >>"${1}"
         done
     )
-    echo "${OUT}"
-}
-
-function __filterSecrets() {
-    local __DELIM=$'\x1F'
-    local SECRETS_REGEX=$(__generateSecretFilter)
-
-    echo "${1}" | sed -E -e "s${__DELIM}${SECRETS_REGEX}${__DELIM}*****${__DELIM}g"
-}
-
-function __generateSecretFilter() {
-    local GIG_SECRET_VARS="$(gigSecrets | xargs)"
-    local STAGE_SECRET_VARS="$(stageSecrets | xargs)"
-    local SECRETS_REGEX=''
-    for VAR in ${GIG_SECRET_VARS} ${STAGE_SECRET_VARS}
-    do
-        SECRETS_REGEX+=${SECRETS_REGEX:+${SECRETS_REGEX:+|}}$(gigEnvGet ${VAR})
-    done
-
-    echo ${SECRETS_REGEX:-$(echo -e '\u2654')}
 }
 
 function __gigRunTime() {
-    local GIGRUN_TIME=$(gigdb-cli INFO | grep uptime_in_seconds | sed 's/[^0-9]//g')
-    local HOURS=$((GIGRUN_TIME/3600))
-    local MINUTES=$((GIGRUN_TIME%3600/60))
-    local SECONDS=$((GIGRUN_TIME%60))
-    echo $(printf '%02d:%02d:%02d' ${HOURS} ${MINUTES} ${SECONDS})
+    (
+        { set +x; } 2>/dev/null
+        local GIGRUN_TIME=$(gigdb-cli INFO | grep uptime_in_seconds | sed 's/[^0-9]//g')
+        local HOURS=$((GIGRUN_TIME/3600))
+        local MINUTES=$((GIGRUN_TIME%3600/60))
+        local SECONDS=$((GIGRUN_TIME%60))
+        echo $(printf '%02d:%02d:%02d' ${HOURS} ${MINUTES} ${SECONDS})
+    )
 }
 
 function __gigRunHeader() {
@@ -197,7 +205,7 @@ function __stepHeader() {
     local STEP_ID=${1}
     local STAGE_NAME=${2}
     local STEP_NAME=${3}
-    local STEP_INTERPRETER=${4}
+    local STEP_RUNTIME=${4}
     local CURRENT_PID=${5}
     local STAGE_TYPE=${6}
 
@@ -205,7 +213,7 @@ function __stepHeader() {
         echo
         echo "${__HEADER_FOOTER_BORDER}"
         echo "${__HEADER_FOOTER_PREFIX} Step ${STEP_ID}: ${STAGE_NAME}:${STEP_NAME}"
-        echo "${__HEADER_FOOTER_PREFIX}       Runtime: ${STEP_INTERPRETER}"
+        echo "${__HEADER_FOOTER_PREFIX}       Runtime: ${STEP_RUNTIME}"
         echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: ${CURRENT_PID}"
 
         if [[ ${STAGE_TYPE} == 'SKIPPED' ]]
@@ -216,7 +224,7 @@ function __stepHeader() {
         echo "${__HEADER_FOOTER_BORDER}"
     )
 
-    echo "${STEP_HEADER}"  | __logOutput "${STEP_ID}"
+    echo "${STEP_HEADER}"  | __logOutput "${STEP_COUNTER}"
 }
 
 function __stepFooter() {
@@ -227,14 +235,14 @@ function __stepFooter() {
 
     if [[ -z ${RESULT} || ${RESULT} == 0 ]]
     then
-        echo "==> SUCCESS: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} <==" | __logOutput "${STEP_ID}"
+        echo "==> SUCCESS: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} <==" | __logOutput "${STEP_COUNTER}"
     else
         local LINENO=$(gigEnvGet __ERR_LINENO)
         local FILE=$(gigEnvGet __ERR_FILE_NAME)
         echo "$(
             echo "==> STEP FAILURE: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME}"
             echo "==>               Exit code ${RESULT}${FILE:+:file ${FILE}}${LINENO:+:ln ${LINENO}}"
-        )" | __logOutput "${STEP_ID}"
+        )" | __logOutput "${STEP_COUNTER}"
         __killGigRun
     fi
 }

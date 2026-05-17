@@ -30,27 +30,19 @@ export const GigRunFormTab = (model) => {
     let formSpec = [];
     let errorMessage: string;
 
-    if (model.obj.kind == GIG_GVK.kind) {
+    if (model.obj.kind == GIG_GVK.kind && model.obj.spec.gigFormRef) {
         gig = model.obj
-        if (gig.spec.gigFormRef) {
-            const [gf, _, gfLoadError] = GigK8sUtils.getGigForm({
-                name: gig.spec.gigFormRef.name,
-                namespace: gig.spec.gigFormRef.namespace
-            });
 
-            gigForm = gf;
-            formSpec = gigForm?.spec?.inputForm ?? [];
-            errorMessage = gfLoadError;
-        }
-        else {
-            gigForm = {
-                spec: {
-                    inputForm: []
-                }
-            };
-        }
+        const [gf, _, gfLoadError] = GigK8sUtils.getGigForm({
+            name: gig.spec.gigFormRef?.name,
+            namespace: gig.spec.gigFormRef.namespace ?? gig.metadata.namespace
+        });
+
+        gigForm = gf;
+        formSpec = gigForm?.spec?.inputForm ?? [];
+        errorMessage = gfLoadError;
     }
-    else {
+    else if (model.spec.inputForm) {
         gigForm = model.obj
         formSpec = structuredClone(gigForm.spec.inputForm ?? []);
     }
@@ -69,7 +61,7 @@ export const GigRunFormTab = (model) => {
     }
 
     let bodyContent;
-    if (gigForm) {
+    if (formSpec) {
         const gigFormType = gig ? GigFormType.START : GigFormType.PREVIEW;
         bodyContent = <GigInputForm formSpec={formSpec} submissionAction={submissionAction} formType={gigFormType} />;
     }
