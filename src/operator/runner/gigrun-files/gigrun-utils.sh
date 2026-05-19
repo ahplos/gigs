@@ -149,6 +149,7 @@ function __gigRunTime() {
 }
 
 function __gigRunHeader() {
+    export CURRENT_PID=${BASHPID}
     local GIG_HEADER=$(
         echo "${__HEADER_FOOTER_BORDER}"
         echo "${__HEADER_FOOTER_PREFIX} GIG: {{ gig_mod.name }}"
@@ -163,7 +164,10 @@ function __gigRunHeader() {
         ${KUBE_EXEC} version | sed "s/^\(.*\)/${__HEADER_FOOTER_PREFIX} \1/g"
         echo "${__HEADER_FOOTER_PREFIX} Helm: $(helm version --short)"
         echo "${__HEADER_FOOTER_BORDER}"
+        echo "${__HEADER_FOOTER_PREFIX} PROCESS ID: ${CURRENT_PID}"
+        echo "${__HEADER_FOOTER_BORDER}"
     )
+    unset CURRENT_PID
     echo "${GIG_HEADER}" | __logOutput '--'
 }
 
@@ -177,15 +181,15 @@ function __gigRunFooter() {
 }
 
 function __stageHeader() {
-    local STAGE_ID=${1}
+    local STAGE_COUNTER=${1}
     local STAGE_NAME=${2}
-    local CURRENT_PID="${3}"
-    local STAGE_TYPE="${4}"
+    export CURRENT_PID=${3}
+    local STAGE_TYPE=${4}
 
     local STAGE_HEADER=$(
         echo
         echo "${__HEADER_FOOTER_BORDER}"
-        echo "${__HEADER_FOOTER_PREFIX} STAGE ${STAGE_ID}: ${STAGE_NAME}"
+        echo "${__HEADER_FOOTER_PREFIX} STAGE ${STAGE_COUNTER}: ${STAGE_NAME}"
         echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: ${CURRENT_PID}"
         echo "${__HEADER_FOOTER_PREFIX}       $(date)"
 
@@ -198,11 +202,12 @@ function __stageHeader() {
         echo "${__HEADER_FOOTER_BORDER}"
     )
 
-    echo "${STAGE_HEADER}" | __logOutput "${STAGE_ID}"
+    unset CURRENT_PID
+    echo "${STAGE_HEADER}" | __logOutput "${STAGE_COUNTER}"
 }
 
 function __stepHeader() {
-    local STEP_ID=${1}
+    local STEP_COUNTER=${1}
     local STAGE_NAME=${2}
     local STEP_NAME=${3}
     local STEP_RUNTIME=${4}
@@ -212,7 +217,7 @@ function __stepHeader() {
     local STEP_HEADER=$(
         echo
         echo "${__HEADER_FOOTER_BORDER}"
-        echo "${__HEADER_FOOTER_PREFIX} Step ${STEP_ID}: ${STAGE_NAME}:${STEP_NAME}"
+        echo "${__HEADER_FOOTER_PREFIX} Step ${STEP_COUNTER}: ${STAGE_NAME}:${STEP_NAME}"
         echo "${__HEADER_FOOTER_PREFIX}       Runtime: ${STEP_RUNTIME}"
         echo "${__HEADER_FOOTER_PREFIX}       PROCESS ID: ${CURRENT_PID}"
 
@@ -224,23 +229,25 @@ function __stepHeader() {
         echo "${__HEADER_FOOTER_BORDER}"
     )
 
+    unset CURRENT_PID
     echo "${STEP_HEADER}"  | __logOutput "${STEP_COUNTER}"
 }
 
 function __stepFooter() {
-    local STEP_ID=${1}
+    local STEP_COUNTER=${1}
     local STAGE_NAME=${2}
     local STEP_NAME=${3}
+    local TIME_SECONDS=${4}
     local RESULT=$(stepEnvGet __STEP_RESULT)
 
     if [[ -z ${RESULT} || ${RESULT} == 0 ]]
     then
-        echo "==> SUCCESS: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} <==" | __logOutput "${STEP_COUNTER}"
+        echo "==> SUCCESS: Step ${STEP_COUNTER} ${STAGE_NAME}:${STEP_NAME} [${TIME_SECONDS}s] <==" | __logOutput "${STEP_COUNTER}"
     else
         local LINENO=$(gigEnvGet __ERR_LINENO)
         local FILE=$(gigEnvGet __ERR_FILE_NAME)
         echo "$(
-            echo "==> STEP FAILURE: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME}"
+            echo "==> STEP FAILURE: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} [${TIME_SECONDS}s]"
             echo "==>               Exit code ${RESULT}${FILE:+:file ${FILE}}${LINENO:+:ln ${LINENO}}"
         )" | __logOutput "${STEP_COUNTER}"
         __killGigRun

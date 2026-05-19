@@ -9,8 +9,7 @@ trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && 
 gigEnvSet GIG_PID "${BASHPID}"
 
 function __gigrunner() {
-
-    local _STAGE_COUNTER=0
+    local __STAGE_COUNTER=0
 
     __GIG_MOD_SECRETS='{{ gig_mod.spec.inputParams | selectattr('secret', 'equalto', True) | map(attribute='name') | join(' ') }}'
     [[ -n ${__GIG_MOD_SECRETS} ]] && gigSecretsAdd ${__GIG_MOD_SECRETS}
@@ -32,12 +31,12 @@ function __gigrunner() {
       {%- set RUN_PARALLEL = '&' if (stage.maxParallel and stage.maxParallel > 0) else '' %}
 
     function {{ STAGE_FUNCTION_NAME }}() {
-        local CURRENT_PID=${BASHPID}
+        local STAGE_CURRENT_PID=${BASHPID}
         (
             export STAGE_ID=$(uuidgen)
             export STAGE_COUNTER="${1}"
-            __stageHeader ${STAGE_COUNTER} '{{ stage.name }}' ${CURRENT_PID}
-            ${GIGRUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stage__{{ STAGE_NAME }}
+            __stageHeader ${STAGE_COUNTER} '{{ stage.name }}' ${STAGE_CURRENT_PID}
+            ${GIGRUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stagerunner__{{ STAGE_NAME }} ${STAGE_CURRENT_PID}
             (echo && echo "==> STAGE ${STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") |& __logOutput "${STAGE_COUNTER}"
         )
     }
@@ -47,7 +46,7 @@ function __gigrunner() {
     gigSecretsAdd ${NEW_SECRET_VARS}
       {%- endif %}
 
-    let _STAGE_COUNTER+=1
+    let __STAGE_COUNTER+=1
     unset __SHOULD_RUN
     {%- if stage.when %}
     local __WHEN_FILE_NAME=${GIGRUN_HOME}/{{ GIGMOD_DIR_NAME }}/stage__{{ stage.name }}_when.js
@@ -61,10 +60,10 @@ function __gigrunner() {
         {% if stage.maxParallel -%}
         {{ '__checkMaxThreads ' ~ stage.maxParallel }}
         {%- endif %}
-        {{ STAGE_FUNCTION_NAME }} ${_STAGE_COUNTER} {{ RUN_PARALLEL }}
+        {{ STAGE_FUNCTION_NAME }} ${__STAGE_COUNTER} 2>&1 {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stageHeader ${_STAGE_COUNTER} '{{ stage.name }}' ${BASHPID} 'SKIPPED'
+        __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' ${BASH_PID} 'SKIPPED'
     fi
     {%- if stage.wait or loop.index == gig_mod.spec.stages|length %}
 

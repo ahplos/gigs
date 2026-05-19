@@ -74,8 +74,8 @@ function executeRuntime() {
 
         UserInput)
             local CHART_DIR=$(mktemp -d)
-            local USER_INPUT_VALUES=${CHART_DIR}/${STEP_COUNTER}_user_input
-            local GIGRUN_PATCH_FILE=${CHART_DIR}/${STEP_COUNTER}_gigrun_patch.yaml
+            local USER_INPUT_VALUES=${CHART_DIR}/${STEP_ID}_user_input
+            local GIGRUN_PATCH_FILE=${CHART_DIR}/${STEP_ID}_gigrun_patch.yaml
 
             renderTemplate $(stepEnvGet STEP_FILE) ${USER_INPUT_VALUES} ${CHART_DIR} >/dev/null
 

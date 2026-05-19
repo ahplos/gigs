@@ -9,6 +9,7 @@ trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && 
 {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIGMOD_DIR_NAME, stage.name) %}
 
 function {{ STAGE_FUNCTION_NAME }}() {
+    local STAGE_CURRENT_PID=${1}
     local __STEP_COUNTER=0
     {%- for step in stage.steps %}
       {%- set GIG_MODULE_NAME = gig_mod.name %}
@@ -30,18 +31,18 @@ function {{ STAGE_FUNCTION_NAME }}() {
       {%- set STEP_FUNCTION_NAME = '{}_{}'.format(STAGE_FUNCTION_NAME, step.name) %}
 
     function {{ STEP_FUNCTION_NAME }}() {
-        local CURRENT_PID=${BASHPID}
+        local STEP_CURRENT_PID=$([[ -n ${2} ]] && echo ${BASH_PID} || echo ${3})
         (
             export STEP_ID=$(uuidgen)
             export STEP_COUNTER=${1}
-            __stepHeader ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' ${CURRENT_PID}
+            SECONDS=0
 
+            __stepHeader ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' ${STEP_CURRENT_PID}
             local __STEP_OUTPUT=$(
-                {{ '${{GIGRUN_HOME}}/{}/steprunner__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_FILE)  }} |& __logOutput "${STEP_COUNTER}"
+                {{ '${{GIGRUN_HOME}}/{}/steprunner__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_FILE)  }}  |& __logOutput "${STEP_COUNTER}"
             )
             echo "${__STEP_OUTPUT}"
-
-            __stepFooter ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }} ${SECONDS}'
+            __stepFooter ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' ${SECONDS}
         )
     }
 
@@ -58,10 +59,10 @@ function {{ STAGE_FUNCTION_NAME }}() {
         {% if step.maxParallel -%}
         {{ '__checkMaxThreads ' ~ step.maxParallel }}
         {%- endif %}
-        {{ STEP_FUNCTION_NAME }} "${STAGE_COUNTER}-${__STEP_COUNTER}" {{ RUN_PARALLEL }}
+        {{ STEP_FUNCTION_NAME }} "${STAGE_COUNTER}-${__STEP_COUNTER}" "{{ RUN_PARALLEL }}" ${STAGE_CURRENT_PID} {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stepHeader "${STAGE_COUNTER}-${__STEP_COUNTER}" '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' 'SKIPPED'
+        __stepHeader "${STEP_COUNTER}-${__STEP_COUNTER}" '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' ${STAGE_CURRENT_PID} 'SKIPPED'
     fi
     {%- if step.wait %}
 
@@ -70,4 +71,4 @@ function {{ STAGE_FUNCTION_NAME }}() {
     {%- endfor %}
 }
 
-{{ STAGE_FUNCTION_NAME }}
+{{ STAGE_FUNCTION_NAME }} ${1}

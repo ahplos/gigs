@@ -1,4 +1,8 @@
 import yaml
+import re
+import subprocess
+
+from box import Box
 
 from jinja2 import Environment, FileSystemLoader, FileSystemBytecodeCache
 
@@ -47,7 +51,28 @@ def on_create_or_update_gigmodule(body, logger, **_):
     output = template.render(template_data)
     logger.debug(f'{output}')
 
-    secret = Secret(yaml.safe_load(output))
+    secret = yaml.safe_load(output)
+    stringData = 'stringData'
+    for shell_file in secret[stringData]:
+        if (not shell_file.endswith('__when.js') and re.match(r"gigrunner|stagerunner", shell_file)):
+            process = subprocess.Popen(
+                ['shfmt', '-i', '4', '-'],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+            stdout, stderr = process.communicate(input=secret[stringData][shell_file])
+
+            if (process.returncode == 0):
+                print(f'PROCESSED: {shell_file}')
+                secret[stringData][shell_file] = stdout
+            else:
+                print(f'Error:\n{secret[stringData][shell_file]}')
+                raise Exception(f'Error: {stderr}')
+
+    secret = Secret(secret)
     if (secret.exists()):
         secret.patch({'stringData': secret.raw.stringData.to_dict()}, type='merge')
     else:
