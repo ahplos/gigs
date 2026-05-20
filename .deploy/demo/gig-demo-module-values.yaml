@@ -105,7 +105,7 @@ elCicdTemplates:
         - name: print-message-from-first-stage
           stepRef: $<PRINT_THE_DEMO_MSG_REF>
           args:
-          - 'PROVING PARALLEL PROCESSING BY STAGE WORKS BY PRINTING SECOND STEP OF FIRST STAGE AT THE END'
+          - 'PROVING PARALLEL PROCESSING BY STAGE WORKS BY PRINTING SECOND STEP OF FIRST STAGE AT THE END: ${TEST_SUCCEEDED:-test succeeded}'
       - name: login
         description: Login into cluster as cluster admin, and retrieve Gig supported Step runtimes.
         steps:
@@ -203,6 +203,9 @@ elCicdTemplates:
             dir, _ := os.Getwd()
             fmt.Println("CURRENT DIR: " + dir)
             TEXT_MESSAGE := GigEnvGet("TEST_MESSAGE")
+            if (TEXT_MESSAGE == "") {
+                TEXT_MESSAGE = "This line of the test message was set using the Go runtime"
+            }
             GigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE)
         - name: print-the-go-msg
           maxParallel: 2
@@ -266,5 +269,9 @@ elCicdTemplates:
             { set +x; } 2>/dev/null
             TEXT_MSG=${1:-$(stageEnvGet TEXT_MESSAGE)}
             echo "${TEXT_MSG:-$(gigEnvGet TEXT_MESSAGE)}"
+
+            set -x
+            echo "STEP_ID: ${STEP_ID}"
+            stepSecretsAdd NEW_SECRET && stepEnvSet NEW_SECRET $(uuidgen)
   template:
     spec: $<GIG_MOD_SPECS>

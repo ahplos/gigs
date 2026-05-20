@@ -29,7 +29,8 @@ ENV PYTHON_VERSION=3.12 \
     PIP_NO_CACHE_DIR=off \
     HOME=/home/user \
     NPM_RUN=start\
-    GOBIN=/usr/local/bin
+    GOBIN=/usr/local/bin \
+    CGO_ENABLED=0
 
 ENV NPM_CONFIG_PREFIX=$HOME/.npm-global \
     PATH=${HOME}/node_modules/.bin/:${HOME}/.npm-global/bin/:${PATH} \

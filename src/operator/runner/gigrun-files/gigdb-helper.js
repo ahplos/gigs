@@ -162,68 +162,56 @@ global.stepEnvValues = async () => {
 
 global.gigSecretsAdd = async (members) => {
 	await gigdb.sAdd(GIG_SECRETS, members);
-	console.log('gigSecretsAdd(*****)');
 }
 
 global.gigSecretExists = async (field) => {
 	let result = await gigdb.sIsMember(GIG_SECRETS, field);
-	console.log('gigSecretExists(*****) => ' + result);
 	return result;
 }
 
 global.gigSecrets = async () => {
 	let result =  await gigdb.sMembers(GIG_SECRETS);
-	console.log('gigSecrets() => *****');
 	return result;
 }
 
 global.gigSecretsRemove = async (field) => {
 	await gigdb.sRem(GIG_SECRETS, field);
-	console.log('gigSecretsRemove(*****)');
 }
 
 global.stageSecretsAdd = async (members) => {
 	await gigdb.sAdd(STAGE_SECRETS, members);
-	console.log('stageSecretsAdd(*****)');
 }
 
 global.stageSecretExists = async (field) => {
 	let result = await gigdb.sIsMember(STAGE_SECRETS, field);
-	console.log('stageSecretExists(*****) => ' + result);
 	return result;
 }
 
 global.stageSecrets = async () => {
 	let result =  await gigdb.sMembers(STAGE_SECRETS);
-	console.log('stageSecrets() => *****');
 	return result;
 }
 
 global.stageSecretsRemove = async (field) => {
 	await gigdb.sRem(STAGE_SECRETS, field);
-	console.log('stageSecretsRemove(*****)');
 }
 
 global.stepSecretsAdd = async (members) => {
 	await gigdb.sAdd(STEP_SECRETS, members);
-	console.log('stepSecretsAdd(*****)');
 }
 
 global.stepSecretExists = async (field) => {
 	let result = await gigdb.sIsMember(STEP_SECRETS, field);
-	console.log('stepSecretExists(*****) => ' + result);
 	return result;
 }
 
 global.stepSecrets = async () => {
 	let result = await gigdb.sMembers(STEP_SECRETS);
-	console.log('stepSecrets() => *****');
 	return result;
 }
 
 global.stepSecretsRemove = async (field) => {
 	await gigdb.sRem(STEP_SECRETS, field);
-	console.log('stepSecretsRemove(*****)');
 }
 
 

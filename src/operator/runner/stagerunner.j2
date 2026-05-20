@@ -38,6 +38,10 @@ function {{ STAGE_FUNCTION_NAME }}() {
             SECONDS=0
 
             __stepHeader ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' ${STEP_CURRENT_PID}
+            {%- if step.args %}
+            CLI_ARGS='{{ step.args|join(' ') }}'
+            stepEnvSet CLI_ARGS "${CLI_ARGS}"
+            {%- endif %}
             local __STEP_OUTPUT=$(
                 {{ '${{GIGRUN_HOME}}/{}/steprunner__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_FILE)  }}  |& __logOutput "${STEP_COUNTER}"
             )

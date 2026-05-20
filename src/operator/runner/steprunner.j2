@@ -11,13 +11,9 @@ gigSecretsAdd {{ step.secretVars|join(' ') }}
 {%- if step.runtime == 'Custom' %}
 RUNTIME_SCRIPT=$(cat <<'EOF'
 {{ step.runtimeScript }}
-EOF)
+EOF
+)
 stepEnvSet RUNTIME_SCRIPT ${RUNTIME_SCRIPT}
-{%- elif step.args %}
-CLI_ARGS=$(cat <<'EOF'
-{{ step.args|join(' ') }}
-EOF)
-stepEnvSet CLI_ARGS ${CLI_ARGS}
 {%- endif %}
 
 stepEnvSet RUNTIME {{ step.runtime }}

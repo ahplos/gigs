@@ -23,7 +23,7 @@ export __LOG_FILE=$(mktemp)
 
 __checkForAbortSignal |& __logOutput '--' &
 
-${GIGRUN_HOME}/{{ gig_mod.namespace }}_{{ gig_mod.name }}/gigrunner.sh |& __logFilteredOutput ${__LOG_FILE} &
+${GIGRUN_HOME}/{{ gig_mod.namespace }}_{{ gig_mod.name }}/gigrunner.sh >>${__LOG_FILE} &
 sleep 1
 tail -q --pid $(gigEnvGet GIG_PID) -f ${__LOG_FILE} -n +1 2>/dev/null
 

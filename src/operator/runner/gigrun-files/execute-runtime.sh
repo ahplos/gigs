@@ -11,6 +11,7 @@ set +o allexport
 function executeRuntime() {
     export CURRENT_WORKDIR=$(pwd)
     local RUNTIME=$(stepEnvGet RUNTIME)
+    local CLI_ARGS=$(stepEnvGet CLI_ARGS)
     case ${RUNTIME} in
         Custom)
             (
@@ -65,7 +66,7 @@ function executeRuntime() {
         ;;
 
         Shell)
-            $(stepEnvGet STEP_FILE) $(stepEnvGet CLI_ARGS)
+            $(stepEnvGet STEP_FILE) "${CLI_ARGS@P}"
         ;;
 
         Template)

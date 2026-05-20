@@ -63,7 +63,7 @@ function __gigrunner() {
         {{ STAGE_FUNCTION_NAME }} ${__STAGE_COUNTER} 2>&1 {{ RUN_PARALLEL }}
       {%- endif %}
     else
-        __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' ${BASH_PID} 'SKIPPED'
+        __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' ${BASHPID} 'SKIPPED'
     fi
     {%- if stage.wait or loop.index == gig_mod.spec.stages|length %}
 
