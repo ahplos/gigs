@@ -44,6 +44,10 @@ const createFormGroup = (formGroup, gigFormState, setGigFormState, selectAllForm
              setGigFormErrors={setGigFormErrors}
              props={inputCompAttrs} />
 
+    if (formGroup.defaultValue) {
+        setGigFormState(formGroup.var, formGroup.defaultValue)
+    }
+
     let formGroupId = `formGroup-${formGroup.var}`;
     const formGroupAttrs: any = {};
     formGroupKeys.forEach(x => formGroupAttrs[x] = formGroup.attributes[x]);

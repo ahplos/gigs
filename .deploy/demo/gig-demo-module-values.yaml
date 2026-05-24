@@ -44,10 +44,10 @@ elCicdTemplates:
           label: Run inline or in separate GigRuns?
           options:
           - Inline
-          - Separate GigRuns
-          defaultValue: Separate GigRuns
+          - GigRuns
+          defaultValue: GigRuns
         inputType: RadioGroup
-        var: RUN_INLINE
+        var: DEMO_RUN_TYPE
 
 - apiVersion: batch.ahplos.org/v1beta1
   kind: GigForm
@@ -92,8 +92,8 @@ elCicdTemplates:
         secret: true
       - name: CLUSTER_ADMIN_USER_NAME
         required: true
-      - name: FOR_TESTING_ONLY
-        secret: true
+      - name: DEMO_RUN_TYPE
+        required: true
       stages:
       - name: prove-parallel-stage
         description: Prove parallel processing works by making this step take longer than the rest of the Gig.
@@ -125,13 +125,19 @@ elCicdTemplates:
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_ASK_USER>
-      - name: $<DEMONSTRATE_GO>
-        when: gigEnv.LANG_DEMO.includes('Go')
+      - name: $<DEMONSTRATE_GO>-inline
+        when: gigEnv.LANG_DEMO.includes('Go') && gigEnv.DEMO_RUN_TYPE == 'Inline'
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_GO_DEMO>
-      - name: $<DEMONSTRATE_PYTHON>
-        when: gigEnv.LANG_DEMO.includes("Python")
+      - name: $<DEMONSTRATE_GO>-gigrun
+        when: gigEnv.LANG_DEMO.includes('Go') && gigEnv.DEMO_RUN_TYPE == 'GigRuns'
+        gigRef:
+          name: $<GIG_MOD_GO_DEMO>
+          inputValues: |-
+            { "TEST_MESSAGE": "This demo is test a Go script in a separate GigRun" }
+      - name: $<DEMONSTRATE_PYTHON>-inline
+        when: gigEnv.LANG_DEMO.includes("Python") && gigEnv.DEMO_RUN_TYPE == 'Inline'
         maxParallel: 2
         iterate:
           when: env.INDEX != 2
@@ -147,8 +153,26 @@ elCicdTemplates:
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_PYTHON_DEMO>
-      - name: $<DEMONSTRATE_JAVASCRIPT>
-        when: gigEnv.LANG_DEMO.includes("JavaScript")
+      - name: $<DEMONSTRATE_PYTHON>-gigrun
+        when: gigEnv.LANG_DEMO.includes("Python") && gigEnv.DEMO_RUN_TYPE == 'GigRuns'
+        maxParallel: 2
+        iterate:
+          when: env.INDEX != 2
+          loops:
+          - name: INDEX
+            range:
+              last: 2
+          - name: VALS
+            vector:
+            - foo
+            - 6
+            - bar
+        gigRef:
+          name: $<GIG_MOD_PYTHON_DEMO>
+          inputValues: |-
+            { "TEST_MESSAGE": "This demo is test a Python script in a separate GigRun" }
+      - name: $<DEMONSTRATE_JAVASCRIPT>-inline
+        when: gigEnv.LANG_DEMO.includes("JavaScript") && gigEnv.DEMO_RUN_TYPE == 'Inline'
         # maxParallel: 2
         # iterate:
         #   when: env.LANG == 'JavaScript'
@@ -159,6 +183,19 @@ elCicdTemplates:
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_JS_DEMO>
+      - name: $<DEMONSTRATE_JAVASCRIPT>-gigrun
+        when: gigEnv.LANG_DEMO.includes("JavaScript") && gigEnv.DEMO_RUN_TYPE == 'GigRuns'
+        # maxParallel: 2
+        # iterate:
+        #   when: env.LANG == 'JavaScript'
+        #   loops:
+        #   - name: LANG
+        #     envVar:
+        #       name: LANGS
+        gigRef:
+          name: $<GIG_MOD_JS_DEMO>
+          inputValues: |-
+            { "TEST_MESSAGE": "This demo is test a JavaScript script in a separate GigRun" }
 
   elCicdDefs-$<GIG_MOD_ASK_USER>:
     GIG_MOD_SPECS:
@@ -271,7 +308,7 @@ elCicdTemplates:
             echo "${TEXT_MSG:-$(gigEnvGet TEXT_MESSAGE)}"
 
             set -x
-            echo "STEP_ID: ${STEP_ID}"
-            stepSecretsAdd NEW_SECRET && stepEnvSet NEW_SECRET $(uuidgen)
+            stepEnvSet NEW_SECRET $(uuidgen)
+            stepSecretsAdd NEW_SECRET
   template:
     spec: $<GIG_MOD_SPECS>

@@ -1,0 +1,12 @@
+{%- raw %}
+apiVersion: batch.ahplos.org/v1beta1
+kind: GigRun
+metadata:
+  generateName: {{ .Release.Name }}-
+spec:
+  gigRef:
+    name: {{ .Release.Name }}
+  {{- if .Values.inputValues }}
+  inputValues: '{{ .Values.inputValues }}'
+  {{ end }}
+{%- endraw %}

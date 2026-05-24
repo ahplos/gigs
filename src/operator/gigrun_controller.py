@@ -94,22 +94,23 @@ def collect_gig_def_secrets(gig_mod: GigModule, secret_key: str, gig_def_secrets
     gig_def_secrets_map[secret_key] =  secret
 
     for stage in gig_mod.spec.stages:
-        if (stage.stageRef):
-            name = stage.stageRef.gigModuleRef.name
-            namespace = stage.stageRef.gigModuleRef.namespace
-            namespace = namespace if namespace else gig_mod.namespace
-            secret_key = f'{namespace}_{name}'
-            if (secret_key not in gig_def_secrets_map.keys()):
-                collect_gig_def_secrets(GigModule.get(name, namespace), secret_key, gig_def_secrets_map)
-        else:
-            for step in stage.steps:
-                if (step.stepRef):
-                    name = step.stepRef.gigModuleRef.name
-                    namespace = step.stepRef.gigModuleRef.namespace
-                    namespace = namespace if namespace else gig_mod.namespace
-                    secret_key = f'{namespace}_{name}'
-                    if (secret_key not in gig_def_secrets_map.keys()):
-                        collect_gig_def_secrets(GigModule.get(name, namespace), secret_key, gig_def_secrets_map)
+        if (not stage.gigRef):
+            if (stage.stageRef):
+                name = stage.stageRef.gigModuleRef.name
+                namespace = stage.stageRef.gigModuleRef.namespace
+                namespace = namespace if namespace else gig_mod.namespace
+                secret_key = f'{namespace}_{name}'
+                if (secret_key not in gig_def_secrets_map.keys()):
+                    collect_gig_def_secrets(GigModule.get(name, namespace), secret_key, gig_def_secrets_map)
+            else:
+                for step in stage.steps:
+                    if (step.stepRef):
+                        name = step.stepRef.gigModuleRef.name
+                        namespace = step.stepRef.gigModuleRef.namespace
+                        namespace = namespace if namespace else gig_mod.namespace
+                        secret_key = f'{namespace}_{name}'
+                        if (secret_key not in gig_def_secrets_map.keys()):
+                            collect_gig_def_secrets(GigModule.get(name, namespace), secret_key, gig_def_secrets_map)
 
 
 def copy_gig_def_secrets_to_gig_run_namespace(gig_def_secrets_map: dict, gig: Gig):
@@ -233,6 +234,7 @@ def create_env_vars(container: Box, gig_run: GigRun):
     env.append(Box(name = 'GIGRUN_HOME', value = GIG_CONSTS.GIGRUN_HOME))
     env.append(Box(name = 'WORKDIR', value = WORKDIR))
     env.append(Box(name = 'GIGRUN_EXTRAS_DIR', value = f'/{GIGRUN}-extra-files'))
+    env.append(Box(name = 'GIG_NAME', value = gig_run.spec.gigRef.name))
     env.append(Box(name = 'GIGRUN_NAME', value = gig_run.name))
     env.append(Box(name = 'GIGRUN_NAMESPACE', value = gig_run.namespace))
     container.setdefault(GIG_CONSTS.ENV, env)

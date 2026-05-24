@@ -72,7 +72,7 @@ function __waitForUserInput() {
     then
         echo 'Waiting for user input...'
 
-        kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} > /dev/null
+        kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} >/dev/null
         __saveInputParamsToEnv
 
         echo
@@ -106,7 +106,7 @@ function __checkForAbortSignal() {
 
 function __killGigRun() {
     echo
-    echo "${1:-==> GIG FAILURE[$(gigEnvGet __ERR_FILE_NAME)/ln $(gigEnvGet __ERR_LINENO)]: TERMINATING DUE TO ERROR IN GIG}"
+    echo "${1:-==> GIG FAILURE[$(gigEnvGet __ERR_FILE_NAME):ln $(gigEnvGet __ERR_LINENO)]: TERMINATING DUE TO ERROR IN GIG}"
     sleep 5
     local PID=$(gigEnvGet GIG_PID)
     (timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}) >/dev/null

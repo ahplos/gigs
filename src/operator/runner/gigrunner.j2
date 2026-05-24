@@ -1,12 +1,23 @@
 #!/usr/bin/bash -e
 # gigrunner
+{%- import 'iterator-macro.j2' as iter_macros %}
+
 set -e -E -o pipefail
 
 trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
 
-{%- import 'iterator-macro.j2' as iter_macros %}
-
 gigEnvSet GIG_PID "${BASHPID}"
+{%- for stage in gig_mod.spec.stages %}
+  {%- if stage.gigRef and stage.gigRef.inputValues %}
+__INPUT_VALUES=$(cat <<'EOF'
+{{ stage.gigRef.inputValues | tojson }}
+EOF
+)
+gigdb-cli SET {{ stage.name }}_GIGRUN_INPUTVALUES "${__INPUT_VALUES}"
+
+  {%- endif %}
+{%- endfor %}
+unset __INPUT_VALUES
 
 function __gigrunner() {
     local __STAGE_COUNTER=0
@@ -33,11 +44,18 @@ function __gigrunner() {
     function {{ STAGE_FUNCTION_NAME }}() {
         local STAGE_CURRENT_PID=${BASHPID}
         (
-            export STAGE_ID=$(uuidgen)
             export STAGE_COUNTER="${1}"
             __stageHeader ${STAGE_COUNTER} '{{ stage.name }}' ${STAGE_CURRENT_PID}
+      {%- if stage.gigRef %}
+        {%- if stage.gigRef.inputValues %}
+            INPUT_VALUES=$(gigdb-cli GET {{ stage.name }}_GIGRUN_INPUTVALUES)
+        {%- endif %}
+            ${GIGRUN_HOME}/launch-gigrun.sh {{ stage.gigRef.name }} '{{ stage.gigRef.namespace if stage.gigRef.namespace else '' }}' "${INPUT_VALUES}"
+      {%- else %}
+            export STAGE_ID=$(uuidgen)
             ${GIGRUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stagerunner__{{ STAGE_NAME }} ${STAGE_CURRENT_PID}
             (echo && echo "==> STAGE ${STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") |& __logOutput "${STAGE_COUNTER}"
+      {%- endif %}
         )
     }
 

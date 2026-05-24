@@ -65,11 +65,8 @@ def on_create_or_update_gigmodule(body, logger, **_):
 
             stdout, stderr = process.communicate(input=secret[stringData][shell_file])
 
-            if (process.returncode == 0):
-                print(f'PROCESSED: {shell_file}')
-                secret[stringData][shell_file] = stdout
-            else:
-                print(f'Error:\n{secret[stringData][shell_file]}')
+            if (process.returncode != 0):
+                logger.error(f'Error:\n{secret[stringData][shell_file]}')
                 raise Exception(f'Error: {stderr}')
 
     secret = Secret(secret)

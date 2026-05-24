@@ -325,19 +325,33 @@ elCicdDefs-$<GIG_MODULE>:
           - name
           oneOf:
           - required:
+            - gigRef
+          - required:
             - stageRef
           - required:
             - steps
           properties:
             description:
               type: string
+            gigRef:
+              type: object
+              properties:
+                name:
+                  type: string
+                namespace:
+                  type: string
+                inputValues:
+                  type: string
+                  description: |-
+                    Key value pairs as input values for launching a GigRun.  Use Helm notation {{ .Values.gigEnv.* }} or {{ .Values.env.* }}
+                    for dynamic values.
             iterate: $<ITERATE_SPEC>
             maxParallel:
               type: integer
               description: |-
                 Number of maximum background processes the stage should run in.  If greater than 0, then stage will spawn
                 in the background up the to number given; e.g. if the stage is iterated over 5 times, but maxParallel
-                is 3, at most 3 active stages will execute simultaneously until all 5 are run.
+                is 3, at most 3 active stages will execute concurrently until all 5 are run.
             mode: $<MODE_SPEC>
             name:
               type: string
@@ -413,7 +427,7 @@ elCicdDefs-$<GIG_MODULE>:
                     description: |-
                       Number of maximum background processes the step should run in.  If greater than 0, then step will spawn
                       in the background up the to number given; e.g. if the step is iterated over 5 times, but maxParallel
-                      is 3, at most 3 active steps will execute simultaneously until all 5 are run.
+                      is 3, at most 3 active steps will execute concurrently until all 5 are run.
                   name:
                     type: string
                     description: |-
@@ -447,7 +461,6 @@ elCicdDefs-$<GIG_MODULE>:
                       declared runtime; i.e. in a subprocess. 'Shell' (bash -ce <step name>.sh) is the default.
                     enum:
                     - Custom
-                    - GigRun
                     - Go
                     - JavaScript
                     - Python
@@ -596,9 +609,8 @@ elCicdDefs-$<GIGRUN>:
         description: |-
           JSON string of input values to pass to a runner Pod when starting a GigRun, or to resume execution when paused for further input.
           InputValues are never preserved in a deployed GigRun, but rather used by the Gig Operator to create an associated Secret for
-          the Pod to read and use.  The Secret will contain the JSON string of all inputValues, each subsequent update will be merged with
-          any existing values for the life of the GigRun, and the JSON string all will be injected into an environment variable in the runner
-          as GIGRUN_INPUT.
+          the Pod to read and use.   Each key/value pair will be added to the gigdb Gig environment, and the lastest JSON string processed
+          will be stored as GIGRUN_INPUT.
       runState: $<RUN_STATE>
       startedBy:
         type: string

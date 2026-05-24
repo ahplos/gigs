@@ -3,10 +3,12 @@ set -e -E -o pipefail
 
 trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
 
-TEMPLATE_FILE=${1}
-RENDERED_FILE=${2}
-CHART_DIR=${3}
-EXTRA_VALUES_FILE=${4}
+TEMPLATE_TYPE=${1}
+INPUT_FILE=${2}
+OUTPUT_FILE=${3}
+CLI_ARGS=${4}
+CHART_DIR=${5}
+EXTRA_VALUES_FILE=${6}
 
 (
     cd ${CHART_DIR}
@@ -17,13 +19,14 @@ EXTRA_VALUES_FILE=${4}
     fi
 
     mkdir -p templates
-    cp ${TEMPLATE_FILE} templates/template.yaml
+    cp ${INPUT_FILE} templates/template.yaml
 
     echo '{ "gigEnv": '$(gigEnvToJson)' }, "stageEnv": '$(stageEnvToJson)' }' >values.yaml
 
-    helm template --debug -f values.yaml ${EXTRA_VALUES_FILE:+-f ${EXTRA_VALUES_FILE}} . 2>/dev/null | sed '1,2d' >${RENDERED_FILE}
+    DEBUG=$([[ ${TEMPLATE_TYPE} == 'Go' ]] && echo '--debug' || echo '')
+    helm template ${DEBUG} -f values.yaml ${EXTRA_VALUES_FILE:+-f ${EXTRA_VALUES_FILE}} . ${DEBUG:+2>/dev/null} | sed '1,2d' >${OUTPUT_FILE}
     echo 'TEMPLATE RENDERED:'
     echo '==='
-    cat ${RENDERED_FILE}
+    cat ${OUTPUT_FILE}
     echo '==='
 )
