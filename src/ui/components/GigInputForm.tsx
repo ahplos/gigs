@@ -86,10 +86,11 @@ export type GigFormType = typeof GigFormType[keyof typeof GigFormType];
 interface GigModuleFormProps {
     formSpec: Array<Object>;
     submissionAction(formState: Object): any;
+    abortAction(): any;
     formType: GigFormType;
 }
 
-export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFormProps) => {
+export const GigInputForm = ({formSpec, submissionAction, abortAction, formType}: GigModuleFormProps) => {
     let formState: any = {};
     let selectAllState: any = {};
     const [gigFormState, setGigFormState] = React.useState(formState);
@@ -121,11 +122,11 @@ export const GigInputForm = ({formSpec, submissionAction, formType}: GigModuleFo
                     </Button>
                     {(formType == GigFormType.WAITING_FOR_INPUT) &&
                         <Button
-                            type={ButtonType.submit}
+                            type={ButtonType.button}
                             variant='primary'
                             onClick={(e) => {
                                 e.preventDefault();
-                                gigFormState['__ABORT_ABORT_ABORT'] = '__ABORT_ABORT_ABORT'
+                                abortAction();
                             }}
                         >
                             {'Abort'}

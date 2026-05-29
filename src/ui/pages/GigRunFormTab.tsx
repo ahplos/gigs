@@ -63,7 +63,7 @@ export const GigRunFormTab = (model) => {
     let bodyContent;
     if (formSpec) {
         const gigFormType = gig ? GigFormType.START : GigFormType.PREVIEW;
-        bodyContent = <GigInputForm formSpec={formSpec} submissionAction={submissionAction} formType={gigFormType} />;
+        bodyContent = <GigInputForm formSpec={formSpec} submissionAction={submissionAction} abortAction={null} formType={gigFormType} />;
     }
     else if (errorMessage) {
         bodyContent = <Banner color="red">ERROR: {errorMessage}</Banner>;

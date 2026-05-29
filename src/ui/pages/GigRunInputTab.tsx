@@ -26,13 +26,14 @@ export const GigRunInputTab = (model) => {
     const navigate = useNavigate();
 
     const submissionAction = (formState: any) => {
-        let aborting: boolean = formState && formState['__ABORT_ABORT_ABORT']
-        if (formState && !aborting) {
-            GigK8sUtils.patchGigRunInputValues(gigRun, formState);
-        }
-        else {
-            GigK8sUtils.patchGigRunRunState(gigRun, aborting ? GigRunState.Aborting : GigRunState.Running);
-        }
+        GigK8sUtils.patchGigRunInputValues(gigRun, formState);
+
+        let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.ahplos.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-log-viewer';
+        navigate(path);
+    }
+
+    const abortAction = () => {
+        GigK8sUtils.patchGigRunRunState(gigRun, GigRunState.Aborting);
 
         let path = '/k8s/ns/' + gigRun.metadata.namespace + '/batch.ahplos.org~v1beta1~GigRun/' + gigRun.metadata.name + '/gigrun-log-viewer';
         navigate(path);
@@ -47,7 +48,7 @@ export const GigRunInputTab = (model) => {
             <TabContent id="input-gigrun-tab">
                 <TabContentBody hasPadding>
                     {title}
-                    <GigInputForm formSpec={formSpec} submissionAction={submissionAction} formType={formType} />
+                    <GigInputForm formSpec={formSpec} submissionAction={submissionAction} abortAction={abortAction} formType={formType} />
                 </TabContentBody>
             </TabContent>
         </>
