@@ -18,10 +18,11 @@ STEP_SECRETS = STEP_ID + "_SECRETS"
 gigdb = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 def gigEnvExists(field: str):
-	return gigdb.hexists(GIG_ENV, field)
+	gigdb.hexists(GIG_ENV, field)
 
 def gigEnvGet(field: str):
-	return gigdb.hget(GIG_ENV, field)
+	result = gigdb.hget(GIG_ENV, field)
+	return result if result else ''
 
 def gigEnvToJson():
 	gig_env = gigEnvToDict()
@@ -43,7 +44,8 @@ def stageEnvExists(field: str):
 	return gigdb.hexists(STAGE_ID, field)
 
 def stageEnvGet(field: str):
-	return gigdb.hget(STAGE_ID, field)
+	result = gigdb.hget(STAGE_ID, field)
+	return result if result else ''
 
 def stageEnvToJson():
 	gig_env = gigEnvToDict()
@@ -65,7 +67,8 @@ def stepEnvExists(field: str):
 	return gigdb.hexists(STEP_ID, field)
 
 def stepEnvGet(field: str):
-	return gigdb.hget(STEP_ID, field)
+	result = gigdb.hget(STEP_ID, field)
+	return result if result else ''
 
 def stepEnvToJson():
 	gig_env = gigEnvToDict()
