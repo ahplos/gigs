@@ -255,6 +255,7 @@ elCicdDefs-$<GIG_MODULE>:
       $<TITLE_CASE_NAME>Spec defines a $<TITLE_CASE_NAME>, and the optional and/or required inputValues to  it.
     required:
     - activeDeadlineSeconds
+    - maxParallel
     - stages
     - workDirSizeLimit
     properties:
@@ -295,6 +296,14 @@ elCicdDefs-$<GIG_MODULE>:
         x-kubernetes-list-type: map
         x-kubernetes-list-map-keys:
         - name
+      maxParallel:
+        type: integer
+        description: |-
+          Number of maximum background processes the total for a GigRun. This is the sum of all background stages and steps.
+        default: 10
+        x-kubernetes-validations:
+        - rule: "self > 0"
+          message: maxParallel for a GigModule must be a positive integer greater than zero
       mode: $<MODE_SPEC>
       requiredInputParams:
         type: array
@@ -349,9 +358,13 @@ elCicdDefs-$<GIG_MODULE>:
             maxParallel:
               type: integer
               description: |-
-                Number of maximum background processes the stage should run in.  If greater than 0, then stage will spawn
-                in the background up the to number given; e.g. if the stage is iterated over 5 times, but maxParallel
-                is 3, at most 3 active stages will execute concurrently until all 5 are run.
+                Number of maximum background processes for this stage that can run concurrently. This is the sum number of times
+                a particular stage is run in the background, plus the sum of any steps that are run in the background of the stage.
+                This total number of background processes allowed for a stage may be further constrained at runtime by the maximum
+                background processes of the GigRun.
+              x-kubernetes-validations:
+              - rule: "self > 0"
+                message: maxParallel for a stage must be >0 or null
             mode: $<MODE_SPEC>
             name:
               type: string
@@ -425,9 +438,12 @@ elCicdDefs-$<GIG_MODULE>:
                   maxParallel:
                     type: integer
                     description: |-
-                      Number of maximum background processes the step should run in.  If greater than 0, then step will spawn
-                      in the background up the to number given; e.g. if the step is iterated over 5 times, but maxParallel
-                      is 3, at most 3 active steps will execute concurrently until all 5 are run.
+                      Number of maximum background processes for this step that can run concurrently.  The number of background processes
+                      allowed for a step may be further constrained at runtime by the maximum background processes of the stage and then
+                      the GigRun.
+                    x-kubernetes-validations:
+                    - rule: "self > 0"
+                      message: maxParallel for a step must be >0 or null
                   name:
                     type: string
                     description: |-
@@ -679,7 +695,6 @@ elCicdDefs-$<GIG_HOOK>:
               default: Header
             validation:
               type: object
-              x-kubernetes-validations:
               oneOf:
                 - required: ["bool"]
                 - required: ["match"]

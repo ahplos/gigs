@@ -3,6 +3,8 @@ set -e -E -o pipefail -o allexport
 
 LC_ALL=C
 source ${GIGRUN_HOME}/gigdb-helper.sh
+source ${GIGRUN_HOME}/gigrun-headers.sh
+source ${GIGRUN_HOME}/gigrun-logging.sh
 source ${GIGRUN_HOME}/gigrun-utils.sh
 
 export PYTHONPATH=$PYTHONPATH:${GIGRUN_HOME}

@@ -9,15 +9,15 @@
     if [[ "${__SHOULD_RUN}" != 'true' ]]
     then
       {%- if not STAGE_NAME %}
-        __stageHeader "${__STAGE_COUNTER}({{ ITERATOR_ID }})" '{{ stage_or_step.name }}' ${BASHPID} 'SKIPPED' 2>&1
+        __stageHeader "${__STAGE_OR_STEP_COUNTER}" '{{ stage_or_step.name }}' ${BASHPID} 'SKIPPED' 2>&1
       {%- else %}
-        __stepHeader "${__STEP_COUNTER}({{ ITERATOR_ID }})" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.runtime }}' ${STAGE_CURRENT_PID} 'SKIPPED'
+        __stepHeader "${__STAGE_OR_STEP_COUNTER}" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.runtime }}' ${STAGE_CURRENT_PID} 'SKIPPED'
       {%- endif %}
         continue
     fi
 {%- endmacro %}
 
-{%- macro realize_iterators(stage_or_step, FUNCTION_NAME, GIGMOD_DIR_NAME, STAGE_NAME=None) %}
+{%- macro realize_iterators(stage_or_step, FUNCTION_NAME, GIGMOD_DIR_NAME, RUN_PARALLEL, STAGE_NAME=None) %}
   {%- set ITERATOR_ID = namespace(ID=[]) %}
   {%- for iter in stage_or_step.iterate.loops %}
       {%- set ITERATOR_ID.ID = ITERATOR_ID.ID + ['${{{}_COUNTER}}'.format(iter.name)] %}
@@ -44,15 +44,10 @@
         export {{ iter.name }}
   {%- endfor %}
 
-    local __STAGE_OR_STEP_COUNTER=
-      {%- if not STAGE_NAME %}"${__STAGE_COUNTER}({{ ITERATOR_ID.ID }})"
-      {%- else %}"${STAGE_COUNTER}-${__STEP_COUNTER}({{ ITERATOR_ID.ID }})"
-      {%- endif %}
+    local __STAGE_OR_STEP_COUNTER="{{ '${__STAGE_COUNTER}(' if not STAGE_NAME else '${STAGE_COUNTER}-${__STEP_COUNTER}(' }}{{ ITERATOR_ID.ID }})"
     {{- when_check(stage_or_step, GIGMOD_DIR_NAME, ITERATOR_ID.ID, STAGE_NAME) if stage_or_step.iterate.when else '' }}
-    {% if stage_or_step.maxParallel -%}
-    {{ '__checkMaxThreads ' ~ stage_or_step.maxParallel }}
-    {%- endif %}
-    {{ FUNCTION_NAME }} "${__STAGE_OR_STEP_COUNTER}"  "{{ RUN_PARALLEL }}" ${STAGE_CURRENT_PID} 2>&1 {{ RUN_PARALLEL }}
+    {%- set STAGE_OR_STEP_SEMAPHORE = '${STAGE_SEMAPHORE}' if not STAGE_NAME else '${STEP_SEMAPHORE}' %}
+    {{ FUNCTION_NAME }} "${__STAGE_OR_STEP_COUNTER}" ${STAGE_CURRENT_PID} {{ STAGE_OR_STEP_SEMAPHORE }} 2>&1 {{ RUN_PARALLEL }}
 
   {%- for iter in (stage_or_step.iterate.loops|reverse) %}
         let {{ '{}_COUNTER'.format(iter.name) }}+=1

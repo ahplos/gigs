@@ -29,10 +29,7 @@ echo 'GENERATING GIGRUN:'
 cat gigrun.yaml | sed -e 's/^/    /g'
 GIGRUN_NAME=$(kubectl create -f gigrun.yaml -n ${NAMESPACE} -o name)
 
-kubectl wait ${GIGRUN_NAME} --timeout=600s --for=jsonpath='{.spec.runState}'='Aborting' -n ${NAMESPACE} >/dev/null &
-kubectl wait ${GIGRUN_NAME} --timeout=600s --for=jsonpath='{.spec.runState}'='Failed' -n ${NAMESPACE} >/dev/null &
-kubectl wait ${GIGRUN_NAME} --timeout=600s --for=jsonpath='{.spec.runState}'='Succeeded' -n ${NAMESPACE} >/dev/null &
-wait -n
+kubectl wait ${GIGRUN_NAME} --timeout=600s --for=jsonpath='{.status.runTime}' -n ${NAMESPACE} >/dev/null
 
 if [[ $? != 0 || $(kubectl get ${GIGRUN_NAME} -n ${NAMESPACE} -o jsonpath='{.spec.runState}') != 'Succeeded' ]]
 then

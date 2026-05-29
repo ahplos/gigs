@@ -1,8 +1,8 @@
 import yaml
 import re
+import json
+import base64
 import subprocess
-
-from box import Box
 
 from jinja2 import Environment, FileSystemLoader, FileSystemBytecodeCache
 
@@ -51,27 +51,34 @@ def on_create_or_update_gigmodule(body, logger, **_):
     output = template.render(template_data)
     logger.debug(f'{output}')
 
-    secret = yaml.safe_load(output)
+    secret = Secret(yaml.safe_load(output))
+    secret_exists = secret.exists()
     stringData = 'stringData'
     for shell_file in secret[stringData]:
         if (not shell_file.endswith('__when.js') and re.match(r"gigrunner|stagerunner", shell_file)):
-            process = subprocess.Popen(
-                ['shfmt', '-i', '4', '-'],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
+            try:
+                result = subprocess.run(
+                    ['shfmt', '-i', '4', '-'],
+                    input=secret[stringData][shell_file],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                logger.debug(f'FORMATTED: {shell_file}')
+                secret.raw.stringData[shell_file] = result.stdout
 
-            stdout, stderr = process.communicate(input=secret[stringData][shell_file])
+            except subprocess.CalledProcessError as e:
+                raise Exception(f'Error[{e.returncode}]: {e.stderr}\nOriginal[{shell_file}]:\n{secret[stringData][shell_file]}')
 
-            if (process.returncode != 0):
-                logger.error(f'Error:\n{secret[stringData][shell_file]}')
-                raise Exception(f'Error: {stderr}')
+        if (secret_exists):
+            bytes_data = secret.raw.stringData[shell_file].encode('utf-8')
+            encoded_bytes = base64.b64encode(bytes_data)
+            encoded_bytes = encoded_bytes.decode('utf-8')
+            secret.raw.setdefault('data', {})[shell_file] = encoded_bytes
 
-    secret = Secret(secret)
     if (secret.exists()):
-        secret.patch({'stringData': secret.raw.stringData.to_dict()}, type='merge')
+        patch_data = [{"op": "replace", "path": "/data", "value": secret.data.to_dict()}]
+        secret.patch(patch_data, type='json')
     else:
         secret.create()
 

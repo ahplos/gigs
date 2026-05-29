@@ -1,6 +1,7 @@
 import os
 import uuid
 from copy import deepcopy
+import base64
 import yaml
 
 from box import Box, BoxList
@@ -118,7 +119,7 @@ def copy_gig_def_secrets_to_gig_run_namespace(gig_def_secrets_map: dict, gig: Gi
         new_secret = Secret(secret.name, gig.namespace)
 
         if (new_secret.exists()):
-            new_secret.patch({'data': secret.data.to_dict()})
+            new_secret.patch([{"op": "replace", "path": "/data", "value": secret.data.to_dict()}], type='json')
         else:
             new_secret.data = deepcopy(secret.data)
             new_secret.raw.type = secret.raw.type
@@ -265,7 +266,16 @@ def create_gigrunner_secret(gig_run: GigRun, gig_mod: GigModule):
     output = template.render(template_data)
 
     secret = Secret(yaml.safe_load(output))
-    secret.create()
-    secret.set_owner(gig_run)
+    if (secret.exists()):
+        for shell_file in secret.raw.stringData:
+            bytes_data = secret.raw.stringData[shell_file].encode('utf-8')
+            encoded_bytes = base64.b64encode(bytes_data)
+            encoded_bytes = encoded_bytes.decode('utf-8')
+            secret.raw.setdefault('data', {})[shell_file] = encoded_bytes
+        patch_data = [{"op": "replace", "path": "/data", "value": secret.data.to_dict()}]
+        secret.patch(patch_data, type='json')
+    else:
+        secret.create()
+        secret.set_owner(gig_run)
 
     return secret

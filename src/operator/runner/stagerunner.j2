@@ -26,13 +26,18 @@ function {{ STAGE_FUNCTION_NAME }}() {
       {%- set STAGE_PREFIX = stage.name if not (step.stepRef and step.stepRef.stage) else step.stepRef.stage %}
       {%- set STEP_RUN_FILE = '{}_{}'.format(STAGE_PREFIX, STEP_SUFFIX) %}
 
-      {%- set RUN_PARALLEL = '&' if (step.maxParallel and step.maxParallel > 0) else '' %}
+      {%- set RUN_PARALLEL = '&' if step.maxParallel else '' %}
 
       {%- set STEP_FUNCTION_NAME = '{}_{}'.format(STAGE_FUNCTION_NAME, step.name) %}
 
     function {{ STEP_FUNCTION_NAME }}() {
-        local STEP_CURRENT_PID=$([[ -n ${2} ]] && echo ${BASH_PID} || echo ${3})
+        local STAGE_CURRENT_PID=${2}
+        local STEP_CURRENT_PID=$([[ -n '{{ RUN_PARALLEL }}' ]] && echo ${STAGE_CURRENT_PID} || echo ${BASHPID})
         (
+      {%- if step.maxParallel %}
+            local STEP_SEMAPHORE=${3}
+            __acquireSemaphores "${STAGE_SEMAPHORE}" "${STEP_SEMAPHORE}"
+      {%- endif %}
             export STEP_ID=$(uuidgen)
             export STEP_COUNTER=${1}
             SECONDS=0
@@ -47,6 +52,9 @@ function {{ STAGE_FUNCTION_NAME }}() {
             )
             echo "${__STEP_OUTPUT}"
             __stepFooter ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' ${SECONDS}
+      {%- if step.maxParallel %}
+            __releaseSemaphores "${STAGE_SEMAPHORE}" "${STEP_SEMAPHORE}"
+      {%- endif %}
         )
     }
 
@@ -57,13 +65,16 @@ function {{ STAGE_FUNCTION_NAME }}() {
     {%- endif %}
     if [[ "${__SHOULD_RUN:-true}" == 'true' ]]
     then
+      {%- if step.maxParallel %}
+      __initSemaphore STEP_SEMAPHORE {{ step.maxParallel }}
+      {%- endif %}
       {%- if step.iterate %}
-        {{- realize_iterators(step, STEP_FUNCTION_NAME, GIGMOD_DIR_NAME, stage.name) }}
+        {{- realize_iterators(step, STEP_FUNCTION_NAME, GIGMOD_DIR_NAME, RUN_PARALLEL, stage.name) }}
       {%- else %}
-        {% if step.maxParallel -%}
-        {{ '__checkMaxThreads ' ~ step.maxParallel }}
-        {%- endif %}
-        {{ STEP_FUNCTION_NAME }} "${STAGE_COUNTER}-${__STEP_COUNTER}" "{{ RUN_PARALLEL }}" ${STAGE_CURRENT_PID} {{ RUN_PARALLEL }}
+        {{ STEP_FUNCTION_NAME }} "${STAGE_COUNTER}-${__STEP_COUNTER}" ${STAGE_CURRENT_PID} ${STEP_SEMAPHORE} {{ RUN_PARALLEL }}
+      {%- endif %}
+      {%- if step.maxParallel %}
+      unset STEP_SEMAPHORE
       {%- endif %}
     else
         __stepHeader "${STEP_COUNTER}-${__STEP_COUNTER}" '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' ${STAGE_CURRENT_PID} 'SKIPPED'

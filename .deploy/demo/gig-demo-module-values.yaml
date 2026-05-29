@@ -112,7 +112,7 @@ elCicdTemplates:
         - name: prove-parallel-step
           maxParallel: 1
           script: |-
-            sleep 25
+            sleep 15
             echo 'PROVING PARALLEL PROCESSING BY STEP WORKS BY PRINTING FIRST STEP OF SECOND STAGE AT THE END'
         - name: cluster-admin-login.sh
           script: |-
@@ -130,6 +130,7 @@ elCicdTemplates:
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_GO_DEMO>
+          name: $<DEMONSTRATE_GO>
       - name: $<DEMONSTRATE_GO>-gigrun
         when: gigEnv.LANG_DEMO.includes('Go') && gigEnv.DEMO_RUN_TYPE == 'GigRuns'
         gigRef:
@@ -153,6 +154,7 @@ elCicdTemplates:
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_PYTHON_DEMO>
+          name: $<DEMONSTRATE_PYTHON>
       - name: $<DEMONSTRATE_PYTHON>-gigrun
         when: gigEnv.LANG_DEMO.includes("Python") && gigEnv.DEMO_RUN_TYPE == 'GigRuns'
         maxParallel: 2
@@ -183,6 +185,7 @@ elCicdTemplates:
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_JS_DEMO>
+          name: $<DEMONSTRATE_JAVASCRIPT>
       - name: $<DEMONSTRATE_JAVASCRIPT>-gigrun
         when: gigEnv.LANG_DEMO.includes("JavaScript") && gigEnv.DEMO_RUN_TYPE == 'GigRuns'
         # maxParallel: 2
