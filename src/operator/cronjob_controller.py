@@ -28,12 +28,12 @@ def onmutatecronjob(patch, meta, annotations, logger, **_):
     operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE]
 )   # type: ignore
 def onvalidatecronjob(annotations, meta, logger, **_):
-    gig_mod_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
-    gig_mod = GigModule.get(gig_mod_ref.name, namespace = gig_mod_ref.namespace)
-    if (not gig_mod.exists()):
+    gigmod_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
+    gigmod = GigModule.get(gigmod_ref.name, namespace = gigmod_ref.namespace)
+    if (not gigmod.exists()):
         anno = f'metadata.annotations.{GigModule.GIG_MODULE_ANNOTATION}: {annotations[GigModule.GIG_MODULE_ANNOTATION]}'
         raise kopf.AdmissionError(
-            f'GigModule {gig_mod_ref.namespace}:{gig_mod_ref.name} referenced in CronJob {meta.name} does not exist:\n[{anno}]',
+            f'GigModule {gigmod_ref.namespace}:{gigmod_ref.name} referenced in CronJob {meta.name} does not exist:\n[{anno}]',
             code=499,
         )
 
@@ -57,16 +57,16 @@ def on_create_cronjob(body, meta, annotations, logger, **_):
     gig = Gig(cron_job.name, namespace=meta.namespace)
     gig.spec.cronJobRef.name = cron_job.name
 
-    gig_mod_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
-    gig_mod = GigModule.get(gig_mod_ref.name, gig_mod_ref.namespace)
-    gig.spec.gigModuleRef.name = gig_mod.name
-    gig.spec.gigModuleRef.namespace = gig_mod.namespace
+    gigmod_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
+    gigmod = GigModule.get(gigmod_ref.name, gigmod_ref.namespace)
+    gig.spec.gigModuleRef.name = gigmod.name
+    gig.spec.gigModuleRef.namespace = gigmod.namespace
 
     formAnno = annotations.get(GigForm.GIG_LAUNCHFORM_ANNOTATION)
     gig_form_ref = get_name_namespace_from_anno(formAnno) if formAnno else None
-    if (gig_form_ref or gig_mod.spec.gigFormRef):
-        gig.spec.gigFormRef.name = gig_form_ref.name if gig_form_ref else gig_mod.spec.gigFormRef.name
-        gig.spec.gigFormRef.namespace = gig_form_ref.namespace if gig_form_ref else gig_mod.spec.gigFormRef.namespace
+    if (gig_form_ref or gigmod.spec.gigFormRef):
+        gig.spec.gigFormRef.name = gig_form_ref.name if gig_form_ref else gigmod.spec.gigFormRef.name
+        gig.spec.gigFormRef.namespace = gig_form_ref.namespace if gig_form_ref else gigmod.spec.gigFormRef.namespace
     else:
         gig.spec.gigFormRef = None
 

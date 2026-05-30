@@ -6,13 +6,17 @@ __HEADER_FOOTER_BORDER='********************************************************
 __HEADER_FOOTER_PREFIX='**'
 
 function __gigRunHeader() {
+    local GIGMOD_NAME=${1}
+    local GIGMOD_DESCRIPTION=${2}
+
     export CURRENT_PID=${BASHPID}
     local GIG_HEADER=$(
         echo "${__HEADER_FOOTER_BORDER}"
-        echo "${__HEADER_FOOTER_PREFIX} GIG: {{ gig_mod.name }}"
-        {%- if gig_mod.spec.description %}
-        echo "${__HEADER_FOOTER_PREFIX} {{ gig_mod.spec.description }}"
-        {%- endif %}
+        echo "${__HEADER_FOOTER_PREFIX} GIG: ${GIGMOD_NAME}"
+        if [[ -n ${GIGMOD_DESCRIPTION} ]]
+        then
+            echo "${__HEADER_FOOTER_PREFIX} ${GIGMOD_DESCRIPTION}"
+        fi
         echo "${__HEADER_FOOTER_PREFIX}   PROCESS ID: ${CURRENT_PID}"
         echo "${__HEADER_FOOTER_PREFIX}   $(date)"
         echo "${__HEADER_FOOTER_PREFIX}"

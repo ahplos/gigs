@@ -12,14 +12,14 @@ function {{ STAGE_FUNCTION_NAME }}() {
     local STAGE_CURRENT_PID=${1}
     local __STEP_COUNTER=0
     {%- for step in stage.steps %}
-      {%- set GIG_MODULE_NAME = gig_mod.name %}
-      {%- set NAMESPACE = gig_mod.namespace %}
+      {%- set GIG_MODULE_NAME = gigmod.name %}
+      {%- set NAMESPACE = gigmod.namespace %}
 
-      {%- set STEP_GIG_MOD_NAMESPACE = gig_mod.namespace
+      {%- set STEP_GIG_MOD_NAMESPACE = gigmod.namespace
         if not (step.stageRef and step.stepRef.gigModuleRef.namespace)
         else step.stepRef.gigModuleRef.namespace
       %}
-      {%- set STEP_GIG_MOD_NAME = gig_mod.name if not step.stepRef else step.stepRef.gigModuleRef.name %}
+      {%- set STEP_GIG_MOD_NAME = gigmod.name if not step.stepRef else step.stepRef.gigModuleRef.name %}
       {%- set STEP_RUN_DIR = '{}_{}'.format(STEP_GIG_MOD_NAMESPACE, STEP_GIG_MOD_NAME) %}
 
       {%- set STEP_SUFFIX = step.name if not (step.stepRef and step.stepRef.name) else step.stepRef.name %}

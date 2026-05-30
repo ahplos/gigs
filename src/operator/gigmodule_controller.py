@@ -29,22 +29,22 @@ JINJA_ENV = Environment(
 
 @kopf.on.mutate(GigModule.version, GigModule.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
 def onmutategigmodule(userinfo, patch, body, logger, **_):
-    gig_mod: GigModule = GigModule(body)
-    if (gig_mod.spec.gigFormRef and not gig_mod.spec.gigFormRef.namespace):
+    gigmod: GigModule = GigModule(body)
+    if (gigmod.spec.gigFormRef and not gigmod.spec.gigFormRef.namespace):
         patch.setdefault(GIG_CONSTS.SPEC, {})[GIG_CONSTS.GIG_FORM_REF] = {
-            GIG_CONSTS.NAME: gig_mod.spec.gigFormRef.name,
-            GIG_CONSTS.NAMESPACE: gig_mod.metadata.namespace,
+            GIG_CONSTS.NAME: gigmod.spec.gigFormRef.name,
+            GIG_CONSTS.NAMESPACE: gigmod.metadata.namespace,
         }
 
 @kopf.on.update(GigModule.version, GigModule.plural)  # type: ignore
 @kopf.on.create(GigModule.version, GigModule.plural)  # type: ignore
 def on_create_or_update_gigmodule(body, logger, **_):
-    gig_mod: GigModule = GigModule(body)
+    gigmod: GigModule = GigModule(body)
 
     template_data = {
-        'gig_mod': gig_mod,
+        'gigmod': gigmod,
         'GIGRUN_HOME': GIG_CONSTS.GIGRUN_HOME,
-        'GIGMOD_DIR_NAME': f'{gig_mod.namespace}_{gig_mod.name}'
+        'GIGMOD_DIR_NAME': f'{gigmod.namespace}_{gigmod.name}'
     }
 
     template = JINJA_ENV.get_template(GIGMOD_SECRET_TEMPLATE)
@@ -82,5 +82,5 @@ def on_create_or_update_gigmodule(body, logger, **_):
     else:
         secret.create()
 
-    secret.set_owner(gig_mod)
-    gig_mod.set_owner(secret)
+    secret.set_owner(gigmod)
+    gigmod.set_owner(secret)

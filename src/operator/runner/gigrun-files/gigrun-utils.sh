@@ -41,8 +41,10 @@ function __initNode() {
 }
 
 function __saveInputParamsToEnv() {
-    local MODULE_INPUT_PARAMS=({{ gig_mod.spec.inputParams | map(attribute='name') | join(' ') }})
-    local JSON_INPUT_VALUES=$(kubectl get secret --ignore-not-found -n {{ gig_run.namespace }} {{ gig_run.name }} -o jsonpath='{.data.inputValues}' | base64 --decode)
+    local MODULE_INPUT_PARAMS=(${GIGRUN_INPUT_PARAMS})
+    local JSON_INPUT_VALUES=$(kubectl get secret --ignore-not-found \
+                                                 -n ${GIGRUN_NAMESPACE} ${GIGRUN_NAME} \
+                                                 -o jsonpath='{.data.inputValues}' | base64 --decode)
     local GIGRUN_INPUT=$(jq -s '.[0] + .[1] // empty' <(echo ${GIGRUN_INPUT}) <(echo ${JSON_INPUT_VALUES}))
 
     echo
@@ -62,7 +64,7 @@ function __saveInputParamsToEnv() {
             fi
         done
 
-        kubectl patch secret -n {{ gig_run.namespace }} {{ gig_run.name }} --patch 'data:' 2>&1 >/dev/null
+        kubectl patch secret -n ${GIGRUN_NAMESPACE} ${GIGRUN_NAME} --patch 'data:' 2>&1 >/dev/null
     else
         echo "${__HEADER_FOOTER_PREFIX} NO INPUT PARAMS RECEIVED"
     fi
@@ -71,12 +73,12 @@ function __saveInputParamsToEnv() {
 }
 
 function __verifyInputParams() {
-    local MODULE_INPUT_PARAMS=({{ gig_mod.spec.inputParams | map(attribute='name') | join(' ') | lower }})
-    local REQUIRED=({{ gig_mod.spec.inputParams | map(attribute='required', default='false') | join(' ') }})
+    local MODULE_INPUT_PARAMS=(${GIGRUN_INPUT_PARAMS})
+    local MODULE_REQUIRED_INPUT_PARAMS=(${GIGRUN_REQUIRED_INPUT_PARAMS})
 
     for INDEX in ${!MODULE_INPUT_PARAMS[@]}
     do
-        if [[ -z $(gigEnvGet ${MODULE_INPUT_PARAMS[${INDEX}]}) && ${REQUIRED[${INDEX}]} == 'true' ]]
+        if [[ -z $(gigEnvGet ${MODULE_INPUT_PARAMS[${INDEX}]}) && ${MODULE_REQUIRED_INPUT_PARAMS[${INDEX}]} == 'true' ]]
         then
             echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" |& __logOutput '--'
             exit 1
@@ -87,12 +89,16 @@ function __verifyInputParams() {
 function __waitForUserInput() {
     local USER_INPUT_PATCH=${1}
 
-    kubectl patch gigrun ${GIGRUN_NAME} -n ${GIGRUN_NAMESPACE} --patch-file ${USER_INPUT_PATCH} --type='merge' --warnings-as-errors >/dev/null
+    kubectl patch gigrun ${GIGRUN_NAME} \
+            -n ${GIGRUN_NAMESPACE} \
+            --patch-file ${USER_INPUT_PATCH} \
+            --type='merge' \
+            --warnings-as-errors >/dev/null
     if [[ $? == 0 ]]
     then
         echo 'Waiting for user input...'
 
-        kubectl wait gigrun/{{ gig_run.name }} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n {{ gig_run.namespace }} >/dev/null
+        kubectl wait gigrun/${GIGRUN_NAME} --timeout=600s --for=jsonpath='{.spec.runState}'='Running' -n ${GIGRUN_NAMESPACE} >/dev/null
         __saveInputParamsToEnv
 
         echo
@@ -103,8 +109,10 @@ function __waitForUserInput() {
 }
 
 function __checkForAbortSignal() {
-    kubectl wait gigrun/{{ gig_run.name }} -n {{ gig_run.namespace }} \
-        --timeout={{ GIG_TIMEOUT }}s --for=jsonpath='{.spec.runState}=Aborting' \
+    kubectl wait gigrun/${GIGRUN_NAME} \
+                 -n ${GIGRUN_NAMESPACE} \
+                 --timeout=${GIGRUN_ACTIVE_DEADLINE_SECONDS}s \
+                 --for=jsonpath='{.spec.runState}=Aborting' \
         2>&1 >/dev/null
 
     __killGigRun "==> ABORT RUN REQUESTED..."

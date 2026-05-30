@@ -7,7 +7,7 @@ set -e -E -o pipefail
 trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
 
 gigEnvSet GIG_PID "${BASHPID}"
-{%- for stage in gig_mod.spec.stages %}
+{%- for stage in gigmod.spec.stages %}
   {%- if stage.gigRef and stage.gigRef.inputValues %}
 __INPUT_VALUES=$(cat <<'EOF'
 {{ stage.gigRef.inputValues | tojson }}
@@ -21,23 +21,23 @@ unset __INPUT_VALUES
 
 function __gigrunner() {
     local __STAGE_COUNTER=0
-    __initSemaphore GIGRUN_SEMAPHORE {{ gig_mod.spec.maxParallel }}
+    __initSemaphore GIGRUN_SEMAPHORE {{ gigmod.spec.maxParallel }}
     export GIGRUN_SEMAPHORE
 
-    __GIG_MOD_SECRETS='{{ gig_mod.spec.inputParams | selectattr('secret', 'equalto', True) | map(attribute='name') | join(' ') }}'
+    __GIG_MOD_SECRETS='{{ gigmod.spec.inputParams | selectattr('secret', 'equalto', True) | map(attribute='name') | join(' ') }}'
     [[ -n ${__GIG_MOD_SECRETS} ]] && gigSecretsAdd ${__GIG_MOD_SECRETS}
 
-    __gigRunHeader
+    __gigRunHeader {{ gigmod.name }} {{ gigmod.spec.description }}
 
     echo "$(__saveInputParamsToEnv)"  |& __logOutput '--'
 
     __verifyInputParams
 
-    {%- for stage in gig_mod.spec.stages %}
+    {%- for stage in gigmod.spec.stages %}
       {%- set STAGE_NAME = stage.name if not (stage.stageRef and stage.stageRef.name) else stage.stageRef.name %}
       {%- set STAGE_GIG_MOD_NAMESPACE = stage.stageRef.gigModuleRef.namespace
-        if (stage.stageRef and stage.stageRef.gigModuleRef.namespace) else gig_mod.namespace %}
-      {%- set STAGE_GIG_MOD_NAME = stage.stageRef.gigModuleRef.name if stage.stageRef else gig_mod.name %}
+        if (stage.stageRef and stage.stageRef.gigModuleRef.namespace) else gigmod.namespace %}
+      {%- set STAGE_GIG_MOD_NAME = stage.stageRef.gigModuleRef.name if stage.stageRef else gigmod.name %}
 
       {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIGMOD_DIR_NAME, stage.name) %}
 
@@ -97,7 +97,7 @@ function __gigrunner() {
     else
         __stageHeader ${__STAGE_COUNTER} '{{ stage.name }}' ${BASHPID} 'SKIPPED'
     fi
-    {%- if stage.wait or loop.index == gig_mod.spec.stages|length %}
+    {%- if stage.wait or loop.index == gigmod.spec.stages|length %}
 
     wait
     {%- endif %}

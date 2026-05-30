@@ -13,11 +13,11 @@ from utilities.constants import GIG_CONSTS
 def onmutategig(userinfo, patch, body, logger, **_):
     gig = Gig(body)
     if (not gig.spec.gigFormRef):
-        gig_mod = GigModule(gig.spec.gigModuleRef.name, gig.spec.gigModuleRef.namespace)
-        if (gig_mod.spec.gigFormRef):
+        gigmod = GigModule(gig.spec.gigModuleRef.name, gig.spec.gigModuleRef.namespace)
+        if (gigmod.spec.gigFormRef):
             patch.setdefault(GIG_CONSTS.SPEC, {})[GIG_CONSTS.GIG_FORM_REF] = {
-                GIG_CONSTS.NAME: gig_mod.spec.gigFormRef.name,
-                GIG_CONSTS.NAMESPACE: gig_mod.spec.gigFormRef.namespace,
+                GIG_CONSTS.NAME: gigmod.spec.gigFormRef.name,
+                GIG_CONSTS.NAMESPACE: gigmod.spec.gigFormRef.namespace,
             }
 
 @kopf.on.validate(Gig.version, Gig.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
@@ -28,12 +28,12 @@ def onvalidategig(body, meta, logger, **_):
     if (not cron_job.exists()):
         raise AdmissionError(f'CronJob {cron_job.name} does not exist for {gig.namespace}:{gig.name}')
 
-    gig_mod = GigModule(gig.spec.gigModuleRef.name, gig.spec.gigModuleRef.namespace)
-    if (not gig_mod.exists()):
-        raise AdmissionError(f'GigModule {gig_mod.namespace}:{gig_mod.name} does not exist for {gig.namespace}:{gig.name}')
+    gigmod = GigModule(gig.spec.gigModuleRef.name, gig.spec.gigModuleRef.namespace)
+    if (not gigmod.exists()):
+        raise AdmissionError(f'GigModule {gigmod.namespace}:{gigmod.name} does not exist for {gig.namespace}:{gig.name}')
 
     if (gig.spec.gigFormRef):
-        namespace = gig.spec.gigFormRef.namespace if gig.spec.gigFormRef.namespace else gig_mod.namespace
+        namespace = gig.spec.gigFormRef.namespace if gig.spec.gigFormRef.namespace else gigmod.namespace
         gig_form = GigForm(gig.spec.gigFormRef.name, namespace)
         if (not gig_form.exists()):
             raise AdmissionError(f'GigForm {gig_form.namespace}:{gig_form.name} does not exist for {gig.namespace}:{gig.name}')

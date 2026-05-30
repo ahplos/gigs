@@ -1,6 +1,8 @@
 #!/usr/bin/bash -e
 set -e -E -o pipefail -o allexport
 
+GIGMOD_DIR=${1}
+
 LC_ALL=C
 source ${GIGRUN_HOME}/gigdb-helper.sh
 source ${GIGRUN_HOME}/gigrun-headers.sh
@@ -25,7 +27,7 @@ export __LOG_FILE=$(mktemp)
 
 __checkForAbortSignal |& __logOutput '--' &
 
-${GIGRUN_HOME}/{{ gig_mod.namespace }}_{{ gig_mod.name }}/gigrunner.sh >>${__LOG_FILE} &
+${GIGRUN_HOME}/${GIGMOD_DIR}/gigrunner.sh >>${__LOG_FILE} &
 sleep 1
 tail -q --pid $(gigEnvGet GIG_PID) -f ${__LOG_FILE} -n +1 2>/dev/null
 

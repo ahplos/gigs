@@ -80,14 +80,14 @@ def process_trigger(namespace, name):
                 logger.info(f'[{request.path}]: {{{event_value.key}: {log_data}}} {event_value.inputVar} captured')
 
         status_code = 202
-        gig_run = GigRun("", namespace = namespace)
-        gig_run.metadata.generateName = f'{gig.name}-'
-        gig_run.spec.gigRef.name = gig.name
+        gigrun = GigRun("", namespace = namespace)
+        gigrun.metadata.generateName = f'{gig.name}-'
+        gigrun.spec.gigRef.name = gig.name
         if (input_values):
-            gig_run.spec.inputValues = json.dumps(input_values)
-        gig_run.create()
+            gigrun.spec.inputValues = json.dumps(input_values)
+        gigrun.create()
 
-        logger.info(f'[{request.path}]: GigRun {gig_run.namespace}/{gig_run.name} started')
+        logger.info(f'[{request.path}]: GigRun {gigrun.namespace}/{gigrun.name} started')
         return jsonify(status_code=status_code)
 
 def validate_event(event_data, validation, namespace):
