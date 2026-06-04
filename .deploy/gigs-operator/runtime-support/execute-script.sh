@@ -8,7 +8,7 @@ STAGE_ENV="$(stageEnvToJson)
 
 set +o allexport
 
-function executeRuntime() {
+function executeScript() {
     export CURRENT_WORKDIR=$(pwd)
     local RUNTIME=$(stepEnvGet RUNTIME)
     case ${RUNTIME} in
@@ -20,27 +20,27 @@ function executeRuntime() {
         ;;
 
         'Go')
-            runGoStep ${CLI_ARGS}
+            runGoStep ${RUNTIME_OPTIONS}
         ;;
 
         JavaScript)
             (
                 set -x
-                node --import=${GIGRUN_HOME}/gigdb-helper.js $(stepEnvGet STEP_FILE) $(stepEnvGet CLI_ARGS)
+                node --import=${GIGRUN_HOME}/gigdb-helper.js $(stepEnvGet STEP_FILE) $(stepEnvGet RUNTIME_OPTIONS)
             )
         ;;
 
         Python)
             python -m trace --trace --ignore-dir=$(python -c 'import sys; print(":".join(sys.path[1:]))') \
-                $(stepEnvGet STEP_FILE) "${CLI_ARGS@P}"
+                $(stepEnvGet STEP_FILE) "${RUNTIME_OPTIONS@P}"
         ;;
 
         Shell)
-            $(stepEnvGet STEP_FILE) "${CLI_ARGS@P}"
+            $(stepEnvGet STEP_FILE) "${RUNTIME_OPTIONS@P}"
         ;;
 
         Template)
-            runTemplateStep $(stepEnvGet TEMPLATE_TYPE) $(stepEnvGet STEP_FILE) $(basename $(stepEnvGet STEP_FILE)) "$(stepEnvGet CLI_ARGS)"
+            runTemplateStep
         ;;
 
         UserInput)
@@ -55,7 +55,7 @@ function executeRuntime() {
 }
 
 function runGoStep() {
-    local CLI_ARGS=$(stepEnvGet CLI_ARGS)
+    local RUNTIME_OPTIONS=$(stepEnvGet RUNTIME_OPTIONS)
 
     local TEMP_DIR=/tmp/${STEP_ID}
     local TMP_STEPRUN=${TEMP_DIR}/steprun
@@ -70,7 +70,7 @@ function runGoStep() {
         cat $(stepEnvGet STEP_FILE) >> ${TMP_STEPRUN_GO}
         echo '}' >> ${TMP_STEPRUN_GO}
         goimports -w ${TMP_STEPRUN_GO}
-        go build . ${CLI_ARGS@P}
+        go build . ${RUNTIME_OPTIONS@P}
     fi
     local OUTPUT=$(${TMP_STEPRUN})
     echo 'EXECUTING:'
@@ -82,16 +82,18 @@ function runGoStep() {
     echo ${OUTPUT:-'=> <NONE> <='}
 }
 
-function runTemplateStep() {
-    local TEMPLATE_TYPE=${1}
-    local INPUT_FILE=${2}
-    local OUTPUT_FILE=${3}
-    local CLI_ARGS=${4}
+function executeScript() {
+    local TEMPLATE_TYPE=$(stepEnvGet TEMPLATE_TYPE)
+    local INPUT_FILE=$(stepEnvGet STEP_FILE)
+    local OUTPUT_FILE=$(stepEnvGet OUTPUT_FILE))
+    local OUTPUT_FILE=${OUTPUT_FILE:-$(basename $(stepEnvGet STEP_FILE))}
+    local RUNTIME_OPTIONS="$(stepEnvGet RUNTIME_OPTIONS)"
+
     case ${TEMPLATE_TYPE} in
         Go|Helm)
             local CHART_DIR=${5}
             local EXTRA_VALUES_FILE=${6}
-            ${GIGRUN_HOME}/render-helm-template.sh ${TEMPLATE_TYPE} ${INPUT_FILE} ${OUTPUT_FILE} "${CLI_ARGS}" ${CHART_DIR} "${EXTRA_VALUES_FILE}"
+            ${GIGRUN_HOME}/render-helm-template.sh ${TEMPLATE_TYPE} ${INPUT_FILE} ${OUTPUT_FILE} "${RUNTIME_OPTIONS}" ${CHART_DIR} "${EXTRA_VALUES_FILE}"
         ;;
 
         JavaScriptLiteral)
@@ -114,13 +116,13 @@ function runTemplateStep() {
 }
 
 function runUserInputStep() {
-    local CLI_ARGS=$(stepEnvGet CLI_ARGS)
+    local RUNTIME_OPTIONS=$(stepEnvGet RUNTIME_OPTIONS)
     local CHART_DIR=$(mktemp -d)
     local USER_INPUT_VALUES=${CHART_DIR}/${STEP_ID}_user_input
     local NEW_GIGRUN_FILE=${CHART_DIR}/${STEP_ID}_gigrun_patch.yaml
 
 
-    runTemplateStep $(stepEnvGet TEMPLATE_TYPE) $(stepEnvGet STEP_FILE) ${USER_INPUT_VALUES} "${CLI_ARGS}" ${CHART_DIR} >/dev/null
+    runTemplateStep $(stepEnvGet TEMPLATE_TYPE) $(stepEnvGet STEP_FILE) ${USER_INPUT_VALUES} "${RUNTIME_OPTIONS}" ${CHART_DIR} >/dev/null
 
     runTemplateStep 'Helm' ${GIGRUN_HOME}/user-input-patch.yaml ${NEW_GIGRUN_FILE} "" ${CHART_DIR} ${USER_INPUT_VALUES}
 
@@ -129,4 +131,4 @@ function runUserInputStep() {
     rm -rf ${CHART_DIR}
 }
 
-executeRuntime 2>&1
+executeScript 2>&1

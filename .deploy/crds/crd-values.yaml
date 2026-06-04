@@ -6,7 +6,7 @@ elCicdDefs:
   GIGRUN: $<GIG>run
   GIG_TYPES: [$<GIG_MODULE>, $<GIG_FORM>, $<GIG_HOOK>, $<GIG>, $<GIGRUN>]
 
-  STAGE_STEP_PATTERN: '[a-z]+(?:-[a-z0-9]+)*'
+  STAGE_STEP_PATTERN: '[_A-Za-z](?:[-.]?[\w]+)*'
 
   NAME_NAMESPACE_PROPS:
     name:
@@ -256,8 +256,12 @@ elCicdDefs-$<GIG_MODULE>:
     required:
     - activeDeadlineSeconds
     - maxParallel
-    - stages
     - workDirSizeLimit
+    anyOf:
+    - required:
+      - stages
+    - required:
+      - runtimeTypes
     properties:
       activeDeadlineSeconds:
         type: integer
@@ -314,6 +318,42 @@ elCicdDefs-$<GIG_MODULE>:
           type: string
           pattern: '^[a-zA-Z_](\w+)$'
         x-kubernetes-list-type: set
+      runtimeTypes:
+        type: array
+        x-kubernetes-list-type: map
+        x-kubernetes-list-map-keys:
+        - type
+        items:
+          type: object
+          required:
+          - type
+          - runtimeDefs
+          properties:
+            type:
+              type: string
+            runtimeDefs:
+              type: array
+              x-kubernetes-list-type: map
+              x-kubernetes-list-map-keys:
+              - name
+              items:
+                type: object
+                required:
+                - name
+                - script
+                properties:
+                  name:
+                    type: string
+                  script:
+                    type: string
+                    description: |-
+                      Custom Bash shell script for processing a step. The following step environment values can be accessed
+                      through the stepEnvGet bash functions provided as part of the GigRun envrironment:
+                      - PWD: The current working directory
+                      - STAGE_NAME: Name of the executing stage
+                      - STEP_FILE: File where the step's script is defined.
+                      - STEP_NAME: Step name
+                      - TEMPLATE_TYPE: template type, if
       secretVars:
         type: array
         description: |-
@@ -345,15 +385,19 @@ elCicdDefs-$<GIG_MODULE>:
             gigRef:
               type: object
               properties:
-                name:
-                  type: string
-                namespace:
-                  type: string
+                failSafe:
+                  type: boolean
+                  description: |-
+                    If true, do not fail the current GigRun if external GigRun fails.
                 inputValues:
                   type: string
                   description: |-
                     Key value pairs as input values for launching a GigRun.  Use Helm notation {{ .Values.gigEnv.* }} or {{ .Values.env.* }}
                     for dynamic values.
+                name:
+                  type: string
+                namespace:
+                  type: string
             iterate: $<ITERATE_SPEC>
             maxParallel:
               type: integer
@@ -402,6 +446,8 @@ elCicdDefs-$<GIG_MODULE>:
                 to as `env.FOO` in the statements.
             workDir:
               type: string
+              description: |-
+                The working directory for the stage and default for its steps. This is only valid for this stage, and does not affect other stages.
             steps:
               type: array
               description: |-
@@ -415,25 +461,27 @@ elCicdDefs-$<GIG_MODULE>:
                 - name
                 oneOf:
                 - required:
-                  - stepRef
-                - required:
+                  - runtime
                   - script
+                - required:
+                  - runtime
+                  - scriptPath
+                - required:
+                  - stepRef
                 properties:
                   args:
                     type: array
                     description: |-
-                      List of arguments to pass to the runtime executable.  If the runtime is Custom, this field is ignored and arguments
-                      are passed in the runtimeScript.
+                      List of arguments to pass to the runtime executable or the step file during execution.
                     items:
                       type: string
                   description:
                     type: string
                     description: Description of name's purpose.
-                  filePath:
-                    type: string
+                  failSafe:
+                    type: boolean
                     description: |-
-                      Path to file relative to the current working directory to process per the runtime. The use case would be pulling a Git
-                      repo of scripts in a prior step, and then referencing a file in the repo to run.
+                      If true, do not fail a GigRun if the step fails.
                   iterate: $<ITERATE_SPEC>
                   maxParallel:
                     type: integer
@@ -454,9 +502,7 @@ elCicdDefs-$<GIG_MODULE>:
                   outputFile:
                     type: object
                     description: |-
-                      If the runtime is TemplateFile and outputFile is defined, the output of the template will be saved
-                      to the given path.  If not defined, the file will be named after the step and saved in the current
-                      working directory.
+                      Optional path of file to write output to if the runtime supports it.
                     required:
                     - path
                     properties:
@@ -465,36 +511,58 @@ elCicdDefs-$<GIG_MODULE>:
                         description: Path relative to current working directory
                       append:
                         type: boolean
-                        description: Whether the file should be appended to or overwritten. Default is to overwrite.
+                        description: |-
+                          Whether the file should be appended to or overwritten. Default is to overwrite. Not all runtimes will support
+                          appending.
                   private:
                     type: boolean
                     description: |-
                       Steps marked private cannot be referenced by other stages or GigModules.  This is evaluated at runtime only.
                   runtime:
+                    type: object
+                    description: |-
+                      Define the runtime to process the step.
+                    required:
+                    - type
+                    properties:
+                      gigModuleRef:
+                        type: object
+                        description: |-
+                          Reference to a GigModule.  If empty, this GigModule will be searched first for a matching runtime type
+                          and name, and then the default runtimes defined in the operator namespace.
+                        properties:
+                          name:
+                            type: string
+                            description: |-
+                              Name of the GigModule that holds referenced runtime(s).
+                          namespace:
+                            type: string
+                            description: |-
+                              Namespace of the GigModule that holds referenced runtime(s).  Defaults to the GigModule namespace if blank.
+                        required:
+                        - name
+                        - type
+                      name:
+                        type: string
+                        description: |-
+                          The name of the runtime to process the step. The default value is "Shell".
+                        pattern: $<STAGE_STEP_PATTERN>
+                        default: Shell
+                      type:
+                        type: string
+                        description: |-
+                          The type of runtime. The default value is "Script".
+                        pattern: $<STAGE_STEP_PATTERN>
+                        default: Script
+                  script:
                     type: string
                     description: |-
-                      The execution environment the script should run in. script is mounted as files in the GigRun Pod and executed using the
-                      declared runtime; i.e. in a subprocess. 'Shell' (bash -ce <step name>.sh) is the default.
-                    enum:
-                    - Custom
-                    - Go
-                    - JavaScript
-                    - Python
-                    - Shell
-                    - Template
-                    - UserInput
-                    default: Shell
-                  runtimeScript:
+                      The script to execute, template to process, etc. Can be writting in any language or template file supported by Ahplos Gigs,
+                      or as a script for a custom command to run.  Will take precedence over filePath.
+                  scriptPath:
                     type: string
                     description: |-
-                      Bash shell script to define a Custom runtime.  Define how an runtime not supported directly by Gigs should be launched.
-                      If the runtime is NOT Custom, this field will be ignored. The following step environment values can be accessed through
-                      the stepEnvGet bash functions provided as part of the GigRun envrironment:defined
-                      - PWD: The current working directory
-                      - STAGE_NAME: Name of the executing stage
-                      - STEP_FILE: File where the step's script is defined.
-                      - STEP_NAME: Step name
-                      - TEMPLATE_TYPE: template type, if
+                      Absolute path or relative path to the current working directory to a script that defines this step.
                   secretVars:
                     type: array
                     description: |-
@@ -502,11 +570,6 @@ elCicdDefs-$<GIG_MODULE>:
                     items:
                       type: string
                     x-kubernetes-list-type: set
-                  script:
-                    type: string
-                    description: |-
-                      The script to execute. Can be writting in any language or template file supported by Ahplos Gigs,
-                      or as a script for a custom command to run.  Will take precedence over filePath.
                   stepRef:
                     type: object
                     description: |-
@@ -524,13 +587,6 @@ elCicdDefs-$<GIG_MODULE>:
                       stage:
                         type: string
                         pattern: $<STAGE_STEP_PATTERN>
-                  templateType:
-                    type: string
-                    enum:
-                    - Go
-                    - Helm
-                    - JavaScriptLiteral
-                    - Jinja
                   wait:
                     type: boolean
                     description: |-
@@ -543,7 +599,17 @@ elCicdDefs-$<GIG_MODULE>:
                       to as `env.FOO` in the statements.
                   workDir:
                     type: string
-                    description: Working directory of current step.
+                    description: |-
+                      The working directory for the step. This is only valid for this step, and does not affect other stages or steps.
+      supportFiles:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            content:
+              type: string
       workDirSizeLimit:
         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
         x-kubernetes-int-or-string: true

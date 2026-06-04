@@ -46,6 +46,9 @@ function __gigrunner() {
     function {{ STAGE_FUNCTION_NAME }}() {
         local STAGE_CURRENT_PID=${BASHPID}
         (
+      {%- if stage.workDir %}
+            cd {{ stage.workDir }}
+      {%- endif %}
       {%- if stage.maxParallel %}
             export STAGE_SEMAPHORE=${2}
             __acquireSemaphores ${STAGE_SEMAPHORE}

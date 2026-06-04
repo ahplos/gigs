@@ -1,0 +1,51 @@
+apiVersion: batch.ahplos.org/v1beta1
+kind: GigModule
+metadata:
+  name: default-runtimes
+spec:
+  mode: Library
+  runtimeTypes:
+  - type: Script
+    runtimeDefs:
+    - name: Go
+      script: |-
+        __runGoStep
+    - name: JavaScript
+      script: |-
+        set -x
+        node --import=${GIGRUN_HOME}/gigdb-helper.js $(stepEnvGet STEP_FILE) $(stepEnvGet RUNTIME_OPTIONS)
+    - name: Python
+      script: |-
+        STEP_FILE=$(stepEnvGet STEP_FILE)
+        python -m trace --trace --ignore-dir=$(python -c 'import sys; print(":".join(sys.path[1:]))') ${STEP_FILE} "${RUNTIME_OPTIONS@P}"
+    - name: Shell
+      script: |-
+        $(stepEnvGet STEP_FILE) "${RUNTIME_OPTIONS@P}"
+  - type: Template
+    runtimeDefs:
+    - name: Helm
+      script: |-
+        __renderTemplate Helm
+    - name: JavaScript
+      script: |-
+        ${GIGRUN_HOME}/render-javascript-literal-template.sh ${INPUT_FILE} ${OUTPUT_FILE}
+    - name: Jinja
+      script: |-
+        python ${GIGRUN_HOME}/jinja_stage.py ${INPUT_FILE} ${OUTPUT_FILE}
+  - type: UserInput
+    runtimeDefs:
+    - name: Helm
+      script: |-
+        __runUserInput Helm
+    - name: JavaScript
+      script: |-
+        __runUserInput JavaScript
+    - name: Jinja
+      script: |-
+        __runUserInput Jinja
+  supportFiles:
+  {{- range $helperFile, $_ :=  .Files.Glob  "runtime-support/**.*" }}
+  - name: {{ base $helperFile }}
+    content: |-
+      {{- $.Files.Get $helperFile | nindent 6}}
+  {{- end }}

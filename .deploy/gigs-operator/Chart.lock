@@ -1,0 +1,6 @@
+dependencies:
+- name: elcicd-chart
+  repository: oci://ghcr.io/elcicd
+  version: 0.1.0
+digest: sha256:415e4e3315d942329ed326b7ebe09defa9b66fa1db4a58692d78e42195d9155f
+generated: "2026-06-03T16:59:05.451995529-05:00"

@@ -6,3 +6,4 @@
 integration-tests/videos
 integration-tests/screenshots
 .venv
+.deploy/gigs-operator/charts/

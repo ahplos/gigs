@@ -54,10 +54,6 @@ const GigModulesTable: React.FC<GigModuleTableProps> = ({ data, unfilteredData, 
             id: 'input-parameters',
         },
         {
-            title: 'Stages',
-            id: 'stages',
-        },
-        {
             title: 'Default Launch Form',
             id: 'default-gig-form',
         },
@@ -65,23 +61,6 @@ const GigModulesTable: React.FC<GigModuleTableProps> = ({ data, unfilteredData, 
 
     const GigModulesRow: React.FC<RowProps<GigModule>> = ({ obj, activeColumnIDs }) => {
         const gigMod: GigModule = obj;
-
-        const stageList = [];
-        for (let stage of gigMod.spec.stages) {
-            let stageName = stage.name;
-            if (stage.stageRef) {
-                stageList.push(
-                    <ListItem>
-                        <ResourceLink groupVersionKind={GIG_MODULE_GVK}
-                                      name={stage.stageRef.gigModuleRef.name}
-                                      namespace={stage.stageRef.gigModuleRef.namespace ?? obj.metadata.namespace}/>
-                        {stageName}
-                    </ListItem>);
-            }
-            else {
-                stageList.push(<ListItem><b>{stageName}</b></ListItem>);
-            }
-        }
 
         return (
             <>
@@ -100,17 +79,12 @@ const GigModulesTable: React.FC<GigModuleTableProps> = ({ data, unfilteredData, 
                 <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
                     <List isPlain>
                         { gigMod.spec.inputParams?.map((param) => param.required ?
-                            <ListItem><b>{param.name}</b></ListItem> :
+                            <ListItem><b>{param.name}*</b></ListItem> :
                             <ListItem>{param.name}</ListItem>)
                         }
                     </List>
                 </TableData>
                 <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
-                    <List isPlain>
-                        {...stageList}
-                    </List>
-                </TableData>
-                <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
                     { gigMod.spec.gigFormRef &&
                         <ResourceLink groupVersionKind={GIG_FORM_GVK}
                                       name={gigMod.spec.gigFormRef.name}

@@ -34,6 +34,9 @@ function {{ STAGE_FUNCTION_NAME }}() {
         local STAGE_CURRENT_PID=${2}
         local STEP_CURRENT_PID=$([[ -n '{{ RUN_PARALLEL }}' ]] && echo ${STAGE_CURRENT_PID} || echo ${BASHPID})
         (
+      {%- if step.workDir %}
+            cd {{ step.workDir }}
+      {%- endif %}
       {%- if step.maxParallel %}
             local STEP_SEMAPHORE=${3}
             __acquireSemaphores "${STAGE_SEMAPHORE}" "${STEP_SEMAPHORE}"
@@ -44,8 +47,8 @@ function {{ STAGE_FUNCTION_NAME }}() {
 
             __stepHeader ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' ${STEP_CURRENT_PID}
             {%- if step.args %}
-            CLI_ARGS='{{ step.args|join(' ') }}'
-            stepEnvSet CLI_ARGS "${CLI_ARGS}"
+            RUNTIME_OPTIONS='{{ step.args|join(' ') }}'
+            stepEnvSet RUNTIME_OPTIONS "${RUNTIME_OPTIONS}"
             {%- endif %}
             local __STEP_OUTPUT=$(
                 {{ '${{GIGRUN_HOME}}/{}/steprunner__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_FILE)  }}  |& __logOutput "${STEP_COUNTER}"

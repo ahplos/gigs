@@ -215,8 +215,8 @@ elCicdTemplates:
             gigEnvSet LANGS_JSON ${LANGS_JSON}
             gigEnvSet LANGS $(echo $LANGS_JSON | jq -r '.[]'  | tr "\n" " ")
         - name: gigrun-operator-supported-languages-patch.yaml
-          runtime: UserInput
-          templateType: Helm
+          runtime: Helm
+          type: UserInput
           script: |-
             formTitle:
               title: 'Gig Runtime(s) to demo'

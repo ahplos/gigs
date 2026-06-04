@@ -1,14 +1,9 @@
 import os
 import logging
 import random
-import yaml
-import base64
 from typing import AsyncIterator
 
-from jinja2 import Environment, FileSystemLoader
-
 import kopf
-from kr8s.objects import Secret
 
 RUNNER_DIR = 'runner'
 GIGRUN_FILES_DIR = 'gigrun-files'
@@ -22,7 +17,7 @@ class ahplosGigsOperator:
 
     def __init__(self):
         self.logger = logging.getLogger()
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
 
         self.namespace = os.environ['AHPLOS_GIGS_OPERATOR_NAMESPACE']
         self.name = os.environ['AHPLOS_GIGS_OPERATOR_NAME']
@@ -69,35 +64,3 @@ def on_startup(settings: kopf.OperatorSettings, logger, **_):
     # all logs by default go to the k8s event api making api server flooding even more likely
     settings.posting.enabled = False
     settings.posting.level = logging.INFO
-
-    create_gigrunner_secret()
-
-def create_gigrunner_secret():
-    env = Environment(loader = FileSystemLoader([RUNNER_DIR, f'{RUNNER_DIR}/{GIGRUN_FILES_DIR}']))
-
-    secret_files = [file for file in os.listdir(f'{RUNNER_DIR}/{GIGRUN_FILES_DIR}')]
-
-    with open('/var/run/secrets/kubernetes.io/serviceaccount/namespace') as f:
-        gigrunner_secret_namespace = f.read().strip()
-
-    template_data = {
-        'namespace': gigrunner_secret_namespace,
-        'SECRET_FILES': secret_files
-    }
-
-    template = env.get_template(GIGRUN_FILES_SECRET_TEMPLATE)
-    output = template.render(template_data)
-
-    secret = Secret(yaml.safe_load(output))
-    if (secret.exists()):
-        for shell_file in secret.raw.stringData:
-            bytes_data = secret.raw.stringData[shell_file].encode('utf-8')
-            encoded_bytes = base64.b64encode(bytes_data)
-            encoded_bytes = encoded_bytes.decode('utf-8')
-            secret.raw.setdefault('data', {})[shell_file] = encoded_bytes
-        patch_data = [{"op": "replace", "path": "/data", "value": secret.data.to_dict()}]
-        secret.patch(patch_data, type='json')
-    else:
-        secret.create()
-
-    return secret
