@@ -215,8 +215,9 @@ elCicdTemplates:
             gigEnvSet LANGS_JSON ${LANGS_JSON}
             gigEnvSet LANGS $(echo $LANGS_JSON | jq -r '.[]'  | tr "\n" " ")
         - name: gigrun-operator-supported-languages-patch.yaml
-          runtime: Helm
-          type: UserInput
+          runtime:
+            name: Helm
+            type: UserInput
           script: |-
             formTitle:
               title: 'Gig Runtime(s) to demo'
@@ -238,7 +239,8 @@ elCicdTemplates:
         description: Set a test msg with a Go script and print it.
         steps:
         - name: set-test-msg-with.go
-          runtime: Go
+          runtime:
+            name: Go
           script: |-
             dir, _ := os.Getwd()
             fmt.Println("CURRENT DIR: " + dir)
@@ -271,7 +273,8 @@ elCicdTemplates:
         description: Set a test msg with JavaScript script and print it.
         steps:
         - name: set-test-msg-with.js
-          runtime: JavaScript
+          runtime:
+            name: JavaScript
           script: |-
             let TEXT_MESSAGE = await gigEnvGet("TEXT_MESSAGE")
             TEXT_MESSAGE = TEXT_MESSAGE ? TEXT_MESSAGE + '\n' : ''
@@ -288,7 +291,8 @@ elCicdTemplates:
         description: Set a test msg with Python script and print it.
         steps:
         - name: set-test-msg-with.py
-          runtime: Python
+          runtime:
+            name: Python
           script: |-
             TEXT_MESSAGE = gigEnvGet("TEXT_MESSAGE")
             TEXT_MESSAGE = TEXT_MESSAGE + '\n' if TEXT_MESSAGE else ''

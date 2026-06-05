@@ -5,10 +5,6 @@ from typing import AsyncIterator
 
 import kopf
 
-RUNNER_DIR = 'runner'
-GIGRUN_FILES_DIR = 'gigrun-files'
-GIGRUN_FILES_SECRET_TEMPLATE = 'gigrun-files-secret.j2'
-
 class ahplosGigsOperator:
     URL = 'url'
     SERVICE = 'service'
@@ -17,7 +13,7 @@ class ahplosGigsOperator:
 
     def __init__(self):
         self.logger = logging.getLogger()
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.INFO)
 
         self.namespace = os.environ['AHPLOS_GIGS_OPERATOR_NAMESPACE']
         self.name = os.environ['AHPLOS_GIGS_OPERATOR_NAME']

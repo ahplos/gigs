@@ -59,7 +59,7 @@ function __gigrunner() {
         {%- if stage.gigRef.inputValues %}
             INPUT_VALUES=$(gigdb-cli --raw GET {{ stage.name }}_GIGRUN_INPUTVALUES)
         {%- endif %}
-            ${GIGRUN_HOME}/launch-gigrun.sh {{ stage.gigRef.name }} \
+            ${GIGRUN_DEFAULT_SCRIPTS_HOME}/launch-gigrun.sh {{ stage.gigRef.name }} \
               '{{ stage.gigRef.namespace if stage.gigRef.namespace else '' }}' "${INPUT_VALUES}" \
               |& __logOutput "${STAGE_COUNTER}"
       {%- else %}

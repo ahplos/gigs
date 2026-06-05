@@ -17,8 +17,6 @@ class GigModule(new_class('GigModule', version=f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/{
 
     GIG_MODULE_ANNOTATION: str = f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/gigmodule'
 
-    GIG_MAX_THREAD_COUNT_ANNOTATION: str = f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/gigmodule'
-
     group: str = GIG_CONSTS.BATCH_AHPLOS_ORG
 
     def __create_box(self, value: Any = {}):
@@ -30,7 +28,7 @@ class GigModule(new_class('GigModule', version=f'{GIG_CONSTS.BATCH_AHPLOS_ORG}/{
         self.raw.metadata.setdefault('annotations', self.__create_box())
         self.raw.setdefault('spec', self.__create_box()).setdefault('gigFormRef', self.__create_box())
         self.raw.spec.setdefault('inputParams', BoxList())
-        self.raw.spec.setdefault('runtimes', BoxList())
+        self.raw.spec.setdefault('runtimeDefs', BoxList())
         self.raw.spec.setdefault('secretVars', BoxList())
         self.raw.spec.setdefault('stages', BoxList())
         self.raw.spec.setdefault('supportFiles', BoxList())

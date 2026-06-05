@@ -4,9 +4,9 @@ metadata:
   name: default-runtimes
 spec:
   mode: Library
-  runtimeTypes:
+  runtimeDefs:
   - type: Script
-    runtimeDefs:
+    runtimes:
     - name: Go
       script: |-
         __runGoStep
@@ -22,7 +22,7 @@ spec:
       script: |-
         $(stepEnvGet STEP_FILE) "${RUNTIME_OPTIONS@P}"
   - type: Template
-    runtimeDefs:
+    runtimes:
     - name: Helm
       script: |-
         __renderTemplate Helm
@@ -33,7 +33,7 @@ spec:
       script: |-
         python ${GIGRUN_HOME}/jinja_stage.py ${INPUT_FILE} ${OUTPUT_FILE}
   - type: UserInput
-    runtimeDefs:
+    runtimes:
     - name: Helm
       script: |-
         __runUserInput Helm

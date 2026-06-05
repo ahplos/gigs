@@ -261,7 +261,7 @@ elCicdDefs-$<GIG_MODULE>:
     - required:
       - stages
     - required:
-      - runtimeTypes
+      - runtimeDefs
     properties:
       activeDeadlineSeconds:
         type: integer
@@ -318,7 +318,7 @@ elCicdDefs-$<GIG_MODULE>:
           type: string
           pattern: '^[a-zA-Z_](\w+)$'
         x-kubernetes-list-type: set
-      runtimeTypes:
+      runtimeDefs:
         type: array
         x-kubernetes-list-type: map
         x-kubernetes-list-map-keys:
@@ -327,11 +327,11 @@ elCicdDefs-$<GIG_MODULE>:
           type: object
           required:
           - type
-          - runtimeDefs
+          - runtimes
           properties:
             type:
               type: string
-            runtimeDefs:
+            runtimes:
               type: array
               x-kubernetes-list-type: map
               x-kubernetes-list-map-keys:
@@ -461,10 +461,8 @@ elCicdDefs-$<GIG_MODULE>:
                 - name
                 oneOf:
                 - required:
-                  - runtime
                   - script
                 - required:
-                  - runtime
                   - scriptPath
                 - required:
                   - stepRef
@@ -523,37 +521,34 @@ elCicdDefs-$<GIG_MODULE>:
                     description: |-
                       Define the runtime to process the step.
                     required:
-                    - type
+                    - name
                     properties:
                       gigModuleRef:
                         type: object
                         description: |-
-                          Reference to a GigModule.  If empty, this GigModule will be searched first for a matching runtime type
-                          and name, and then the default runtimes defined in the operator namespace.
+                          Reference to a GigModule holding a runtime definition. If left blank, the default runtimes will be used.
+                        required:
+                        - name
+                        - namespace
                         properties:
                           name:
                             type: string
                             description: |-
-                              Name of the GigModule that holds referenced runtime(s).
+                              Name of the GigModule that holds referenced runtime.
                           namespace:
                             type: string
                             description: |-
-                              Namespace of the GigModule that holds referenced runtime(s).  Defaults to the GigModule namespace if blank.
-                        required:
-                        - name
-                        - type
+                              Namespace of the GigModule that holds referenced runtime.
                       name:
                         type: string
                         description: |-
                           The name of the runtime to process the step. The default value is "Shell".
                         pattern: $<STAGE_STEP_PATTERN>
-                        default: Shell
                       type:
                         type: string
                         description: |-
                           The type of runtime. The default value is "Script".
                         pattern: $<STAGE_STEP_PATTERN>
-                        default: Script
                   script:
                     type: string
                     description: |-
