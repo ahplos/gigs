@@ -26,7 +26,7 @@ JINJA_ENV = Environment(
     cache_size=400
 )
 
-@kopf.on.mutate(GigModule.version, GigModule.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
+@kopf.on.mutate(GigModule.version, GigModule.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE], persistent=False)  # type: ignore
 def onmutategigmodule(userinfo, patch, body, logger, **_):
     gigmod: GigModule = GigModule(body)
     if (gigmod.spec.gigFormRef and not gigmod.spec.gigFormRef.namespace):
@@ -83,3 +83,7 @@ def on_create_or_update_gigmodule(body, logger, **_):
 
     secret.set_owner(gigmod)
     gigmod.set_owner(secret)
+
+@kopf.on.update(GigModule.version, GigModule.plural)  # type: ignore
+def on_delete_default_runtime(body, logger, **_):
+    pass

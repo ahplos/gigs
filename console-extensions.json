@@ -2,7 +2,7 @@
   {
     "type": "console.navigation/section",
     "properties": {
-      "id": "ahplos-gigs-section",
+      "id": "gigs-section",
       "name": "Ahplos Gigs",
       "insertAfter": "storage"
     }
@@ -10,8 +10,8 @@
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "ahplos-gigs-modules",
-      "section": "ahplos-gigs-section",
+      "id": "gigs-modules",
+      "section": "gigs-section",
       "name": "GigModules",
       "model": {
           "group": "batch.ahplos.org",
@@ -104,8 +104,8 @@
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "ahplos-gig-forms",
-      "section": "ahplos-gigs-section",
+      "id": "gig-forms",
+      "section": "gigs-section",
       "name": "GigForms",
       "model": {
           "group": "batch.ahplos.org",
@@ -158,8 +158,8 @@
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "ahplos-gigs",
-      "section": "ahplos-gigs-section",
+      "id": "gigs",
+      "section": "gigs-section",
       "name": "Gigs",
       "model": {
           "group": "batch.ahplos.org",
@@ -271,8 +271,8 @@
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "ahplos-gigruns",
-      "section": "ahplos-gigs-section",
+      "id": "gigruns",
+      "section": "gigs-section",
       "name": "GigRuns",
       "model": {
           "group": "batch.ahplos.org",
@@ -383,8 +383,8 @@
   {
     "type": "console.navigation/resource-ns",
     "properties": {
-      "id": "ahplos-gig-hooks",
-      "section": "ahplos-gigs-section",
+      "id": "gig-hooks",
+      "section": "gigs-section",
       "name": "GigHooks",
       "model": {
           "group": "batch.ahplos.org",

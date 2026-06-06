@@ -6,11 +6,11 @@ elCicdDefs:
   GIG_FORM_NAME: gig-mod-demo-form
   GIG_ORG_NAMEPACE: gig-demo-org
 
-  AHPLOS_GIGS_OPERATOR: ahplos-gigs-operator
+  GIGS_OPERATOR: gigs-operator
 
-  AHPLOS_GIGS_IMAGE_PULL_SECRET: gig-registry-credentials
+  GIGS_IMAGE_PULL_SECRET: gig-registry-credentials
 
-  IMAGE: dev-demo-image-registry.apps-crc.testing/ahplos-gigs-test-runner:latest
+  IMAGE: dev-demo-image-registry.apps-crc.testing/gigs-test-runner:latest
 
   SCHEDULE: '* * 30 2 *'
 
@@ -42,7 +42,7 @@ elCicdTemplates:
   successfulJobsHistoryLimit: $<HISTORY_LIMIT>
   image: $<IMAGE>
   imagePullSecrets:
-  - name: $<AHPLOS_GIGS_IMAGE_PULL_SECRET>
+  - name: $<GIGS_IMAGE_PULL_SECRET>
   imagePullPolicy: IfNotPresent
   serviceAccountName: $<SERVICE_ACCOUNT_NAME>
   schedule: $<SCHEDULE>

@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from box import Box, BoxList
@@ -23,14 +24,9 @@ WORK_DIR = 'workDir'
 WORKDIR = f'/{WORK_DIR}'
 DEFAULT_RUNTIMES = 'default-runtimes'
 
-DEFAULT_RUNTIMES_SECRET: Secret
-with open('/var/run/secrets/kubernetes.io/serviceaccount/namespace') as f:
-    default_runtimes_gigmodule_ns = f.read().strip()
-    DEFAULT_RUNTIMES_SECRET =next(kr8s.get(Secret.plural,
-                                           namespace = default_runtimes_gigmodule_ns,
-                                           field_selector = f'type={GigModule.group}/{GigModule.singular}'))
+DEFAULT_RUNTIMES_SECRET: Secret = None
 
-@kopf.on.mutate(GigRun.version, GigRun.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
+@kopf.on.mutate(GigRun.version, GigRun.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE], persistent=False)  # type: ignore
 def onmutategigrun(userinfo, patch, body, logger, **_):
     gigrun = GigRun(body)
     uid = str(gigrun.metadata.annotations.get(GigRun.UUID_ANNOTATION, uuid.uuid4()))
@@ -50,7 +46,7 @@ def onmutategigrun(userinfo, patch, body, logger, **_):
         if (gigrun.metadata.name):
             patch[GIG_CONSTS.SPEC][GIG_CONSTS.INPUT_RECEIVED] = True
 
-@kopf.on.validate(GigRun.version, GigRun.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
+@kopf.on.validate(GigRun.version, GigRun.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE], persistent=False)  # type: ignore
 def onvalidategigrun(body, logger, **_):
     gigrun = GigRun(body)
     gig = Gig(gigrun.spec.gigRef.name, gigrun.namespace)
@@ -84,6 +80,11 @@ def on_create_gigrun(body, meta, patch, logger, **_):
 
 def copy_gigmod_secrets_to_gigrun_namespace(gigmod: GigModule, gig: Gig):
     gigmod_secrets_map = {}
+    global DEFAULT_RUNTIMES_SECRET
+    if (not DEFAULT_RUNTIMES_SECRET):
+        DEFAULT_RUNTIMES_SECRET = next(kr8s.get(Secret.plural,
+                                       namespace = os.envrion['GIGS_OPERATOR_NAMESPACE'],
+                                       field_selector = f'type={GigModule.group}/{GigModule.singular}'))
     gigmod_secrets_map[DEFAULT_RUNTIMES_SECRET.name] = DEFAULT_RUNTIMES_SECRET
 
     collect_gigmod_secrets(gigmod, gigmod_secrets_map)

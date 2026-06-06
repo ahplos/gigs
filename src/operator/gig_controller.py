@@ -1,5 +1,3 @@
-from box import Box
-
 import kopf
 from kopf import AdmissionError
 
@@ -9,7 +7,7 @@ from utilities.gig_types import Gig, GigModule, GigForm
 
 from utilities.constants import GIG_CONSTS
 
-@kopf.on.mutate(Gig.version, Gig.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
+@kopf.on.mutate(Gig.version, Gig.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE], persistent=False)  # type: ignore
 def onmutategig(userinfo, patch, body, logger, **_):
     gig = Gig(body)
     if (not gig.spec.gigFormRef):
@@ -20,7 +18,7 @@ def onmutategig(userinfo, patch, body, logger, **_):
                 GIG_CONSTS.NAMESPACE: gigmod.spec.gigFormRef.namespace,
             }
 
-@kopf.on.validate(Gig.version, Gig.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE])  # type: ignore
+@kopf.on.validate(Gig.version, Gig.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE], persistent=False)  # type: ignore
 def onvalidategig(body, meta, logger, **_):
     gig = Gig(body)
 

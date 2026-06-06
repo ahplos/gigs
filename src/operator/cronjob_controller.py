@@ -11,6 +11,7 @@ from utilities.gig_types import GIG_CONSTS, Gig, GigModule, GigForm
     CronJob.plural,
     annotations={GigModule.GIG_MODULE_ANNOTATION: kopf.PRESENT},
     operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE],
+    persistent=False
 ) # type: ignore
 def onmutatecronjob(patch, meta, annotations, logger, **_):
     jobAnnotations = (
@@ -25,7 +26,8 @@ def onmutatecronjob(patch, meta, annotations, logger, **_):
     CronJob.version,
     CronJob.plural,
     annotations={GigModule.GIG_MODULE_ANNOTATION: kopf.PRESENT},
-    operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE]
+    operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE],
+    persistent=False
 )   # type: ignore
 def onvalidatecronjob(annotations, meta, logger, **_):
     gigmod_ref = get_name_namespace_from_anno(annotations[GigModule.GIG_MODULE_ANNOTATION])
