@@ -1,0 +1,204 @@
+elcicd-chart:
+  elCicdDefs:
+    PLUGIN_NAME: ahplos-gigs-console-plugin
+    OPERATOR_NAME: ahplos-gigs-operator
+    GIG_HOOKS_HANDLER: gighooks
+
+    IMAGE_REGISTRY: dev-demo-image-registry.apps-crc.testing
+    GIGS_PLUGIN_IMAGE: $<IMAGE_REGISTRY>/$<PLUGIN_NAME>:latest
+    GIGS_OPERATOR_IMAGE: $<IMAGE_REGISTRY>/$<OPERATOR_NAME>:latest
+
+    GIGS_IMAGE_PULL_SECRET: gig-registry-credentials
+
+    PORT: 8443
+
+    IMAGE_PULL_POLICY: Always
+
+    NGINX_CONF_VOLUME: nginx-conf
+    NGINX_CONF: nginx.conf
+
+    PATCH_SA_NAME: console-patcher
+
+    CERT_NAME: $<HELM_RELEASE_NAME>-cert
+
+    GIGS_ADMIN_ROLE: gigs-admin
+
+    GIGS_OCP_OPERATOR_ROLE: $<OPERATOR_NAME>-openshift-console
+
+    GIGS_DEFAULT_RUNTIMES: default-runtimes
+
+  elCicdDefs-dev:
+    IMAGE_PULL_POLICY: Always
+
+  elCicdTemplates:
+  - templateName: serviceAccount
+    objName: $<OPERATOR_NAME>
+
+  - templateName: clusterRoleBinding
+    objName: $<GIGS_OCP_OPERATOR_ROLE>
+    subjects:
+    - kind: ServiceAccount
+      name: $<OPERATOR_NAME>
+      namespace: $<HELM_RELEASE_NAMESPACE>
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: $<OBJ_NAME>
+
+  - apiVersion: console.openshift.io/v1
+    objName: $<PLUGIN_NAME>
+    kind: ConsolePlugin
+    template:
+      spec:
+        displayName: $<OBJ_NAME>
+        i18n:
+          loadType: Preload
+        backend:
+          type: Service
+          service:
+            name: $<OBJ_NAME>
+            namespace: $<HELM_RELEASE_NAMESPACE>
+            port: $<PORT>
+            basePath: /
+
+  - templateName: clusterRole
+    objName: $<GIGS_OCP_OPERATOR_ROLE>
+    rules:
+    - apiGroups:
+      - operator.openshift.io
+      resources:
+      - consoles
+      verbs:
+      - get
+      - list
+      - patch
+      - update
+    - apiGroups:
+      - admissionregistration.k8s.io
+      - batch
+      resources:
+      - validatingwebhookconfigurations
+      - mutatingwebhookconfigurations
+      - cronjobs/status
+      - jobs/status
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - verbs:
+      - list
+      - get
+      - watch
+      apiGroups:
+      - apiextensions.k8s.io
+      resources:
+      - customresourcedefinitions
+
+  - templateName: clusterRole
+    objName: $<GIGS_ADMIN_ROLE>
+    labels:
+      rbac.authorization.k8s.io/aggregate-to-edit: 'true'
+    rules:
+    - verbs:
+      - '*'
+      apiGroups:
+      - ""
+      resources:
+      - pods
+      - pods/status
+      - pods/finalizers
+      - secrets
+      - secrets/finalizers
+    - verbs:
+      - '*'
+      apiGroups:
+      - batch
+      resources:
+      - jobs
+      - jobs/status
+      - jobs/finalizers
+      - cronjobs
+      - cronjobs/status
+      - cronjobs/finalizers
+    - verbs:
+      - '*'
+      apiGroups:
+      - batch.ahplos.org
+      resources:
+      - gigmodules
+      - gigforms
+      - gigs
+      - gighooks
+      - gigruns
+      - gigmodules/status
+      - gigforms/status
+      - gigs/status
+      - gigruns/status
+      - gigmodules/finalizers
+      - gigforms/finalizers
+      - gigs/finalizers
+      - gighooks/finalizers
+      - gigruns/finalizers
+
+  - templateName: clusterRole
+    objName: gigruns-runner
+    annotations:
+      rbac.authorization.kubernetes.io/autoupdate: 'true'
+    labels:
+      rbac.authorization.k8s.io/aggregate-to-view: 'true'
+    rules:
+    - apiGroups:
+      - batch.ahplos.org
+      resources:
+      - gigruns
+      verbs:
+      - '*'
+    - apiGroups:
+      - batch.ahplos.org
+      resources:
+      - gigs
+      - gigs/status
+      - gigruns/status
+      - gigforms
+      verbs:
+      - get
+      - list
+      - watch
+    - apiGroups:
+      - ""
+      resources:
+      - pods
+      - pods/log
+      - namespaces
+      verbs:
+      - get
+      - list
+      - watch
+    - apiGroups:
+      - project.openshift.io
+      resources:
+      - projects
+      verbs:
+      - get
+      - list
+      - watch
+
+  - templateName: clusterRoleBinding
+    objName: $<OPERATOR_NAME>-namespace-admin
+    subjects:
+    - kind: ServiceAccount
+      name: $<OPERATOR_NAME>
+      namespace: $<HELM_RELEASE_NAMESPACE>
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: admin
+
+  - templateName: clusterRoleBinding
+    objName: $<OPERATOR_NAME>-$<GIGS_ADMIN_ROLE>
+    subjects:
+    - kind: ServiceAccount
+      name: $<OPERATOR_NAME>
+      namespace: $<HELM_RELEASE_NAMESPACE>
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: $<GIGS_ADMIN_ROLE>
+
