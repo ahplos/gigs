@@ -36,13 +36,13 @@ function __runUserInput() {
     local NEW_GIGRUN_FILE=${CHART_DIR}/${STEP_ID}_gigrun_patch.yaml
     local USER_INPUT_CONFIG_FILE=${CHART_DIR}/${STEP_ID}_user_input
 
-    setEnvStep OUTPUT_FILE ${USER_INPUT_CONFIG_FILE}
-    setEnvStep CHART_DIR ${CHART_DIR}
-    __render$(stepEnvGet RUNTIME_TYPE)Template
+    stepEnvSet OUTPUT_FILE ${USER_INPUT_CONFIG_FILE}
+    stepEnvSet CHART_DIR ${CHART_DIR}
+    __render$(stepEnvGet RUNTIME)Template
 
-    setEnvStep STEP_FILE ${NEW_GIGRUN_FILE}
-    setEnvStep EXTRA_VALUES_FILE USER_INPUT_CONFIG_FILE
-    setEnvStep OUTPUT_FILE ${GIGRUN_FILE}
+    stepEnvSet STEP_FILE ${GIGRUN_DEFAULT_SCRIPTS_HOME}/user-input-patch.yaml
+    stepEnvSet EXTRA_VALUES_FILE ${USER_INPUT_CONFIG_FILE}
+    stepEnvSet OUTPUT_FILE ${NEW_GIGRUN_FILE}
     __renderHelmTemplate
 
     __waitForUserInput ${NEW_GIGRUN_FILE}
@@ -51,7 +51,7 @@ function __runUserInput() {
 }
 
 __renderHelmTemplate() {
-    local TEMPLATE_TYPE=$(stepEnvGet TEMPLATE_TYPE)
+    local RUNTIME=$(stepEnvGet RUNTIME)
     local INPUT_FILE=$(stepEnvGet STEP_FILE)
     local OUTPUT_FILE=$(stepEnvGet OUTPUT_FILE)
     local RUNTIME_OPTIONS=$(stepEnvGet RUNTIME_OPTIONS)
@@ -60,7 +60,7 @@ __renderHelmTemplate() {
 
     (
         cd ${CHART_DIR}
-        cp ${GIGRUN_HOME}/Chart.yaml .
+        cp ${GIGRUN_DEFAULT_SCRIPTS_HOME}/Chart.yaml .
         if [[ ${EXTRA_VALUES_FILE} && ! -f $(basename ${EXTRA_VALUES_FILE}) ]]
         then
             cat ${EXTRA_VALUES_FILE}
@@ -71,7 +71,7 @@ __renderHelmTemplate() {
 
         echo '{ "gigEnv": '$(gigEnvToJson)' }, "stageEnv": '$(stageEnvToJson)' }' >values.yaml
 
-        DEBUG=$([[ ${TEMPLATE_TYPE} == 'Go' ]] && echo '--debug' || echo '')
+        DEBUG=$([[ ${RUNTIME} == 'Go' ]] && echo '--debug' || echo '')
         helm template ${DEBUG} -f values.yaml ${EXTRA_VALUES_FILE:+-f ${EXTRA_VALUES_FILE}} ${RUNTIME_OPTIONS@P} . ${DEBUG:+2>/dev/null} | sed '1,2d' >${OUTPUT_FILE}
         echo 'TEMPLATE RENDERED:'
         echo '==='
@@ -80,7 +80,7 @@ __renderHelmTemplate() {
     )
 }
 
-__renderJaveScriptTemplate() {
+__renderJavaScriptTemplate() {
     node ${GIGRUN_HOME}/render-javascript-literal-template.sh
 }
 

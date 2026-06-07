@@ -43,8 +43,8 @@ function __initNode() {
 function __saveInputParamsToEnv() {
     local MODULE_INPUT_PARAMS=(${GIGRUN_INPUT_PARAMS})
     local JSON_INPUT_VALUES=$(kubectl get secret --ignore-not-found \
-                                                 -n ${GIGRUN_NAMESPACE} ${GIGRUN_NAME} \
-                                                 -o jsonpath='{.data.inputValues}' | base64 --decode)
+                                                -n ${GIGRUN_NAMESPACE} ${GIGRUN_NAME} \
+                                                -o jsonpath='{.data.inputValues}' | base64 --decode)
     local GIGRUN_INPUT=$(jq -s '.[0] + .[1] // empty' <(echo ${GIGRUN_INPUT}) <(echo ${JSON_INPUT_VALUES}))
 
     echo
@@ -73,12 +73,9 @@ function __saveInputParamsToEnv() {
 }
 
 function __verifyInputParams() {
-    local MODULE_INPUT_PARAMS=(${GIGRUN_INPUT_PARAMS})
-    local MODULE_REQUIRED_INPUT_PARAMS=(${GIGRUN_REQUIRED_INPUT_PARAMS})
-
-    for INDEX in ${!MODULE_INPUT_PARAMS[@]}
+    for REQ_INPUT_PARAM in ${GIGRUN_REQUIRED_INPUT_PARAMS}
     do
-        if [[ -z $(gigEnvGet ${MODULE_INPUT_PARAMS[${INDEX}]}) && ${MODULE_REQUIRED_INPUT_PARAMS[${INDEX}]} == 'true' ]]
+        if [[ -z $(gigEnvGet ${REQ_INPUT_PARAM}) ]]
         then
             echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" |& __logOutput '--'
             exit 1

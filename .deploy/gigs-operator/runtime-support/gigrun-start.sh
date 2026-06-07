@@ -8,8 +8,9 @@ source ${GIGRUN_DEFAULT_SCRIPTS_HOME}/gigdb-helper.sh
 source ${GIGRUN_DEFAULT_SCRIPTS_HOME}/gigrun-headers.sh
 source ${GIGRUN_DEFAULT_SCRIPTS_HOME}/gigrun-logging.sh
 source ${GIGRUN_DEFAULT_SCRIPTS_HOME}/gigrun-utils.sh
+source ${GIGRUN_DEFAULT_SCRIPTS_HOME}/runtime-helpers.sh
 
-export PYTHONPATH=$PYTHONPATH:${GIGRUN_HOME}
+export PYTHONPATH=$PYTHONPATH:${GIGRUN_DEFAULT_SCRIPTS_HOME}
 
 set +o allexport
 

@@ -26,6 +26,8 @@ DEFAULT_RUNTIMES = 'default-runtimes'
 
 DEFAULT_RUNTIMES_SECRET: Secret = None
 
+GIG_CONSTS.GLOBAL_REGISTRY
+
 @kopf.on.mutate(GigRun.version, GigRun.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE], persistent=False)  # type: ignore
 def onmutategigrun(userinfo, patch, body, logger, **_):
     gigrun = GigRun(body)
@@ -42,6 +44,8 @@ def onmutategigrun(userinfo, patch, body, logger, **_):
         patch.setdefault(GIG_CONSTS.SPEC, {})[GIG_CONSTS.STARTED_BY] = userinfo['username']
 
     if (gigrun.spec.inputValues):
+        GIG_CONSTS.GLOBAL_REGISTRY[uid] = gigrun.spec.inputValues
+
         patch.setdefault(GIG_CONSTS.SPEC, {})[GIG_CONSTS.INPUT_VALUES] = None
         if (gigrun.metadata.name):
             patch[GIG_CONSTS.SPEC][GIG_CONSTS.INPUT_RECEIVED] = True
@@ -83,8 +87,10 @@ def copy_gigmod_secrets_to_gigrun_namespace(gigmod: GigModule, gig: Gig):
     global DEFAULT_RUNTIMES_SECRET
     if (not DEFAULT_RUNTIMES_SECRET):
         DEFAULT_RUNTIMES_SECRET = next(kr8s.get(Secret.plural,
-                                       namespace = os.envrion['GIGS_OPERATOR_NAMESPACE'],
+                                       namespace = os.environ['GIGS_OPERATOR_NAMESPACE'],
                                        field_selector = f'type={GigModule.group}/{GigModule.singular}'))
+    else:
+        DEFAULT_RUNTIMES_SECRET.refresh()
     gigmod_secrets_map[DEFAULT_RUNTIMES_SECRET.name] = DEFAULT_RUNTIMES_SECRET
 
     collect_gigmod_secrets(gigmod, gigmod_secrets_map)

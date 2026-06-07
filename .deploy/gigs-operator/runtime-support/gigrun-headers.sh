@@ -6,8 +6,8 @@ __HEADER_FOOTER_BORDER='********************************************************
 __HEADER_FOOTER_PREFIX='**'
 
 function __gigRunHeader() {
-    local GIGMOD_NAME=${1}
-    local GIGMOD_DESCRIPTION=${2}
+    local GIGMOD_NAME="${1}"
+    local GIGMOD_DESCRIPTION="${2}"
 
     export CURRENT_PID=${BASHPID}
     local GIG_HEADER=$(
@@ -41,10 +41,10 @@ function __gigRunFooter() {
 }
 
 function __stageHeader() {
-    local STAGE_COUNTER=${1}
-    local STAGE_NAME=${2}
-    export CURRENT_PID=${3}
-    local STAGE_TYPE=${4}
+    local STAGE_COUNTER="${1}"
+    local STAGE_NAME="${2}"
+    export CURRENT_PID="${3}"
+    local STAGE_TYPE="${4}"
 
     local STAGE_HEADER=$(
         echo
@@ -69,12 +69,12 @@ function __stageHeader() {
 }
 
 function __stepHeader() {
-    local STEP_COUNTER=${1}
-    local STAGE_NAME=${2}
-    local STEP_NAME=${3}
-    local STEP_RUNTIME=${4}
-    local CURRENT_PID=${5}
-    local STEP_TYPE=${6}
+    local STEP_COUNTER="${1}"
+    local STAGE_NAME="${2}"
+    local STEP_NAME="${3}"
+    local STEP_RUNTIME="${4}"
+    local CURRENT_PID="${5}"
+    local STEP_TYPE="${6}"
 
     local STEP_HEADER=$(
         echo
@@ -95,11 +95,11 @@ function __stepHeader() {
 }
 
 function __stepFooter() {
-    local STEP_COUNTER=${1}
-    local STAGE_NAME=${2}
-    local STEP_NAME=${3}
-    local TIME_SECONDS=${4}
-    local RESULT=$(stepEnvGet __STEP_RESULT)
+    local STEP_COUNTER="${1}"
+    local STAGE_NAME="${2}"
+    local STEP_NAME="${3}"
+    local TIME_SECONDS="${4}"
+    local RESULT="$(stepEnvGet __STEP_RESULT)"
 
     if [[ -z ${RESULT} || ${RESULT} == 0 ]]
     then

@@ -93,7 +93,7 @@ elcicd-chart:
       python --version
       python gighook_handler.py $<toString|PORT>
 
-  - templateNames: [deployment, service, serviceAccount]
+  - templateNames: [deployment, service]
     annotations:
       service.beta.openshift.io/serving-cert-secret-name: $<CERT_NAME>
     objName: $<PLUGIN_NAME>

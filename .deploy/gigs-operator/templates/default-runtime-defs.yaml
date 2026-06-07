@@ -36,13 +36,13 @@ spec:
     runtimes:
     - name: Helm
       script: |-
-        __runUserInput Helm
+        __runUserInput
     - name: JavaScript
       script: |-
-        __runUserInput JavaScript
+        __runUserInput
     - name: Jinja
       script: |-
-        __runUserInput Jinja
+        __runUserInput
   supportFiles:
   {{- range $helperFile, $_ :=  .Files.Glob  "runtime-support/**.*" }}
   - name: {{ base $helperFile }}

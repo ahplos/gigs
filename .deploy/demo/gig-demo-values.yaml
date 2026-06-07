@@ -10,7 +10,7 @@ elCicdDefs:
 
   GIGS_IMAGE_PULL_SECRET: gig-registry-credentials
 
-  IMAGE: dev-demo-image-registry.apps-crc.testing/gigs-test-runner:latest
+  IMAGE: dev-demo-image-registry.apps-crc.testing/ahplos-gigs-test-runner:latest
 
   SCHEDULE: '* * 30 2 *'
 

@@ -210,17 +210,17 @@ elCicdTemplates:
         - name: retrieve-gig-operator-supported-languages
           script: |-
             echo "SOME_VAR [set in completely different module, stage, & step]: $(gigEnvGet SOME_VAR)"
-            JSONPATH='.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.stages.items.properties.steps.items.properties.runtime.enum'
-            LANGS_JSON="$(oc get crd gigmodules.batch.ahplos.org -o jsonpath="{${JSONPATH}}")"
-            gigEnvSet LANGS_JSON ${LANGS_JSON}
-            gigEnvSet LANGS $(echo $LANGS_JSON | jq -r '.[]'  | tr "\n" " ")
+            JSONPATH='{.spec.runtimeDefs[?(@.type == "Script")].runtimes[*].name}'
+            RUNTIMES="$(oc get -n gigs-operator gigmodule default-runtimes -o jsonpath="${JSONPATH}")"
+            gigEnvSet LANGS "${RUNTIMES}"
+            gigEnvSet LANGS_JSON $(echo ${RUNTIMES} | jq -Rc 'split(" ")')
         - name: gigrun-operator-supported-languages-patch.yaml
           runtime:
             name: Helm
             type: UserInput
           script: |-
             formTitle:
-              title: 'Gig Runtime(s) to demo'
+              title: 'Gig Script Runtimes to demo'
             inputForm:
             - attributes:
                 options: {{ .Values.gigEnv.LANGS_JSON | toYaml | nindent 4 }}

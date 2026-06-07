@@ -32,7 +32,7 @@ elcicd-chart:
 
   elCicdTemplates:
   - templateName: serviceAccount
-    objName: $<OPERATOR_NAME>
+    objNames: [$<OPERATOR_NAME>, $<PLUGIN_NAME>]
 
   - templateName: clusterRoleBinding
     objName: $<GIGS_OCP_OPERATOR_ROLE>

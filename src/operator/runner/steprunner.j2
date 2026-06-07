@@ -16,8 +16,11 @@ EOF
 stepEnvSet RUNTIME_SCRIPT ${RUNTIME_SCRIPT}
 {%- endif %}
 
-stepEnvSet RUNTIME {{ step.runtime }}
-stepEnvSet TEMPLATE_TYPE '{{ step.templateType if step.templateType else '' }}'
+RUNTIME_TYPE={{ step.runtime.type if (step.runtime and step.runtime.type) else 'Script' }}
+RUNTIME={{ step.runtime.name if step.runtime else 'Shell' }}
+
+stepEnvSet RUNTIME_TYPE ${RUNTIME_TYPE}
+stepEnvSet RUNTIME ${RUNTIME}
 stepEnvSet STAGE_NAME {{ stage.name }}
 stepEnvSet STEP_NAME {{ step.name }}
 stepEnvSet STEP_FILE {{ '$GIGRUN_HOME/{}/step__{}_{}'.format(GIGMOD_DIR_NAME, stage.name, step.name) if step.script else step.scriptPath }}
@@ -26,21 +29,10 @@ stepEnvSet PWD "$(pwd)"
 stepEnvSet OUTPUT_FILE '{{ step.outputFile }}'
 {%- endif %}
 
-{%- if step.type == 'Custom' %}
-    {%- set RUNTIME_GIG_MOD_NAMESPACE = gigmod.namespace
-        if not (step.customRuntimeRef and step.customRuntimeRef.gigModuleRef.namespace)
-        else step.customRuntimeRef.gigModuleRef.namespace
-    %}
-    {%- set RUNTIME_GIG_MOD_NAME = gigmod.name
-        if not (step.customRuntimeRef and step.customRuntimeRef.gigModuleRef.name)
-        else step.stepRef.gigModuleRef.name
-    %}
-    {%- set RUNTIME_RUN_DIR = '{}_{}'.format(RUNTIME_GIG_MOD_NAMESPACE, RUNTIME_GIG_MOD_NAME) %}
-    {%- set STAGE_NAME = stage.name if not step.customRuntimeRef else step.customRuntimeRef.stage %}
-    {%- set STEP_NAME = stage.name if not step.customRuntimeRef.name else step.customRuntimeRef.name %}
-${GIGRUN_HOME}/{{ RUNTIME_RUN_DIR }}/runtime__{{ STAGE_NAME }}_{{ STEP_NAME }}.sh
-{%- else %}
-${GIGRUN_HOME}/execute-{{ step.type | lower }}.sh
+{%- if (step.runtime and step.runtime.gigModuleRef) %}
+RUNTIME_SCRIPT_DIR=${GIGRUN_HOME}/{{ '{}_{}'.format(step.runtime.gigModuleRef.namespace, step.runtime.gigModuleRef.name) }}
 {%- endif %}
+
+${RUNTIME_SCRIPT_DIR:-${GIGRUN_DEFAULT_SCRIPTS_HOME}}/runtime__${RUNTIME_TYPE}_${RUNTIME}
 
 stepEnvSet __STEP_RESULT $?

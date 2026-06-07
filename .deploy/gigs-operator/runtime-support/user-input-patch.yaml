@@ -1,4 +1,3 @@
-{%- raw %}
 spec:
   {{- if .Values.formTitle }}
   formTitle: {{ .Values.formTitle | toYaml | nindent 4 }}
@@ -7,4 +6,3 @@ spec:
   inputForm: {{ .Values.inputForm | toYaml | nindent 2 }}
   {{- end }}
   runState: WaitingForInput
-{%- endraw %}

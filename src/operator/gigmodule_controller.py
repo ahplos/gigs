@@ -83,7 +83,3 @@ def on_create_or_update_gigmodule(body, logger, **_):
 
     secret.set_owner(gigmod)
     gigmod.set_owner(secret)
-
-@kopf.on.update(GigModule.version, GigModule.plural)  # type: ignore
-def on_delete_default_runtime(body, logger, **_):
-    pass

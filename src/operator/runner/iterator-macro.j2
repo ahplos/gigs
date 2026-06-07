@@ -1,4 +1,4 @@
-{%- macro when_check(stage_or_step, GIGMOD_DIR_NAME, ITERATOR_ID, STAGE_NAME) %}
+{%- macro when_check(stage_or_step, GIGMOD_DIR_NAME, ITERATOR_ID, STAGE_NAME, RUNTIME_TYPE, RUNTIME) %}
     unset __SHOULD_RUN
       {%- if not STAGE_NAME %}
     local __WHEN_FILE_NAME=${GIGRUN_HOME}/{{ GIGMOD_DIR_NAME }}/stage__{{ stage_or_step.name }}_iterate_when.js
@@ -11,13 +11,13 @@
       {%- if not STAGE_NAME %}
         __stageHeader "${__STAGE_OR_STEP_COUNTER}" '{{ stage_or_step.name }}' ${BASHPID} 'SKIPPED' 2>&1
       {%- else %}
-        __stepHeader "${__STAGE_OR_STEP_COUNTER}" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ stage_or_step.runtime }}' ${STAGE_CURRENT_PID} 'SKIPPED'
+        __stepHeader "${__STAGE_OR_STEP_COUNTER}" '{{ STAGE_NAME }}' '{{ stage_or_step.name }}' '{{ RUNTIME }} [{{ RUNTIME_TYPE }}]' ${STAGE_CURRENT_PID} 'SKIPPED'
       {%- endif %}
         continue
     fi
 {%- endmacro %}
 
-{%- macro realize_iterators(stage_or_step, FUNCTION_NAME, GIGMOD_DIR_NAME, RUN_PARALLEL, STAGE_NAME=None) %}
+{%- macro realize_iterators(stage_or_step, FUNCTION_NAME, GIGMOD_DIR_NAME, RUN_PARALLEL, STAGE_NAME, RUNTIME_TYPE, RUNTIME) %}
   {%- set ITERATOR_ID = namespace(ID=[]) %}
   {%- for iter in stage_or_step.iterate.loops %}
       {%- set ITERATOR_ID.ID = ITERATOR_ID.ID + ['${{{}_COUNTER}}'.format(iter.name)] %}
@@ -45,7 +45,10 @@
   {%- endfor %}
 
     local __STAGE_OR_STEP_COUNTER="{{ '${__STAGE_COUNTER}(' if not STAGE_NAME else '${STAGE_COUNTER}-${__STEP_COUNTER}(' }}{{ ITERATOR_ID.ID }})"
-    {{- when_check(stage_or_step, GIGMOD_DIR_NAME, ITERATOR_ID.ID, STAGE_NAME) if stage_or_step.iterate.when else '' }}
+    {{-
+        when_check(stage_or_step, GIGMOD_DIR_NAME, ITERATOR_ID.ID, STAGE_NAME, RUNTIME_TYPE, RUNTIME)
+          if stage_or_step.iterate.when else ''
+    }}
     {%- set STAGE_OR_STEP_SEMAPHORE = '${STAGE_SEMAPHORE}' if not STAGE_NAME else '${STEP_SEMAPHORE}' %}
     {{ FUNCTION_NAME }} "${__STAGE_OR_STEP_COUNTER}" ${STAGE_CURRENT_PID} {{ STAGE_OR_STEP_SEMAPHORE }} 2>&1 {{ RUN_PARALLEL }}
 

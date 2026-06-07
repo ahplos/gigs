@@ -30,6 +30,9 @@ function {{ STAGE_FUNCTION_NAME }}() {
 
       {%- set STEP_FUNCTION_NAME = '{}_{}'.format(STAGE_FUNCTION_NAME, step.name) %}
 
+      {%- set RUNTIME_TYPE = step.runtime.type if (step.runtime and step.runtime.type) else 'Script' %}
+      {%- set RUNTIME = 'Shell' if not step.runtime else step.runtime.name %}
+
     function {{ STEP_FUNCTION_NAME }}() {
         local STAGE_CURRENT_PID=${2}
         local STEP_CURRENT_PID=$([[ -n '{{ RUN_PARALLEL }}' ]] && echo ${STAGE_CURRENT_PID} || echo ${BASHPID})
@@ -45,7 +48,7 @@ function {{ STAGE_FUNCTION_NAME }}() {
             export STEP_COUNTER=${1}
             SECONDS=0
 
-            __stepHeader ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' ${STEP_CURRENT_PID}
+            __stepHeader ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ RUNTIME }} [{{ RUNTIME_TYPE }}]' ${STEP_CURRENT_PID}
             {%- if step.args %}
             RUNTIME_OPTIONS='{{ step.args|join(' ') }}'
             stepEnvSet RUNTIME_OPTIONS "${RUNTIME_OPTIONS}"
@@ -72,7 +75,7 @@ function {{ STAGE_FUNCTION_NAME }}() {
       __initSemaphore STEP_SEMAPHORE {{ step.maxParallel }}
       {%- endif %}
       {%- if step.iterate %}
-        {{- realize_iterators(step, STEP_FUNCTION_NAME, GIGMOD_DIR_NAME, RUN_PARALLEL, stage.name) }}
+        {{- realize_iterators(step, STEP_FUNCTION_NAME, GIGMOD_DIR_NAME, RUN_PARALLEL, stage.name, RUNTIME_TYPE, RUNTIME) }}
       {%- else %}
         {{ STEP_FUNCTION_NAME }} "${STAGE_COUNTER}-${__STEP_COUNTER}" ${STAGE_CURRENT_PID} ${STEP_SEMAPHORE} {{ RUN_PARALLEL }}
       {%- endif %}
@@ -80,7 +83,7 @@ function {{ STAGE_FUNCTION_NAME }}() {
       unset STEP_SEMAPHORE
       {%- endif %}
     else
-        __stepHeader "${STEP_COUNTER}-${__STEP_COUNTER}" '{{ stage.name }}' '{{ step.name }}' '{{ step.runtime }}' ${STAGE_CURRENT_PID} 'SKIPPED'
+        __stepHeader "${STEP_COUNTER}-${__STEP_COUNTER}" '{{ stage.name }}' '{{ step.name }}' '{{ RUNTIME }} [{{ RUNTIME_TYPE }}]' ${STAGE_CURRENT_PID} 'SKIPPED'
     fi
     {%- if step.wait %}
 
