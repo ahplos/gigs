@@ -104,8 +104,8 @@ elCicdTemplates:
             sleep 25
         - name: print-message-from-first-stage
           stepRef: $<PRINT_THE_DEMO_MSG_REF>
-          args:
-          - 'PROVING PARALLEL PROCESSING BY STAGE WORKS BY PRINTING SECOND STEP OF FIRST STAGE AT THE END: ${TEST_SUCCEEDED:-test succeeded}'
+          args: |-
+            'PROVING PARALLEL PROCESSING BY STAGE WORKS BY PRINTING SECOND STEP OF FIRST STAGE AT THE END: ${TEST_SUCCEEDED:-test succeeded}'
       - name: login
         description: Login into cluster as cluster admin, and retrieve Gig supported Step runtimes.
         steps:

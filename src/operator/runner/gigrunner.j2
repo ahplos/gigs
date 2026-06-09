@@ -27,7 +27,7 @@ function __gigrunner() {
     __GIG_MOD_SECRETS='{{ gigmod.spec.inputParams | selectattr('secret', 'equalto', True) | map(attribute='name') | join(' ') }}'
     [[ -n ${__GIG_MOD_SECRETS} ]] && gigSecretsAdd ${__GIG_MOD_SECRETS}
 
-    __gigRunHeader {{ gigmod.name }} {{ gigmod.spec.description }}
+    __gigRunHeader {{ gigmod.name }} {{ (gigmod.spec.description | tojson) if gigmod.spec.description else '' }}
 
     echo "$(__saveInputParamsToEnv)"  |& __logOutput '--'
 

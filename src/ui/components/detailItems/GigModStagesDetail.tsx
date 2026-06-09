@@ -13,6 +13,7 @@ import {
 
 import {
     GigModule,
+    GIG_GVK,
     GIG_MODULE_GVK,
 } from '../../utilities/objectDefs';
 
@@ -20,12 +21,20 @@ function getStageListItem(stage, gigMod) {
     if (stage.steps) {
         return <ListItem><b>{stage.name}</b><br/>STEPS: {stage.steps.length}</ListItem>
     }
-    else {
+    else if (stage.stageRef) {
         let namespace = stage.stageRef.gigModuleRef.namespace ?? gigMod.metadata.namespace;
         return <ListItem><b>{stage.name}</b><br/>
-                   FROM: <ResourceLink groupVersionKind={GIG_MODULE_GVK}
-                                       name={stage.stageRef.gigModuleRef.name}
-                                       namespace={namespace}/>
+                   IMPORT FROM: <ResourceLink groupVersionKind={GIG_MODULE_GVK}
+                                              name={stage.stageRef.gigModuleRef.name}
+                                              namespace={namespace}/>
+               </ListItem>
+    }
+    else {
+        let namespace = stage.gigRef.namespace ?? gigMod.metadata.namespace;
+        return <ListItem><b>{stage.name}</b><br/>
+                   LAUNCH GIG: <ResourceLink groupVersionKind={GIG_GVK}
+                                             name={stage.gigRef.name}
+                                             namespace={namespace}/>
                </ListItem>
     }
 }

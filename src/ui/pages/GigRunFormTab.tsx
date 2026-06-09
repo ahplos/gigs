@@ -42,7 +42,7 @@ export const GigRunFormTab = (model) => {
         formSpec = gigForm?.spec?.inputForm ?? [];
         errorMessage = gfLoadError;
     }
-    else if (model.spec.inputForm) {
+    else if (model.obj.spec.inputForm) {
         gigForm = model.obj
         formSpec = structuredClone(gigForm.spec.inputForm ?? []);
     }

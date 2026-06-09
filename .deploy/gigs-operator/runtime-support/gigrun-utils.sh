@@ -118,7 +118,9 @@ function __checkForAbortSignal() {
 function __killGigRun() {
     echo
     echo "${1:-==> GIG FAILURE[$(gigEnvGet __ERR_FILE_NAME):ln $(gigEnvGet __ERR_LINENO)]: TERMINATING DUE TO ERROR IN GIG}"
-    sleep 5
+    kubectl delete --ignore-not-found secret -n ${GIGRUN_NAMESPACE} ${GIGRUN_NAME}
+    sleep 3
+
     local PID=$(gigEnvGet GIG_PID)
     (timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}) >/dev/null
 }

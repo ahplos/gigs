@@ -26,6 +26,8 @@ DEFAULT_RUNTIMES = 'default-runtimes'
 
 DEFAULT_RUNTIMES_SECRET: Secret = None
 
+GIGRUN_CACHE = 'gigrun-cache'
+
 GIG_CONSTS.GLOBAL_REGISTRY
 
 @kopf.on.mutate(GigRun.version, GigRun.plural, operations=[GIG_CONSTS.CREATE, GIG_CONSTS.UPDATE], persistent=False)  # type: ignore
@@ -159,7 +161,7 @@ def create_or_patch_inputValues_secret(gigrun: GigRun, logger):
         inputValuesSecret = Secret(gigrun.name, namespace=gigrun.metadata.namespace)
         inputValuesSecret[STRING_DATA] = {GIG_CONSTS.INPUT_VALUES: inputValues}
         if (not inputValuesSecret.exists()):
-            inputValuesSecret['type'] = f'{GigRun.group}/{GigRun.singular}'
+            inputValuesSecret['type'] = f'{GigRun.group}/{GigRun.singular}-cache'
             inputValuesSecret.create()
             inputValuesSecret.set_owner(gigrun)
         else:

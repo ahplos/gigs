@@ -396,8 +396,12 @@ elCicdDefs-$<GIG_MODULE>:
                     for dynamic values.
                 name:
                   type: string
+                  description: |-
+                    Name of a Gig to run externally.
                 namespace:
                   type: string
+                  description: |-
+                    Namespace of a Gig to run externally.
             iterate: $<ITERATE_SPEC>
             maxParallel:
               type: integer
@@ -468,11 +472,10 @@ elCicdDefs-$<GIG_MODULE>:
                   - stepRef
                 properties:
                   args:
-                    type: array
+                    type: string
                     description: |-
-                      List of arguments to pass to the runtime executable or the step file during execution.
-                    items:
-                      type: string
+                      Options to append to the runtime executable.  These will be executed in the context of a shell script, so using shell
+                      variables here is permissable.
                   description:
                     type: string
                     description: Description of name's purpose.

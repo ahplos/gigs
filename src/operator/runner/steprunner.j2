@@ -8,14 +8,6 @@ trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && 
 gigSecretsAdd {{ step.secretVars|join(' ') }}
 {%- endif %}
 
-{%- if step.runtime == 'Custom' %}
-RUNTIME_SCRIPT=$(cat <<'EOF'
-{{ step.runtimeScript }}
-EOF
-)
-stepEnvSet RUNTIME_SCRIPT ${RUNTIME_SCRIPT}
-{%- endif %}
-
 RUNTIME_TYPE={{ step.runtime.type if (step.runtime and step.runtime.type) else 'Script' }}
 RUNTIME={{ step.runtime.name if step.runtime else 'Shell' }}
 

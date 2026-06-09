@@ -21,8 +21,8 @@ NAMESPACE=${NAMESPACE:-${GIGRUN_NAMESPACE}}
 CHART_DIR=$(mktemp -d)
 cd ${CHART_DIR}
 mkdir -p templates
-cp ${GIGRUN_HOME}/Chart.yaml .
-cp ${GIGRUN_HOME}/gigrunTemplate.yaml ./templates
+cp ${GIGRUN_DEFAULT_SCRIPTS_HOME}/Chart.yaml .
+cp ${GIGRUN_DEFAULT_SCRIPTS_HOME}/gigrunTemplate.yaml ./templates
 
 helm template --set-literal inputValues="${INPUT_VALUES}" ${LAUNCH_GIG_NAME} . > gigrun.yaml
 echo 'GENERATING GIGRUN:'

@@ -8,6 +8,17 @@ trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && 
 {%- from 'iterator-macro.j2' import realize_iterators %}
 {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIGMOD_DIR_NAME, stage.name) %}
 
+{%- for step in stage.steps %}
+  {%- if step.args %}
+__ARGS=$(cat <<'EOF'
+{{ step.args }}
+EOF
+)
+gigdb-cli SET {{ step.name }}_GIGRUN_ARGS "${__ARGS}" >/dev/null
+  {%- endif %}
+{%- endfor %}
+unset __ARGS
+
 function {{ STAGE_FUNCTION_NAME }}() {
     local STAGE_CURRENT_PID=${1}
     local __STEP_COUNTER=0
@@ -30,12 +41,13 @@ function {{ STAGE_FUNCTION_NAME }}() {
 
       {%- set STEP_FUNCTION_NAME = '{}_{}'.format(STAGE_FUNCTION_NAME, step.name) %}
 
-      {%- set RUNTIME_TYPE = step.runtime.type if (step.runtime and step.runtime.type) else 'Script' %}
+      {%- set RUNTIME_TYPE = 'Script' if not (step.runtime and step.runtime.type) else step.runtime.type %}
       {%- set RUNTIME = 'Shell' if not step.runtime else step.runtime.name %}
 
     function {{ STEP_FUNCTION_NAME }}() {
         local STAGE_CURRENT_PID=${2}
-        local STEP_CURRENT_PID=$([[ -n '{{ RUN_PARALLEL }}' ]] && echo ${STAGE_CURRENT_PID} || echo ${BASHPID})
+        local STEP_PID=${BASHPID}
+        local STEP_CURRENT_PID=$([[ -n '{{ RUN_PARALLEL }}' ]] && echo ${STEP_PID} || echo ${STAGE_CURRENT_PID})
         (
       {%- if step.workDir %}
             cd {{ step.workDir }}
@@ -50,14 +62,13 @@ function {{ STAGE_FUNCTION_NAME }}() {
 
             __stepHeader ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' '{{ RUNTIME }} [{{ RUNTIME_TYPE }}]' ${STEP_CURRENT_PID}
             {%- if step.args %}
-            RUNTIME_OPTIONS='{{ step.args|join(' ') }}'
-            stepEnvSet RUNTIME_OPTIONS "${RUNTIME_OPTIONS}"
+            stepEnvSet RUNTIME_OPTIONS "$(gigdb-cli GET {{ step.name }}_GIGRUN_ARGS)"
             {%- endif %}
             local __STEP_OUTPUT=$(
                 {{ '${{GIGRUN_HOME}}/{}/steprunner__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_FILE)  }}  |& __logOutput "${STEP_COUNTER}"
             )
             echo "${__STEP_OUTPUT}"
-            __stepFooter ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' ${SECONDS}
+            __stepFooter ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' ${SECONDS} {{ 'failSafe' if step.failSafe else '' }}
       {%- if step.maxParallel %}
             __releaseSemaphores "${STAGE_SEMAPHORE}" "${STEP_SEMAPHORE}"
       {%- endif %}

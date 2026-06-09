@@ -13,7 +13,7 @@ function __gigRunHeader() {
     local GIG_HEADER=$(
         echo "${__HEADER_FOOTER_BORDER}"
         echo "${__HEADER_FOOTER_PREFIX} GIG: ${GIGMOD_NAME}"
-        if [[ -n ${GIGMOD_DESCRIPTION} ]]
+        if [[ -n "${GIGMOD_DESCRIPTION}" ]]
         then
             echo "${__HEADER_FOOTER_PREFIX} ${GIGMOD_DESCRIPTION}"
         fi
@@ -99,6 +99,7 @@ function __stepFooter() {
     local STAGE_NAME="${2}"
     local STEP_NAME="${3}"
     local TIME_SECONDS="${4}"
+    local FAIL_SAFE="${5}"
     local RESULT="$(stepEnvGet __STEP_RESULT)"
 
     if [[ -z ${RESULT} || ${RESULT} == 0 ]]
@@ -111,6 +112,6 @@ function __stepFooter() {
             echo "==> STEP FAILURE: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} [${TIME_SECONDS}s]"
             echo "==>               Exit code ${RESULT}${FILE:+:file ${FILE}}${LINENO:+:ln ${LINENO}}"
         )" | __logOutput "${STEP_COUNTER}"
-        __killGigRun
+        [[ -z ${FAIL_SAFE} ]] && __killGigRun
     fi
 }
