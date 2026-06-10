@@ -1,10 +1,6 @@
 #!/usr/bin/bash -e
 # stagerunner
 
-set -e -E -o pipefail
-
-trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
-
 {%- from 'iterator-macro.j2' import realize_iterators %}
 {%- set STAGE_FUNCTION_NAME = '__{}_{}'.format(GIGMOD_DIR_NAME, stage.name) %}
 
@@ -65,7 +61,7 @@ function {{ STAGE_FUNCTION_NAME }}() {
             stepEnvSet RUNTIME_OPTIONS "$(gigdb-cli GET {{ step.name }}_GIGRUN_ARGS)"
             {%- endif %}
             local __STEP_OUTPUT=$(
-                {{ '${{GIGRUN_HOME}}/{}/steprunner__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_FILE)  }}  |& __logOutput "${STEP_COUNTER}"
+                source {{ '${{GIGRUN_HOME}}/{}/steprunner__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_FILE)  }} |& __logOutput "${STEP_COUNTER}"
             )
             echo "${__STEP_OUTPUT}"
             __stepFooter ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' ${SECONDS} {{ 'failSafe' if step.failSafe else '' }}

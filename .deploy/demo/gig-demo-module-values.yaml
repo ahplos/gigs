@@ -41,11 +41,11 @@ elCicdTemplates:
         var: CLUSTER_ADMIN_PASSWORD
       - attributes:
           isInline: true
-          label: Run inline or in separate GigRuns?
+          label: Run inline or externally (i.e. separate GigRuns)?
           options:
           - Inline
-          - GigRuns
-          defaultValue: GigRuns
+          - External
+          defaultValue: Inline
         inputType: RadioGroup
         var: DEMO_RUN_TYPE
 
@@ -278,7 +278,7 @@ elCicdTemplates:
           script: |-
             let TEXT_MESSAGE = await gigEnvGet("TEXT_MESSAGE")
             TEXT_MESSAGE = TEXT_MESSAGE ? TEXT_MESSAGE + '\n' : ''
-            await gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Javascript runtime")
+            await gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Javascript runtime in POD")
         - name: print-the-javascript-msg
           stepRef: $<PRINT_THE_DEMO_MSG_REF>
 
@@ -296,7 +296,7 @@ elCicdTemplates:
           script: |-
             TEXT_MESSAGE = gigEnvGet("TEXT_MESSAGE")
             TEXT_MESSAGE = TEXT_MESSAGE + '\n' if TEXT_MESSAGE else ''
-            gigEnvSet("TEXT_MESSAGE", TEXT_MESSAGE + "This line of the test message was set using the Python runtime")
+            gigEnvSet('TEXT_MESSAGE', TEXT_MESSAGE + f'This line of the test message was set using the Python runtime in PID {os.getpid()}')
         - name: print-the-python-msg
           stepRef: $<PRINT_THE_DEMO_MSG_REF>
 

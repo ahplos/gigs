@@ -12,27 +12,27 @@ spec:
         __runGoStep
     - name: JavaScript
       script: |-
-        set -x
-        node --import=${GIGRUN_DEFAULT_SCRIPTS_HOME}/gigdb-helper.js $(stepEnvGet STEP_FILE) $(stepEnvGet RUNTIME_OPTIONS)
+        __runJavaScriptStep
     - name: Python
       script: |-
-        STEP_FILE=$(stepEnvGet STEP_FILE)
-        python -m trace --trace --ignore-dir=$(python -c 'import sys; print(":".join(sys.path[1:]))') ${STEP_FILE} "${RUNTIME_OPTIONS@P}"
+        __runPythonStep
     - name: Shell
       script: |-
-        RUNTIME_OPTIONS="$(stepEnvGet RUNTIME_OPTIONS)"
-        $(stepEnvGet STEP_FILE) "${RUNTIME_OPTIONS@P}"
+        __runShellStep
   - type: Template
     runtimes:
     - name: Helm
       script: |-
-        __renderTemplate Helm
+        __renderHelmTemplate
     - name: JavaScript
       script: |-
-        ${GIGRUN_DEFAULT_SCRIPTS_HOME}/render-javascript-literal-template.sh ${INPUT_FILE} ${OUTPUT_FILE}
+        __renderJavaScriptTemplate
     - name: Jinja
       script: |-
-        python ${GIGRUN_DEFAULT_SCRIPTS_HOME}/render-jinja-template.py ${INPUT_FILE} ${OUTPUT_FILE}
+        __renderJinjaTemplate
+    - name: Shell
+      script: |-
+        __renderShellTemplate
   - type: UserInput
     runtimes:
     - name: Helm

@@ -1,11 +1,9 @@
 #!/usr/bin/bash
 # steprunner
 
-trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
-
 {%- set HAS_SECRETS = 'HAS_SECRETS' if step.secretVars else '' %}
 {%- if HAS_SECRETS %}
-gigSecretsAdd {{ step.secretVars|join(' ') }}
+gigSecretsAdd {{ step.secretVars | join(' ') }}
 {%- endif %}
 
 RUNTIME_TYPE={{ step.runtime.type if (step.runtime and step.runtime.type) else 'Script' }}
@@ -25,6 +23,7 @@ stepEnvSet OUTPUT_FILE '{{ step.outputFile }}'
 RUNTIME_SCRIPT_DIR=${GIGRUN_HOME}/{{ '{}_{}'.format(step.runtime.gigModuleRef.namespace, step.runtime.gigModuleRef.name) }}
 {%- endif %}
 
-${RUNTIME_SCRIPT_DIR:-${GIGRUN_DEFAULT_SCRIPTS_HOME}}/runtime__${RUNTIME_TYPE}_${RUNTIME}
+source ${GIGRUN_DEFAULT_SCRIPTS_HOME}/step-error-handler.sh
+source ${RUNTIME_SCRIPT_DIR:-${GIGRUN_DEFAULT_SCRIPTS_HOME}}/runtime__${RUNTIME_TYPE}_${RUNTIME}
 
 stepEnvSet __STEP_RESULT $?

@@ -46,6 +46,12 @@ func CloseGigDb(gigdb *redis.Client, err error) {
 	}
 }
 
+func envDel(key string, field string) {
+	gigdb, gigdbCtx := GigDb()
+	_, err := gigdb.HDel(gigdbCtx, key, field).Result()
+	CloseGigDb(gigdb, err)
+}
+
 func envExists(key string, field string) bool {
 	gigdb, gigdbCtx := GigDb()
 	val, err := gigdb.HExists(gigdbCtx, key, field).Result()
@@ -95,6 +101,10 @@ func envValues(key string) []string {
 	return values
 }
 
+func GigEnvDel(field string) {
+	envDel(GIG_ENV, field)
+}
+
 func GigEnvExists(field string) bool {
 	return envExists(GIG_ENV, field)
 }
@@ -123,6 +133,10 @@ func GigEnvValues() []string {
 	return envValues(GIG_ENV)
 }
 
+func StageEnvDel(field string) {
+	envDel(STAGE_ID, field)
+}
+
 func StageEnvExists(field string) bool {
 	return envExists(STAGE_ID, field)
 }
@@ -149,6 +163,10 @@ func StageEnvSet(field string, val string) {
 
 func StageEnvValues() []string {
 	return envValues(STAGE_ID)
+}
+
+func StepEnvDel(field string) {
+	envDel(STEP_ID, field)
 }
 
 func StepEnvExists(field string) bool {

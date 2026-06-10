@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-trap 'gigEnvSet __ERR_LINENO ${LINENO}; gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
-
 function __initSemaphore() {
     local -n __SEM=${1}
     local MAX_PARALLEL=${2}
@@ -64,7 +62,7 @@ function __saveInputParamsToEnv() {
             fi
         done
 
-        kubectl patch secret -n ${GIGRUN_NAMESPACE} ${GIGRUN_NAME} --patch 'data:' 2>&1 >/dev/null
+        kubectl patch secret -n ${GIGRUN_NAMESPACE} ${GIGRUN_NAME} --patch 'data:' &>/dev/null
     else
         echo "${__HEADER_FOOTER_PREFIX} NO INPUT PARAMS RECEIVED"
     fi
@@ -110,17 +108,15 @@ function __checkForAbortSignal() {
                  -n ${GIGRUN_NAMESPACE} \
                  --timeout=${GIGRUN_ACTIVE_DEADLINE_SECONDS}s \
                  --for=jsonpath='{.spec.runState}=Aborting' \
-        2>&1 >/dev/null
+        &>/dev/null
 
     __killGigRun "==> ABORT RUN REQUESTED..."
 }
 
 function __killGigRun() {
-    echo
-    echo "${1:-==> GIG FAILURE[$(gigEnvGet __ERR_FILE_NAME):ln $(gigEnvGet __ERR_LINENO)]: TERMINATING DUE TO ERROR IN GIG}"
-    kubectl delete --ignore-not-found secret -n ${GIGRUN_NAMESPACE} ${GIGRUN_NAME}
-    sleep 3
+    [[ -n ${1} ]] && echo && echo "${1}"
+    kubectl delete --ignore-not-found secret -n ${GIGRUN_NAMESPACE} ${GIGRUN_NAME} &>/dev/null
 
     local PID=$(gigEnvGet GIG_PID)
-    (timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}) >/dev/null
+    (timeout 30s pkill -P ${PID} || pkill --signal KILL -P ${PID}) &>/dev/null
 }

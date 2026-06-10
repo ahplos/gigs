@@ -1,4 +1,3 @@
-{%- raw %}
 apiVersion: batch.ahplos.org/v1beta1
 kind: GigRun
 metadata:
@@ -9,4 +8,3 @@ spec:
   {{- if .Values.inputValues }}
   inputValues: '{{ .Values.inputValues }}'
   {{ end }}
-{%- endraw %}

@@ -37,6 +37,12 @@ try {
     gigdbQuit(err);
 }
 
+global.gigEnvDel = async (field) => {
+	await gigdb.hDel(GIG_ENV, field);
+	console.log('gigEnvDel(' + field + ')');
+	return result;
+}
+
 global.gigEnvExists = async (field) => {
 	let result = await gigdb.hExists(GIG_ENV, field);
 	console.log('gigEnvExists(' + field + ') => ' + result);
@@ -78,6 +84,12 @@ global.gigEnvValues = async () => {
 	return result;
 }
 
+global.stageEnvDel = async (field) => {
+	await gigdb.hDel(STAGE_ID, field);
+	console.log('stageEnvDel(' + field + ')');
+	return result;
+}
+
 global.stageEnvExists = async (field) => {
 	let result = await gigdb.hExists(STAGE_ID, field);
 	console.log('stageEnvExists(' + field + ') => ' + result);
@@ -116,6 +128,12 @@ global.stageEnvSet = async (field, value) => {
 global.stageEnvValues = async () => {
 	let result = await gigdb.hVals(STAGE_ID);
 	console.log('stageEnvValues() => ' + result);
+	return result;
+}
+
+global.stepEnvDel = async (field) => {
+	await gigdb.hDel(STEP_ID, field);
+	console.log('stepEnvDel(' + field + ')');
 	return result;
 }
 

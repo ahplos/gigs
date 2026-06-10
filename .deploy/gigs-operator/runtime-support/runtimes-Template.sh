@@ -3,53 +3,6 @@ trap '[[ -z $(gigEnvGet __ERR_LINENO) ]] && gigEnvSet __ERR_LINENO ${LINENO} && 
 
 set -e -E
 
-function __runGoStep() {
-    local RUNTIME_OPTIONS=$(stepEnvGet RUNTIME_OPTIONS)
-
-    local TEMP_DIR=/tmp/${STEP_ID}
-    local TMP_STEPRUN=${TEMP_DIR}/steprun
-    local TMP_STEPRUN_GO=${TEMP_DIR}/steprun.go
-    if [[ ! -f ${TMP_STEPRUN} ]]
-    then
-        mkdir -p ${TEMP_DIR} >/dev/null
-        cd ${TEMP_DIR}
-        cp ${GIGRUN_HOME}/gigdb-helper.go ${HOME}/go.* ${HOME}/steprun.go .
-        echo >> ${TMP_STEPRUN_GO}
-        echo 'func main() {' >> ${TMP_STEPRUN_GO}
-        cat $(stepEnvGet STEP_FILE) >> ${TMP_STEPRUN_GO}
-        echo '}' >> ${TMP_STEPRUN_GO}
-        goimports -w ${TMP_STEPRUN_GO}
-        go build . ${RUNTIME_OPTIONS@P}
-    fi
-    local OUTPUT=$(${TMP_STEPRUN})
-    echo 'EXECUTING:'
-    echo
-    cat ${TMP_STEPRUN_GO}
-    echo
-    echo 'OUTPUT:'
-    echo
-    echo ${OUTPUT:-'=> <NONE> <='}
-}
-
-function __runUserInput() {
-    local CHART_DIR=$(mktemp -d)
-    local NEW_GIGRUN_FILE=${CHART_DIR}/${STEP_ID}_gigrun_patch.yaml
-    local USER_INPUT_CONFIG_FILE=${CHART_DIR}/${STEP_ID}_user_input
-
-    stepEnvSet OUTPUT_FILE ${USER_INPUT_CONFIG_FILE}
-    stepEnvSet CHART_DIR ${CHART_DIR}
-    __render$(stepEnvGet RUNTIME)Template
-
-    stepEnvSet STEP_FILE ${GIGRUN_DEFAULT_SCRIPTS_HOME}/user-input-patch.yaml
-    stepEnvSet EXTRA_VALUES_FILE ${USER_INPUT_CONFIG_FILE}
-    stepEnvSet OUTPUT_FILE ${NEW_GIGRUN_FILE}
-    __renderHelmTemplate
-
-    __waitForUserInput ${NEW_GIGRUN_FILE}
-
-    rm -rf ${CHART_DIR}
-}
-
 __renderHelmTemplate() {
     local RUNTIME=$(stepEnvGet RUNTIME)
     local INPUT_FILE=$(stepEnvGet STEP_FILE)

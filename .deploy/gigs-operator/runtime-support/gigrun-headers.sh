@@ -109,9 +109,13 @@ function __stepFooter() {
         local LINENO=$(gigEnvGet __ERR_LINENO)
         local FILE=$(gigEnvGet __ERR_FILE_NAME)
         echo "$(
-            echo "==> STEP FAILURE: Step ${STEP_ID} ${STAGE_NAME}:${STEP_NAME} [${TIME_SECONDS}s]"
+            echo "==> STEP FAILURE: Step ${STAGE_NAME}:${STEP_NAME} [${TIME_SECONDS}s]"
             echo "==>               Exit code ${RESULT}${FILE:+:file ${FILE}}${LINENO:+:ln ${LINENO}}"
         )" | __logOutput "${STEP_COUNTER}"
-        [[ -z ${FAIL_SAFE} ]] && __killGigRun
+        if [[ -z ${FAIL_SAFE} ]]
+        then
+            gigEnvSet EXIT_STATUS ${RESULT}
+            __killGigRun
+        fi
     fi
 }

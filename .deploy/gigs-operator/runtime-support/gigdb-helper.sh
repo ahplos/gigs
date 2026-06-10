@@ -1,5 +1,9 @@
 #!/usr/bin/bash
 
+function gigEnvDel() {
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HDEL GIG_ENV "${1}" )
+}
+
 function gigEnvExists() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HISMEMBER GIG_ENV "${1}" )
 }
@@ -24,6 +28,10 @@ function gigEnvValues() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HVALS GIG_ENV )
 }
 
+function stageEnvDel() {
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HDEL ${STAGE_ID:-___} "${1}" )
+}
+
 function stageEnvExists() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HISMEMBER ${STAGE_ID:-___} "${1}" )
 }
@@ -46,6 +54,10 @@ function stageEnvSet() {
 
 function stageEnvValues() {
     ( { set +x; } 2>/dev/null; gigdb-cli --raw HVALS ${STAGE_ID:-___} )
+}
+
+function stepEnvDel() {
+    ( { set +x; } 2>/dev/null; gigdb-cli --raw HDEL ${STEP_ID:-___} "${1}" )
 }
 
 function stepEnvExists() {
