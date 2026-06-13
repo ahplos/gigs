@@ -165,3 +165,155 @@ elcicd-chart:
             root                /usr/share/nginx/html;
           }
         }
+
+  - apiVersion: console.openshift.io/v1
+    kind: ConsoleYAMLSample
+    template:
+      metadata:
+        name: gigmodule-sample
+      spec:
+        targetResource:
+          apiVersion: batch.ahplos.org/v1beta1
+          kind: GigModule
+        title: "Create GigModule"
+        description: |-
+          Create by manually entering YAML or JSON definitions, or by dragging and dropping a file into the editor.
+        yaml: |-
+          apiVersion: batch.ahplos.org/v1beta1
+          kind: GigModule
+          metadata:
+            name: example-gigmodule
+          spec:
+            activeDeadlineSeconds: 600
+            inputParams:
+            - name: A_SAMPLE_INPUT_PARAM
+              default: 'sample value'
+              required: false
+            mode: Executable
+            stages:
+            - name: my-first-stage
+              steps:
+              - name: my-first-step
+                script: |-
+                  echo "Running my first script"
+
+  - apiVersion: console.openshift.io/v1
+    kind: ConsoleYAMLSample
+    template:
+      metadata:
+        name: gigform-sample
+      spec:
+        targetResource:
+          apiVersion: batch.ahplos.org/v1beta1
+          kind: GigForm
+        title: "Create GigForm"
+        description: |-
+          Create by manually entering YAML or JSON definitions, or by dragging and dropping a file into the editor.
+        yaml: |-
+          apiVersion: batch.ahplos.org/v1beta1
+          kind: GigForm
+          metadata:
+            name: example-gigform
+          spec:
+            formTitle:
+              title:  An Example Title for an GigForm Input Form
+            inputForm:
+            - attributes:
+                label: An example label for a text field
+                isRequired: true
+                defaultValue: Sample default text
+                style:
+                  maxWidth: 50%
+              inputType: Text
+              var: A_SAMPLE_INPUT_PARAM
+
+  - apiVersion: console.openshift.io/v1
+    kind: ConsoleYAMLSample
+    template:
+      metadata:
+        name: gighook-sample
+      spec:
+        targetResource:
+          apiVersion: batch.ahplos.org/v1beta1
+          kind: GigHook
+        title: "Create GigHook"
+        description: |-
+          Create by manually entering YAML or JSON definitions, or by dragging and dropping a file into the editor.
+        yaml: |-
+          apiVersion: batch.ahplos.org/v1beta1
+          kind: GigHook
+          metadata:
+            name: example-github-gighook
+          spec:
+            eventData:
+            - key: X-GitHub-Event
+              validation:
+                match: ^push$
+            - key: $.deleted
+              source: Payload
+              validation:
+                bool: false
+            - key: X-Hub-Signature-256
+              validation:
+                secretKeyRef:
+                  name: hook-secret
+                  key: hook-secret
+                type: HMAC
+            - key: $.ref
+              source: Payload
+              inputVar: SCM_BRANCH
+              validation:
+                match: ^refs/heads/development$
+
+  - apiVersion: console.openshift.io/v1
+    kind: ConsoleYAMLSample
+    template:
+      metadata:
+        name: gig-sample
+      spec:
+        targetResource:
+          apiVersion: batch.ahplos.org/v1beta1
+          kind: Gig
+        title: "Create Gig"
+        description: |-
+          Create by manually entering YAML or JSON definitions, or by dragging and dropping a file into the editor.
+        yaml: |-
+          apiVersion: batch.ahplos.org/v1beta1
+          kind: Gig
+          metadata:
+            name: example-gig
+          spec:
+            cronJobRef:
+              name: some-cronjob
+            gigFormRef:
+              name: some-gigform
+              namespace: some-gigform-namespace
+            gigModuleRef:
+              name: some-gigmodule
+              namespace: some-gigmodule-namespace
+
+  - apiVersion: console.openshift.io/v1
+    kind: ConsoleYAMLSample
+    template:
+      metadata:
+        name: gigrun-sample
+      spec:
+        targetResource:
+          apiVersion: batch.ahplos.org/v1beta1
+          kind: GigRun
+        title: "Create GigRun"
+        description: |-
+          Create by manually entering YAML or JSON definitions, or by dragging and dropping a file into the editor.
+        yaml: |-
+          apiVersion: batch.ahplos.org/v1beta1
+          kind: GigRun
+          metadata:
+            name: example-gig
+          spec:
+            gigRef:
+              name: some-gig
+            inputValues: '{"A_SAMPLE_INPUT_PARAM": "a sample value"}'
+            inputReceived: false
+
+
+

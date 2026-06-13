@@ -75,7 +75,7 @@ function __verifyInputParams() {
     do
         if [[ -z $(gigEnvGet ${REQ_INPUT_PARAM}) ]]
         then
-            echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" |& __logOutput '--'
+            echo "ERROR: Missing required input parameter ${REQ_INPUT_PARAM}" |& __logOutput
             exit 1
         fi
     done

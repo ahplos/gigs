@@ -309,15 +309,6 @@ elCicdDefs-$<GIG_MODULE>:
         - rule: "self > 0"
           message: maxParallel for a GigModule must be a positive integer greater than zero
       mode: $<MODE_SPEC>
-      requiredInputParams:
-        type: array
-        description: |-
-          List of required input parameters that are required to  to module.  A Secret with the same name as the GigRun
-          will be checked for existence and that the required params are defined before ing.
-        items:
-          type: string
-          pattern: '^[a-zA-Z_](\w+)$'
-        x-kubernetes-list-type: set
       runtimeDefs:
         type: array
         x-kubernetes-list-type: map
@@ -417,8 +408,6 @@ elCicdDefs-$<GIG_MODULE>:
             name:
               type: string
               pattern: $<STAGE_STEP_PATTERN>
-            private:
-              type: boolean
             secretVars:
               type: array
               description: |-
@@ -515,10 +504,11 @@ elCicdDefs-$<GIG_MODULE>:
                         description: |-
                           Whether the file should be appended to or overwritten. Default is to overwrite. Not all runtimes will support
                           appending.
-                  private:
+                  referable:
                     type: boolean
                     description: |-
-                      Steps marked private cannot be referenced by other stages or GigModules.  This is evaluated at runtime only.
+                      By default, all steps can be referenced by other stages. If false, the stage will not be able to be referenced. This
+                      property is ignored if both the containing GigModule and stage are set to Library mode; i.e. the step must be public.
                   runtime:
                     type: object
                     description: |-
@@ -636,6 +626,10 @@ elCicdDefs-$<GIG>:
             description: Name of a CronJob in the same Namespace as the Gig.
         required:
         - name
+      debug:
+        type: boolean
+        description: |-
+          By default GigRuns log as much of their execution as possible.  If false, step tracing is suppressed.
       gigModuleRef:
         type: object
         description: Reference to a GigModule.
@@ -669,6 +663,11 @@ elCicdDefs-$<GIGRUN>:
     description: |-
       $<TITLE_CASE_NAME>Spec defines a $<TITLE_CASE_NAME>, which in turn trigger a Job produced from the parent Gig's CronJob.
     properties:
+      debug:
+        type: boolean
+        description: |-
+          By default GigRuns log as much of their execution as possible.  If false, step tracing and output is suppressed.
+      formTitle: $<TITLE_SPEC>
       gigRef:
         type: object
         required:
@@ -679,7 +678,6 @@ elCicdDefs-$<GIGRUN>:
             x-kubernetes-validations:
             - rule: "!(self != oldSelf)"
               message: gigRef is immutable
-      formTitle: $<TITLE_SPEC>
       inputForm: $<FORM_SPEC>
       inputReceived:
         type: boolean

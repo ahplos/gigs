@@ -113,6 +113,7 @@ elCicdTemplates:
           maxParallel: 1
           script: |-
             sleep 15
+            adfadf
             echo 'PROVING PARALLEL PROCESSING BY STEP WORKS BY PRINTING FIRST STEP OF SECOND STAGE AT THE END'
         - name: cluster-admin-login.sh
           script: |-

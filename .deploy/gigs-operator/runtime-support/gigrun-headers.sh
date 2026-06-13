@@ -1,7 +1,4 @@
 #!/usr/bin/bash
-
-trap 'gigEnvSet __ERR_LINENO ${LINENO}; gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
-
 __HEADER_FOOTER_BORDER='******************************************************************'
 __HEADER_FOOTER_PREFIX='**'
 
@@ -28,7 +25,7 @@ function __gigRunHeader() {
         echo "${__HEADER_FOOTER_BORDER}"
     )
     unset CURRENT_PID
-    echo "${GIG_HEADER}" | __logOutput '--'
+    echo "${GIG_HEADER}" | __logOutput
 }
 
 function __gigRunFooter() {
@@ -65,7 +62,7 @@ function __stageHeader() {
     )
 
     unset CURRENT_PID
-    echo "${STAGE_HEADER}" | __logOutput "${STAGE_COUNTER}"
+    echo "${STAGE_HEADER}" | __logOutput
 }
 
 function __stepHeader() {
@@ -91,7 +88,7 @@ function __stepHeader() {
     )
 
     unset CURRENT_PID
-    echo "${STEP_HEADER}"  | __logOutput "${STEP_COUNTER}"
+    echo "${STEP_HEADER}"  | __logOutput
 }
 
 function __stepFooter() {
@@ -104,14 +101,15 @@ function __stepFooter() {
 
     if [[ -z ${RESULT} || ${RESULT} == 0 ]]
     then
-        echo "==> SUCCESS: Step ${STEP_COUNTER} ${STAGE_NAME}:${STEP_NAME} [${TIME_SECONDS}s] <==" | __logOutput "${STEP_COUNTER}"
+        echo "==> SUCCESS: Step ${STEP_COUNTER} ${STAGE_NAME}:${STEP_NAME} [${TIME_SECONDS}s] <==" | __logOutput
     else
         local LINENO=$(gigEnvGet __ERR_LINENO)
         local FILE=$(gigEnvGet __ERR_FILE_NAME)
+        echo "$(stepEnvGet __STACK_TRACE)" | __logOutput
         echo "$(
             echo "==> STEP FAILURE: Step ${STAGE_NAME}:${STEP_NAME} [${TIME_SECONDS}s]"
             echo "==>               Exit code ${RESULT}${FILE:+:file ${FILE}}${LINENO:+:ln ${LINENO}}"
-        )" | __logOutput "${STEP_COUNTER}"
+        )" | __logOutput
         if [[ -z ${FAIL_SAFE} ]]
         then
             gigEnvSet EXIT_STATUS ${RESULT}

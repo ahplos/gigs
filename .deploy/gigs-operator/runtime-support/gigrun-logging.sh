@@ -1,27 +1,29 @@
 #!/usr/bin/bash
-
-trap 'gigEnvSet __ERR_LINENO ${LINENO}; gigEnvSet __ERR_FILE_NAME $(basename ${BASH_SOURCE})' ERR
-
 ECHO_XTRACE_REGEX='^[+]+\s+echo(\s|$)'
 
 __DELIM=$'\x1F'
 
+function __filterLogs() {
+    local LOG_HDR=$(printf "%s%18s" "$(__gigRunTime)" "[${STEP_COUNTER:-${STAGE_COUNTER:---}}] ")
+    local SECRETS_REGEX=$(__generateSecretFilter)
+    echo "${LOG_OUT}" |
+        sed -Ee "s${__DELIM}${SECRETS_REGEX:-$'\u2063'}${__DELIM}*****${__DELIM}g" \
+            -e "/${ECHO_XTRACE_REGEX}/d" \
+            -e "s/^/${LOG_HDR}/g"
+}
+
 function __logOutput() {
-    (
-        { set +x; } 2>/dev/null
-        local OUT=$(
-            while IFS='' read -r LOG_OUT
-            do
-                local LOG_HDR=$(printf "%s%18s" "$(__gigRunTime)" "[${STEP_COUNTER:-${STAGE_COUNTER:---}}] ")
-                SECRETS_REGEX=$(__generateSecretFilter)
-                echo "${LOG_OUT}" |
-                    sed -Ee "s${__DELIM}${SECRETS_REGEX:-$'\u2063'}${__DELIM}*****${__DELIM}g" \
-                        -e "/${ECHO_XTRACE_REGEX}/d" \
-                        -e "s/^/${LOG_HDR}/g"
-            done
+        (
+            { set +x; } 2>/dev/null
+            local OUT=$(
+                while IFS='' read -r LOG_OUT
+                do
+                    [[ -z "${1}" ]] && __filterLogs
+                done
+            )
+
+            echo "${OUT}"
         )
-        echo "${OUT}"
-    )
 }
 
 function __generateSecretFilter() {

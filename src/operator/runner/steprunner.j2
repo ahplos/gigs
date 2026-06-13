@@ -1,6 +1,8 @@
 #!/usr/bin/bash
 # steprunner
 
+set -e -E -o pipefail
+
 {%- set HAS_SECRETS = 'HAS_SECRETS' if step.secretVars else '' %}
 {%- if HAS_SECRETS %}
 gigSecretsAdd {{ step.secretVars | join(' ') }}
@@ -24,6 +26,6 @@ RUNTIME_SCRIPT_DIR=${GIGRUN_HOME}/{{ '{}_{}'.format(step.runtime.gigModuleRef.na
 {%- endif %}
 
 source ${GIGRUN_DEFAULT_SCRIPTS_HOME}/step-error-handler.sh
-source ${RUNTIME_SCRIPT_DIR:-${GIGRUN_DEFAULT_SCRIPTS_HOME}}/runtime__${RUNTIME_TYPE}_${RUNTIME}
+source ${RUNTIME_SCRIPT_DIR:-${GIGRUN_DEFAULT_SCRIPTS_HOME}}/runtime__${RUNTIME_TYPE}_${RUNTIME} |& __logOutput ${GIGRUN_SUPPRESS_OUTPUT}
 
 stepEnvSet __STEP_RESULT $?

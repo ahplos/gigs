@@ -2,7 +2,6 @@ elcicd-chart:
   elCicdDefs:
     PLUGIN_NAME: ahplos-gigs-console-plugin
     OPERATOR_NAME: ahplos-gigs-operator
-    GIG_HOOKS_HANDLER: gighooks
 
     IMAGE_REGISTRY: dev-demo-image-registry.apps-crc.testing
     GIGS_PLUGIN_IMAGE: $<IMAGE_REGISTRY>/$<PLUGIN_NAME>:latest

@@ -29,7 +29,7 @@ function __gigrunner() {
 
     __gigRunHeader {{ gigmod.name }} {{ (gigmod.spec.description | tojson) if gigmod.spec.description else '' }}
 
-    echo "$(__saveInputParamsToEnv)"  |& __logOutput '--'
+    echo "$(__saveInputParamsToEnv)"  |& __logOutput
 
     __verifyInputParams
 
@@ -61,12 +61,13 @@ function __gigrunner() {
         {%- endif %}
             ${GIGRUN_DEFAULT_SCRIPTS_HOME}/launch-gigrun.sh {{ stage.gigRef.name }} \
               '{{ stage.gigRef.namespace if stage.gigRef.namespace else '' }}' "${INPUT_VALUES}" \
-              |& __logOutput "${STAGE_COUNTER}"
+              |& __logOutput
       {%- else %}
             export STAGE_ID=$(uuidgen)
-            ${GIGRUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/stagerunner__{{ STAGE_NAME }} ${STAGE_CURRENT_PID}
+            {%- set STAGE_SCRIPT_PREFIX = 'stagerunner' if (stage.stageRef or stage.mode != 'Library') else '__stagerunner' %}
+            ${GIGRUN_HOME}/{{ STAGE_GIG_MOD_NAMESPACE }}_{{ STAGE_GIG_MOD_NAME }}/{{ STAGE_SCRIPT_PREFIX }}__{{ STAGE_NAME }} ${STAGE_CURRENT_PID}
       {%- endif %}
-            (echo && echo "==> STAGE ${STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") |& __logOutput "${STAGE_COUNTER}"
+            (echo && echo "==> STAGE ${STAGE_COUNTER} COMPLETE: {{ stage.name }} <==") |& __logOutput
       {%- if stage.maxParallel %}
             __releaseSemaphores ${STAGE_SEMAPHORE}
       {%- endif %}

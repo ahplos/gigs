@@ -75,7 +75,7 @@ def on_create_gigrun(body, meta, patch, logger, **_):
 
     gigmod_secrets_map = copy_gigmod_secrets_to_gigrun_namespace(gigmod, gig)
 
-    job = create_job(cron_job, gigrun, gigmod, gigmod_secrets_map)
+    job = create_job(cron_job, gigrun, gig, gigmod, gigmod_secrets_map)
 
     create_or_patch_inputValues_secret(gigrun, logger)
 
@@ -167,7 +167,7 @@ def create_or_patch_inputValues_secret(gigrun: GigRun, logger):
         else:
             inputValuesSecret.patch({STRING_DATA: {GIG_CONSTS.INPUT_VALUES: inputValues}})
 
-def create_job(cron_job: CronJob, gigrun: GigRun, gigmod: GigModule, gigmod_secrets_map: dict) -> Job:
+def create_job(cron_job: CronJob, gigrun: GigRun, gig: Gig, gigmod: GigModule, gigmod_secrets_map: dict) -> Job:
     spec = cron_job.spec.jobTemplate.copy()
     job = Job(spec)
     job.name = None
@@ -177,7 +177,7 @@ def create_job(cron_job: CronJob, gigrun: GigRun, gigmod: GigModule, gigmod_secr
     job.spec[GIG_CONSTS.BACKOFF_LIMIT] = 0
 
     container = get_container(job, cron_job.annotations.get(GigRun.CONTAINER_NAME_ANNOTATION, None))
-    configure_container(job, container, gigrun, gigmod, gigmod_secrets_map)
+    configure_container(job, container, gigrun, gig, gigmod, gigmod_secrets_map)
 
     job.create()
     job.set_owner(cron_job)
@@ -196,7 +196,7 @@ def get_container(job: Job, name: str) -> Box:
 
     return containers[0]
 
-def configure_container(job: Job, container: Box, gigrun: GigRun, gigmod: GigModule, gigmod_secrets_map: dict):
+def configure_container(job: Job, container: Box, gigrun: GigRun, gig: Gig, gigmod: GigModule, gigmod_secrets_map: dict):
     mounted_volume = Box(name = GIGRUN, emptyDir = Box(medium = 'Memory', sizeLimit = '50M'))
     job.spec.template.spec.setdefault(GIG_CONSTS.VOLUMES, BoxList()).append(mounted_volume)
 
@@ -220,12 +220,12 @@ def configure_container(job: Job, container: Box, gigrun: GigRun, gigmod: GigMod
         secret_volume_mount = Box(name = secret_vol_name, mountPath = f'{mountedDirectory}/{secret_dir_name}')
         container[GIG_CONSTS.VOLUME_MOUNTS].append(secret_volume_mount)
 
-    create_env_vars(container, gigrun, gigmod)
+    create_env_vars(container, gigrun, gig, gigmod)
 
     container['imagePullPolicy'] = 'Always'
     set_job_working_dir(container, job, gigmod.spec.workDirSizeLimit)
 
-def create_env_vars(container: Box, gigrun: GigRun, gigmod: GigModule):
+def create_env_vars(container: Box, gigrun: GigRun, gig: Gig, gigmod: GigModule):
     env = BoxList()
     env.append(Box(name = 'GIGRUN_HOME', value = GIG_CONSTS.GIGRUN_HOME))
     env.append(Box(name = 'GIGRUN_DEFAULT_SCRIPTS_HOME', value = f'{GIG_CONSTS.GIGRUN_HOME}/{DEFAULT_RUNTIMES_SECRET.name}'))
@@ -235,6 +235,10 @@ def create_env_vars(container: Box, gigrun: GigRun, gigmod: GigModule):
     env.append(Box(name = 'GIGRUN_NAME', value = gigrun.name))
     env.append(Box(name = 'GIGRUN_NAMESPACE', value = gigrun.namespace))
     env.append(Box(name = 'GIGRUN_ACTIVE_DEADLINE_SECONDS', value = f'{gigmod.spec.activeDeadlineSeconds}'))
+
+    if ((gigrun.spec.debug is not None and not gigrun.spec.debug) or
+        (gigrun.spec.debug is None and gig.spec.debug is not None and not gig.spec.debug)):
+        env.append(Box(name = 'GIGRUN_SUPPRESS_OUTPUT', value = 'TRUE'))
 
     input_params = ' '.join([input_param.name for input_param in gigmod.spec.inputParams])
     env.append(Box(name = 'GIGRUN_INPUT_PARAMS', value = input_params))

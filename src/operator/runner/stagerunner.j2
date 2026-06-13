@@ -61,9 +61,13 @@ function {{ STAGE_FUNCTION_NAME }}() {
             stepEnvSet RUNTIME_OPTIONS "$(gigdb-cli GET {{ step.name }}_GIGRUN_ARGS)"
             {%- endif %}
             local __STEP_OUTPUT=$(
-                source {{ '${{GIGRUN_HOME}}/{}/steprunner__{}.sh'.format(STEP_RUN_DIR, STEP_RUN_FILE)  }} |& __logOutput "${STEP_COUNTER}"
+                {%- set STEP_PREFIX = 'steprunner'
+                    if  (step.referable != False or (stage.mode == 'Library' and gigmod.spec.mode == 'Library'))
+                    else '__steprunner'
+                %}
+                source ${GIGRUN_HOME}/{{ STEP_RUN_DIR }}/{{ STEP_PREFIX }}__{{ STEP_RUN_FILE }}.sh
             )
-            echo "${__STEP_OUTPUT}"
+            [[ -n "${__STEP_OUTPUT}" ]] && echo "${__STEP_OUTPUT}"
             __stepFooter ${STEP_COUNTER} '{{ stage.name }}' '{{ step.name }}' ${SECONDS} {{ 'failSafe' if step.failSafe else '' }}
       {%- if step.maxParallel %}
             __releaseSemaphores "${STAGE_SEMAPHORE}" "${STEP_SEMAPHORE}"

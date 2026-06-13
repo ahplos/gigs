@@ -26,11 +26,11 @@ gigdb-server --daemonize yes --protected-mode yes --appendonly no
 
 __initNode
 
-trap 'echo "$(__gigRunFooter $?)" |& __logOutput "--"' EXIT
+trap 'echo "$(__gigRunFooter $?)" |& __logOutput' EXIT
 
 export __LOG_FILE=$(mktemp)
 
-__checkForAbortSignal |& __logOutput '--' &
+__checkForAbortSignal |& __logOutput &
 
 ${GIGRUN_HOME}/${GIGMOD_DIR}/gigrunner.sh >>${__LOG_FILE} &
 sleep 1
