@@ -90,6 +90,20 @@
   {
     "type": "console.resource/details-item",
     "properties": {
+      "id": "gigmodule-runtimedefs-item",
+      "column": "right",
+      "title": "Runtime Definitions Summary",
+      "model": {
+        "group": "batch.ahplos.org",
+        "version": "v1beta1",
+        "kind": "GigModule"
+      },
+      "component": { "$codeRef": "gigUiComponents.GigModRuntimeDefsDetail" }
+    }
+  },
+  {
+    "type": "console.resource/details-item",
+    "properties": {
       "id": "gigmodule-stages-item",
       "column": "right",
       "title": "Stages Summary",

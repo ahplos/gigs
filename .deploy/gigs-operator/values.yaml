@@ -189,6 +189,7 @@ elcicd-chart:
             - name: A_SAMPLE_INPUT_PARAM
               default: 'sample value'
               required: false
+            maxParallel: 10
             mode: Executable
             stages:
             - name: my-first-stage
@@ -196,6 +197,7 @@ elcicd-chart:
               - name: my-first-step
                 script: |-
                   echo "Running my first script"
+            workDirSizeLimit: 100Mi
 
   - apiVersion: console.openshift.io/v1
     kind: ConsoleYAMLSample
@@ -247,6 +249,7 @@ elcicd-chart:
           spec:
             eventData:
             - key: X-GitHub-Event
+              source: Header
               validation:
                 match: ^push$
             - key: $.deleted
@@ -254,6 +257,7 @@ elcicd-chart:
               validation:
                 bool: false
             - key: X-Hub-Signature-256
+              source: Header
               validation:
                 secretKeyRef:
                   name: hook-secret

@@ -15,9 +15,11 @@ export const GigModInputParamsDetail = (model) => {
 
     return (
         <List isPlain>
-            { gigMod.spec.inputParams?.map((param) => param.required ?
-                <ListItem><b>{param.name}</b></ListItem> :
-                <ListItem>{param.name}</ListItem>)
+            { gigMod.spec.inputParams ?
+                 (gigMod.spec.inputParams.map((param) => param.required ?
+                    <ListItem><b>{param.name}</b></ListItem> :
+                    <ListItem>{param.name}</ListItem>))
+                : <ListItem>None</ListItem>
             }
         </List>
     );

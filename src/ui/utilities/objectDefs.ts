@@ -107,11 +107,20 @@ type StepSpec = {
     }
 }
 
+type RuntimeSpec = {
+    name: string;
+    script: string;
+};
+
+type RuntimeDefSpec = {
+    type: string;
+    runtimes: RuntimeSpec[];
+};
+
 type StageSpec = {
     name: string;
     description?: string;
     steps: StepSpec[];
-    runtime: string;
     stageRef: {
         name: string;
         gigModuleRef: {
@@ -131,6 +140,7 @@ export type GigModule = K8sResourceCommon & {
         mode: boolean;
         name: string;
         inputParams: InputParamsSpec[];
+        runtimeDefs: RuntimeDefSpec[];
         stages: StageSpec[];
         workDirSizeLimit: string;
     };

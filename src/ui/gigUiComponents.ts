@@ -14,6 +14,7 @@ export { GigRunsList } from './components/GigRunsList';
 export { GigRunLogViewer } from './components/GigRunLogViewer';
 
 export { GigModInputParamsDetail } from './components/detailItems/GigModInputParamsDetail';
+export { GigModRuntimeDefsDetail } from './components/detailItems/GigModRuntimeDefsDetail';
 export { GigModStagesDetail } from './components/detailItems/GigModStagesDetail';
 
 export { GigFormSummaryDetail } from './components/detailItems/GigFormSummaryDetail';

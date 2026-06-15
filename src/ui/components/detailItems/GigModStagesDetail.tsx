@@ -39,14 +39,26 @@ function getStageListItem(stage, gigMod) {
     }
 }
 
+const orderedProps = {
+    component: ListComponent.ol,
+    type: OrderType.number
+}
+
+const plainProps = {
+    isPlain: true
+}
 
 export const GigModStagesDetail = (model) => {
     if (model) {
         const gigMod: GigModule = model.obj;
 
+        const stageListItems = gigMod.spec.stages ?
+            gigMod.spec.stages.map((stage) => getStageListItem(stage, gigMod)) : <ListItem>None</ListItem>;
+
+
         return (
-            <List component={ListComponent.ol} type={OrderType.number}>
-                {gigMod.spec.stages.map((stage) => getStageListItem(stage, gigMod))}
+            <List {...(gigMod.spec.stages ? orderedProps : plainProps )} >
+                { stageListItems }
             </List>
         );
     }
