@@ -209,32 +209,42 @@ elCicdDefs-$<GIG_MODULE>:
             envVar:
               type: object
               description: |-
-                Environment variable of values to iterate over.
+                A variable in the Gig or stage environment containing a delimited list of strings to iterate over.  The stage environment
+                will take precedence if found.
               properties:
                 name:
                   type: string
-                  description: |-
-                    Environment variable of values to iterate over. Precedence is given to local env, then STEP, STAGE, and GIG. the delim
-                    property refers to delimeter separating the values. A blank delim assumes spaces.
+                  description: Variable name.
                 delim:
                   type: string
+                  description: The delimiter to split the values of the string by to iterate over. Whitespace will be assumed if left blank.
             range:
               type: object
               description: A range of numbers to iterate over, incremented each loop by the incr.
               properties:
-                first:
+                start:
                   x-kubernetes-int-or-string: true
+                  description: |-
+                    Beginning of range to iterate over. Must resolve to a number. If the value contains alphabetical characters, it
+                    will be assumed to be a variable in the Gig or stage environment. The stage environment will take precedence if found.
                   default: 0
-                last:
+                end:
                   x-kubernetes-int-or-string: true
+                  description: |-
+                    End of range to iterate over. Must resolve to a number. If the value contains alphabetical characters, it
+                    will be assumed to be a variable in the Gig or stage environment. The stage environment will take precedence if found.
+                    Only the end of the range is required.
+                  default: 1
                 incr:
                   x-kubernetes-int-or-string: true
+                  description: |-
+                    The value iterator should increment the counter while iterating through the range.
                   default: 1
               required:
-              - last
+              - end
             vector:
               type: array
-              description: A list of strings and/or integers to iterate over.
+              description: A literal of strings and/or integers to iterate over.
               items:
                 x-kubernetes-int-or-string: true
               minLength: 1

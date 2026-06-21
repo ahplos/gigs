@@ -17,8 +17,8 @@ ARG RH_LINUX_EXTRA_PACKAGES
 ARG NPM_GIG_PACKAGES="redis"
 ARG NPM_EXTRA_GIG_PACKAGES
 
-ARG PYTHON_GIG_WHEELS="jinja2 pyyaml redis"
-ARG PYTHON_EXTRA_GIG_WHEELS="jinja2 pyyaml redis"
+ARG PYTHON_GIG_WHEELS='jinja2 pyyaml redis'
+ARG PYTHON_EXTRA_GIG_WHEELS='jinja2 pyyaml redis'
 
 ENV GO_GIG_MODULES="github.com/redis/go-redis/v9" \
     GO_EXTRA_GIG_MODULES="fmt"\ "os"

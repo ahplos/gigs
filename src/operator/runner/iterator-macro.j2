@@ -25,18 +25,21 @@
   {%- set ITERATOR_ID = namespace(ID=ITERATOR_ID.ID|join('-')) %}
 
   {%- for iter in stage_or_step.iterate.loops %}
+      {%- set ARRAY_VAR = iter.name ~ '_ARRAY' %}
     {%- if iter.envVar %}
-    {{ "IFS='%s' ".format(iter.envVar.delim) if iter.envVar.delim else '' }}read -ra {{ iter.name }}_ARRAY <<< "${{ iter.envVar.name }}"
-      {%- set VALUES = '${{{}_ARRAY[@]}}'.format(iter.name) %}
+    {{ ARRAY_VAR }}=$(stageEnvGet {{ iter.envVar.name }})
+    {{ ARRAY_VAR }}={{ '${' ~ ARRAY_VAR ~ ':-$(gigEnvGet ' ~ iter.envVar.name ~ ')}' }}
+    {{ "IFS='%s' ".format(iter.envVar.delim) if iter.envVar.delim else '' }}read -ra {{ ARRAY_VAR }} <<< "{{ '${' ~ ARRAY_VAR ~ '}' }}"
+      {%- set VALUES = '${' ~ ARRAY_VAR ~ '[@]}' %}
     {%- elif iter.range %}
-      {%- set VALUES = '{{{}..{}..{}}}'.format(iter.range.first , iter.range.last , iter.range.incr) %}
+      {%- set VALUES = '{{{}..{}..{}}}'.format(iter.range.start , iter.range.end , iter.range.incr) %}
     {%- else %}
-    {{ iter.name }}_ARRAY=(
+    {{ ARRAY_VAR }}=(
       {%- for val in iter.vector %}
-        {{ val }}
+        "{{ val }}"
       {%- endfor %}
     )
-      {%- set VALUES = '${{{}_ARRAY[@]}}'.format(iter.name) %}
+      {%- set VALUES = '${' ~ ARRAY_VAR ~ '[@]}' %}
     {%- endif %}
     export {{ '{}_COUNTER'.format(iter.name) }}=0
     for {{ iter.name }} in {{ VALUES }}

@@ -113,12 +113,12 @@ elCicdTemplates:
           maxParallel: 1
           script: |-
             sleep 15
-            adfadf
             echo 'PROVING PARALLEL PROCESSING BY STEP WORKS BY PRINTING FIRST STEP OF SECOND STAGE AT THE END'
         - name: cluster-admin-login.sh
           script: |-
             SOME_VAR='Testing passing variables across stages and steps through the environment'
             gigEnvSet SOME_VAR "${SOME_VAR}"
+            gigEnvSet LATER_FOR_TEST_ITER 'foo bar baz'
             echo "SOME_VAR: $(gigEnvGet SOME_VAR)"
             oc login --insecure-skip-tls-verify -u $(gigEnvGet CLUSTER_ADMIN_USER_NAME) \
                 -p $(gigEnvGet CLUSTER_ADMIN_PASSWORD) https://kubernetes.default.svc
@@ -146,7 +146,7 @@ elCicdTemplates:
           loops:
           - name: INDEX
             range:
-              last: 2
+              end: 2
           - name: VALS
             vector:
             - foo
@@ -164,7 +164,7 @@ elCicdTemplates:
           loops:
           - name: INDEX
             range:
-              last: 2
+              end: 2
           - name: VALS
             vector:
             - foo
@@ -176,26 +176,24 @@ elCicdTemplates:
             { "TEST_MESSAGE": "This demo is test a Python script in a separate GigRun" }
       - name: $<DEMONSTRATE_JAVASCRIPT>-inline
         when: gigEnv.LANG_DEMO.includes("JavaScript") && gigEnv.DEMO_RUN_TYPE == 'Inline'
-        # maxParallel: 2
-        # iterate:
-        #   when: env.LANG == 'JavaScript'
-        #   loops:
-        #   - name: LANG
-        #     envVar:
-        #       name: LANGS
+        maxParallel: 2
+        iterate:
+          loops:
+          - name: LATER_TESTING_ITER
+            envVar:
+              name: LATER_FOR_TEST_ITER
         stageRef:
           gigModuleRef:
             name: $<GIG_MOD_JS_DEMO>
           name: $<DEMONSTRATE_JAVASCRIPT>
       - name: $<DEMONSTRATE_JAVASCRIPT>-gigrun
         when: gigEnv.LANG_DEMO.includes("JavaScript") && gigEnv.DEMO_RUN_TYPE == 'GigRuns'
-        # maxParallel: 2
-        # iterate:
-        #   when: env.LANG == 'JavaScript'
-        #   loops:
-        #   - name: LANG
-        #     envVar:
-        #       name: LANGS
+        maxParallel: 2
+        iterate:
+          loops:
+          - name: LATER_TESTING_ITER
+            envVar:
+              name: LATER_FOR_TEST_ITER
         gigRef:
           name: $<GIG_MOD_JS_DEMO>
           inputValues: |-
@@ -257,7 +255,7 @@ elCicdTemplates:
             loops:
             - name: INDEX
               range:
-                last: 2
+                end: 2
             - name: VALS
               vector:
               - foo
