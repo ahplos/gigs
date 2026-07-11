@@ -9,4 +9,5 @@ version: 0.1.0
 dependencies:
 - name: elcicd-chart
   version: 0.1.0
-  repository: oci://ghcr.io/elcicd
+  repository: file:///home/hippyod/elcicd-edv/scratch/
+  # repository: oci://ghcr.io/elcicd
